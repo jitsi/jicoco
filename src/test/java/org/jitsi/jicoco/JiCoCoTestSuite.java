@@ -9,8 +9,7 @@ import org.junit.runners.*;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    CmdLineArgsTest.class,
-    PasswordUtilTest.class
+    CmdLineArgsTest.class
 })
 public class JiCoCoTestSuite
 {

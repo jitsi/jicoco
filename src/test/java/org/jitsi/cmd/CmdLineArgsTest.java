@@ -20,6 +20,7 @@ import org.junit.runner.*;
 import org.junit.runners.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -33,6 +34,7 @@ public class CmdLineArgsTest
      */
     @Test
     public void testJvbArgs()
+        throws ParseException
     {
         String[] args = {
             "--apis=xmpp,rest",
@@ -65,29 +67,28 @@ public class CmdLineArgsTest
         assertEquals(10000, parser.getIntOptionValue("min-port", 10000));
     }
 
-    /*@Test
+    @Test
     public void testRequiredArg()
     {
-        String[] args = { };
-        Options options = new Options();
+        String[] args = { "--min-port=23423" };
 
-        Option maxPort = new Option("max-port");
-        maxPort.setRequired(true);
-        options.addOption(maxPort);
+        CmdLine parser = new CmdLine();
 
-        CmdLineParser parser = CmdLineParsers.getDefault();
+        parser.addRequiredArgument("-max-port");
 
         try
         {
-            CmdLine line = parser.parse(args);
+            parser.parse(args);
 
             fail("Missed required argument");
         }
         catch (ParseException e)
         {
-            // Ok
+            assertEquals(
+                "Some of required arguments were not specified: [max-port]",
+                e.getMessage());
         }
-    }*/
+    }
 
 
 }
