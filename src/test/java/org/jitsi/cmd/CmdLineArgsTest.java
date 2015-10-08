@@ -75,6 +75,7 @@ public class CmdLineArgsTest
         CmdLine parser = new CmdLine();
 
         parser.addRequiredArgument("-max-port");
+        parser.addRequiredArgument("min-port");
 
         try
         {
