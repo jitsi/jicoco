@@ -19,10 +19,30 @@
   <url>https://github.com/jitsi/jicoco</url>
 
   <dependencies>
+    <dependency>
+      <groupId>org.igniterealtime</groupId>
+      <artifactId>tinder</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.igniterealtime.whack</groupId>
+      <artifactId>core</artifactId>
+    </dependency>
     <!-- org.jitsi -->
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>jitsi-android-osgi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>jitsi-ui-service</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-util</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>libjitsi-protocol</artifactId>
     </dependency>
     <!-- test -->
     <dependency>
