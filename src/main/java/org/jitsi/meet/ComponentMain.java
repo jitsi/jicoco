@@ -89,8 +89,7 @@ public class ComponentMain
          * (APIs) of Jitsi Videobridge. Each of them will keep the application
          * alive.
          */
-        OSGi.start(
-            new BundleActivator()
+        BundleActivator activator = new BundleActivator()
             {
                 @Override
                 public void start(BundleContext bundleContext)
@@ -111,7 +110,7 @@ public class ComponentMain
                 {
                     // We're doing nothing
                 }
-            });
+            };
 
         // Register shutdown hook to perform cleanup before exit
         Runtime.getRuntime().addShutdownHook(new Thread()
@@ -145,7 +144,7 @@ public class ComponentMain
 
         stopComponent();
 
-        OSGi.stop();
+        OSGi.stop(activator);
     }
 
     /**

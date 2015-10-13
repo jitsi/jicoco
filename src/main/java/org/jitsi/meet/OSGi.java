@@ -33,12 +33,6 @@ public class OSGi
     private static OSGiLauncher launcher;
 
     /**
-     * <tt>BundleActivator</tt> bundle activator launched on startup/shutdown of
-     * the OSGi system.
-     */
-    private static BundleActivator activator;
-
-    /**
      * OSGi bundles descriptor
      */
     private static OSGiBundleConfig bundleConfig;
@@ -47,18 +41,15 @@ public class OSGi
      * Starts the OSGi infrastructure.
      *
      * @param activator the <tt>BundleActivator</tt> that will be launched after
-     *        OSGi starts. {@link BundleActivator#stop(BundleContext)} will be
-     *        called on OSGi shutdown.
+     *        OSGi starts.
      */
     public static synchronized void start(BundleActivator activator)
     {
-        if (OSGi.activator != null)
-            throw new IllegalStateException("activator");
+        if (activator == null)
+            throw new NullPointerException("activator");
 
         if (OSGi.bundleConfig == null)
             throw new IllegalStateException("Bundle config not initialized");
-
-        OSGi.activator = activator;
 
         if (launcher == null)
         {
@@ -73,16 +64,18 @@ public class OSGi
     /**
      * Stops the OSGi system.
      *
-     * The <tt>BundleActivator</tt> that has been passed to
-     * {@link #start(BundleActivator)} will be launched after shutdown.
+     * @param activator the <tt>BundleActivator</tt> which
+     *        {@link BundleActivator#stop(BundleContext)} method will be called
+     *        after OSGi shutdown.
      */
-    public static synchronized void stop()
+    public static synchronized void stop(BundleActivator activator)
     {
-        if (launcher != null && activator != null)
+        if (activator == null)
+            throw new NullPointerException("activator");
+
+        if (launcher != null)
         {
             launcher.stop(activator);
-
-            activator = null;
         }
     }
 
@@ -99,16 +92,9 @@ public class OSGi
      * Modifies OSGi bundles config.
      * @param bundleConfig the OSGi config that describes OSGi bundles to be
      *                     used
-     * @throws IllegalStateException on config change attempt while the OSGi
-     *         system is running.
      */
     public static void setBundleConfig(OSGiBundleConfig bundleConfig)
     {
-        if (activator != null)
-        {
-            throw new IllegalStateException(
-                "Can not change OSGi config while the system is running");
-        }
         OSGi.bundleConfig = bundleConfig;
     }
 }
