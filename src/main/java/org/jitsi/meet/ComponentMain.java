@@ -124,6 +124,9 @@ public class ComponentMain
             }
         });
 
+        // Start OSGi
+        OSGi.start(activator);
+
         // FIXME: implement startComponent retries in case Prosody is not
         // available yet(currently we'll stop on the exception thrown by
         // startComponent)
