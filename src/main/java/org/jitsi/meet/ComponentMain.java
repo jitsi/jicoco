@@ -18,12 +18,19 @@ package org.jitsi.meet;
 import net.java.sip.communicator.service.shutdown.*;
 import net.java.sip.communicator.util.*;
 import net.java.sip.communicator.util.Logger;
+
 import org.jitsi.impl.configuration.*;
+import org.jitsi.retry.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.xmpp.component.*;
+
 import org.jivesoftware.whack.*;
+
 import org.osgi.framework.*;
+
 import org.xmpp.component.*;
+
+import java.util.concurrent.*;
 
 /**
  * Class for running main program loop of Jitsi Meet components like
@@ -56,6 +63,18 @@ public class ComponentMain
      * External component manager used to connect the component to Prosody.
      */
     private ExternalComponentManager componentManager;
+
+    /**
+     * Retry strategy for "first time connect". After we successfully add
+     * external component to <tt>ExternalComponentManager</tt>(it is connected)
+     * those will be handled by <tt>ExternalComponentManager</tt> internally.
+     */
+    private RetryStrategy connectRetry;
+
+    /**
+     * Lock used to synchronize first time connect attempt with cancel job.
+     */
+    private final Object connectSynRoot = new Object();
 
     /**
      * Runs "main" program loop until it gets killed or stopped by shutdown hook
@@ -170,20 +189,15 @@ public class ComponentMain
 
         componentManager.setServerName(component.getDomain());
 
-        try
-        {
-            componentManager.addComponent(
-                component.getSubdomain(), component);
-        }
-        catch (ComponentException e)
-        {
-            logger.error(
-                e.getMessage() + ", host:" + host + ", port:" + port, e);
-
-            return false;
-        }
+        ScheduledExecutorService executorService
+            = Executors.newScheduledThreadPool(1);
 
         component.init();
+
+        connectRetry = new RetryStrategy(executorService);
+
+        connectRetry.runRetryingTask(
+            new SimpleRetryTask(0, 5000, true, getConnectCallable()));
 
         return true;
     }
@@ -193,20 +207,75 @@ public class ComponentMain
      */
     private void stopComponent()
     {
-        if (component == null || componentManager == null)
-            return;
-
-        component.shutdown();
-        try
+        synchronized (connectSynRoot)
         {
-            componentManager.removeComponent(component.getSubdomain());
-        }
-        catch (ComponentException e)
-        {
-            logger.error(e, e);
-        }
+            if (component == null || componentManager == null)
+                return;
 
-        component.dispose();
+            if (connectRetry != null)
+            {
+                connectRetry.cancel();
+                connectRetry = null;
+            }
+
+            component.shutdown();
+            try
+            {
+                componentManager.removeComponent(component.getSubdomain());
+            }
+            catch (ComponentException e)
+            {
+                logger.error(e, e);
+            }
+
+            component.dispose();
+
+            component = null;
+            componentManager = null;
+        }
+    }
+
+    /**
+     * The callable returned by this method describes the task of connecting
+     * XMPP component.
+     *
+     * @return <tt>Callable<Boolean></tt> which returns <tt>true</tt> as long
+     *         as we're failing to connect.
+     */
+    private Callable<Boolean> getConnectCallable()
+    {
+        return new Callable<Boolean>()
+        {
+            @Override
+            public Boolean call()
+                throws Exception
+            {
+                try
+                {
+                    synchronized (connectSynRoot)
+                    {
+                        if (componentManager == null || component == null)
+                        {
+                            // Task cancelled ?
+                            return false;
+                        }
+
+                        componentManager.addComponent(
+                            component.getSubdomain(), component);
+
+                        return false;
+                    }
+                }
+                catch (ComponentException e)
+                {
+                    logger.error(
+                        e.getMessage() +
+                            ", host:" + component.getHostname() +
+                            ", port:" + component.getPort(), e);
+                    return true;
+                }
+            }
+        };
     }
 
     /**
