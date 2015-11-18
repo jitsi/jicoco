@@ -51,6 +51,10 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>jitsi-protocol-jabber</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-ui-service</artifactId>
     </dependency>
     <dependency>
