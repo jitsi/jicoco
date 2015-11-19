@@ -77,6 +77,11 @@ public class ComponentMain
     private final Object connectSynRoot = new Object();
 
     /**
+     * Executor service used to execute connect retry attempts.
+     */
+    private ScheduledExecutorService executorService;
+
+    /**
      * Runs "main" program loop until it gets killed or stopped by shutdown hook
      * @param bundleConfig OSGi bundles configuration that describes the system.
      */
@@ -189,8 +194,7 @@ public class ComponentMain
 
         componentManager.setServerName(component.getDomain());
 
-        ScheduledExecutorService executorService
-            = Executors.newScheduledThreadPool(1);
+        this.executorService = Executors.newScheduledThreadPool(1);
 
         component.init();
 
@@ -217,6 +221,9 @@ public class ComponentMain
                 connectRetry.cancel();
                 connectRetry = null;
             }
+
+            if (executorService != null)
+                executorService.shutdown();
 
             component.shutdown();
             try
