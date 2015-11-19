@@ -33,6 +33,7 @@ import java.io.*;
  * format.
  *
  * @author Lyubomir Marinov
+ * @author Pawel Domas
  */
 public abstract class AbstractJSONHandler
     extends AbstractHandler
@@ -54,17 +55,6 @@ public abstract class AbstractJSONHandler
      * encourage consistency among the extenders.
      */
     private static final String HEALTH_TARGET = "/about/health";
-
-    /**
-     * The MIME type of HTTP content in JSON format.
-     */
-    private static final String JSON_CONTENT_TYPE = "application/json";
-
-    /**
-     * The MIME type of HTTP content in JSON format with a charset.
-     */
-    private static final String JSON_CONTENT_TYPE_WITH_CHARSET
-        = JSON_CONTENT_TYPE + ";charset=UTF-8";
 
     /**
      * The HTTP PATCH method.
@@ -163,7 +153,7 @@ public abstract class AbstractJSONHandler
                 baseRequest,
                 request,
                 response,
-                JSON_CONTENT_TYPE_WITH_CHARSET);
+                RESTUtil.JSON_CONTENT_TYPE_WITH_CHARSET);
     }
 
     /**
@@ -445,22 +435,5 @@ public abstract class AbstractJSONHandler
         {
             response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
-    }
-
-    /**
-     * Determines whether a specific MIME type of HTTP content specifies a JSON
-     * representation.
-     *
-     * @param contentType the MIME type of HTTP content to determine whether it
-     * specifies a JSON representation
-     * @return {@code true} if {@code contentType} stands for a MIME type of
-     * HTTP content which specifies a JSON representation; otherwise,
-     * {@code false}
-     */
-    protected boolean isJSONContentType(String contentType)
-    {
-        return
-            JSON_CONTENT_TYPE.equals(contentType)
-                || JSON_CONTENT_TYPE_WITH_CHARSET.equals(contentType);
     }
 }
