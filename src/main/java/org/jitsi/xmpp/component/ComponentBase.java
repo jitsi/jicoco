@@ -215,13 +215,16 @@ public abstract class ComponentBase
      */
     protected void startPingTask()
     {
-        if (pingInterval > 0)
+        synchronized (timeouts)
         {
-            ProviderManager.getInstance().addIQProvider(
-                "ping", "urn:xmpp:ping", new KeepAliveEventProvider());
+            if (pingInterval > 0)
+            {
+                ProviderManager.getInstance().addIQProvider(
+                    "ping", "urn:xmpp:ping", new KeepAliveEventProvider());
 
-            pingTimer = new Timer();
-            pingTimer.schedule(new PingTask(), pingInterval, pingInterval);
+                pingTimer = new Timer();
+                pingTimer.schedule(new PingTask(), pingInterval, pingInterval);
+            }
         }
     }
 
@@ -243,10 +246,15 @@ public abstract class ComponentBase
 
         super.preComponentShutdown();
 
-        if (pingTimer != null)
+        synchronized (timeouts)
         {
-            pingTimer.cancel();
-            pingTimer = null;
+            if (pingTimer != null)
+            {
+                pingTimer.cancel();
+                pingTimer = null;
+            }
+
+            timeouts.clear();
         }
     }
 
@@ -336,20 +344,23 @@ public abstract class ComponentBase
         {
             try
             {
-                String domain = getDomain();
-
-                // domain = domain.substring(domain.indexOf(".") + 1);
-
-                KeepAliveEvent ping = new KeepAliveEvent(null, domain);
-
-                IQ pingIq = IQUtils.convert(ping);
-
-                logger.debug("Sending ping IQ: " + ping.toXML());
-
-                send(pingIq);
-
                 synchronized (timeouts)
                 {
+                    if (pingTimer == null)
+                        return; // cancelled
+
+                    String domain = getDomain();
+
+                    // domain = domain.substring(domain.indexOf(".") + 1);
+
+                    KeepAliveEvent ping = new KeepAliveEvent(null, domain);
+
+                    IQ pingIq = IQUtils.convert(ping);
+
+                    logger.debug("Sending ping IQ: " + ping.toXML());
+
+                    send(pingIq);
+
                     String packetId = pingIq.getID();
                     TimeoutTask timeout = new TimeoutTask(packetId);
 
@@ -386,22 +397,25 @@ public abstract class ComponentBase
 
         public void gotResult()
         {
-            this.hasResult = true;
+            synchronized (timeouts)
+            {
+                this.hasResult = true;
 
-            logger.debug("Got ping response for: " + packetId);
+                logger.debug("Got ping response for: " + packetId);
+            }
         }
 
         @Override
         public void run()
         {
-            if (!hasResult)
+            synchronized (timeouts)
             {
-                pingFailures++;
-
-                logger.error("Ping timeout for ID: " + packetId);
-
-                synchronized (timeouts)
+                if (!hasResult && timeouts.containsKey(packetId))
                 {
+                    pingFailures++;
+
+                    logger.error("Ping timeout for ID: " + packetId);
+
                     timeouts.remove(packetId);
                 }
             }
