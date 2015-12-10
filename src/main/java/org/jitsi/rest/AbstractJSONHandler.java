@@ -54,6 +54,13 @@ public abstract class AbstractJSONHandler
      * through {@code AbstractJSONHandler}. Explicitly defined as an attempt to
      * encourage consistency among the extenders.
      */
+    private static final String CALL_CONTROL_TARGET = "/call-control";
+
+    /**
+     * The HTTP resource which checks the health of the server/service exposed
+     * through {@code AbstractJSONHandler}. Explicitly defined as an attempt to
+     * encourage consistency among the extenders.
+     */
     private static final String HEALTH_TARGET = "/about/health";
 
     /**
@@ -195,6 +202,27 @@ public abstract class AbstractJSONHandler
      * @throws ServletException
      */
     protected void doGetHealthJSON(
+            Request baseRequest,
+            HttpServletRequest request,
+            HttpServletResponse response)
+        throws IOException,
+               ServletException
+    {
+    }
+    /**
+     * Gets a JSON representation of the health (status) of the associated
+     * server/service. The default implementation does nothing because it serves
+     * as a placeholder for extenders.
+     *
+     * @param baseRequest the original unwrapped {@link Request} object
+     * @param request the request either as the {@code Request} object or a
+     * wrapper of that request
+     * @param response the response either as the {@code Response} object or a
+     * wrapper of that response
+     * @throws IOException
+     * @throws ServletException
+     */
+    protected void doGetCallControlJSON(
             Request baseRequest,
             HttpServletRequest request,
             HttpServletResponse response)
@@ -375,6 +403,37 @@ public abstract class AbstractJSONHandler
     }
 
     /**
+     * Handles an HTTP request for a {@link #HEALTH_TARGET}-related resource.
+     *
+     * @param target the target of the request
+     * @param baseRequest the original unwrapped {@link Request} object
+     * @param request the request either as the {@code Request} object or a
+     * wrapper of that request
+     * @param response the response either as the {@code Response} object or a
+     * wrapper of that response
+     * @throws IOException
+     * @throws ServletException
+     */
+    protected void handleCallControlJSON(
+            String target,
+            Request baseRequest,
+            HttpServletRequest request,
+            HttpServletResponse response)
+        throws IOException,
+               ServletException
+    {
+        if (GET_HTTP_METHOD.equals(request.getMethod()))
+        {
+            // Check/get the health (status) of the associated server/service.
+            doGetCallControlJSON(baseRequest, request, response);
+        }
+        else
+        {
+            response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        }
+    }
+
+    /**
      * Handles a specific HTTP request for JSON content.
      *
      * @param target
@@ -403,6 +462,12 @@ public abstract class AbstractJSONHandler
             target = target.substring(VERSION_TARGET.length());
 
             handleVersionJSON(target, baseRequest, request, response);
+        }
+        else if (CALL_CONTROL_TARGET.equals(target))
+        {
+            target = target.substring(CALL_CONTROL_TARGET.length());
+
+            handleCallControlJSON(target, baseRequest, request, response);
         }
     }
 
