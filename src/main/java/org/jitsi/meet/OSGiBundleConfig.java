@@ -15,12 +15,11 @@
  */
 package org.jitsi.meet;
 
+import java.io.*;
+import java.util.*;
 import org.jitsi.impl.neomedia.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.util.*;
-
-import java.io.*;
-import java.util.*;
 
 /**
  * The class describes the list of OSGi bundle activators and their order of
@@ -58,16 +57,16 @@ public abstract class OSGiBundleConfig
             return null;
         }
 
-        List<String[]> lines = new ArrayList<String[]>();
-
         Scanner input = null;
+        List<String[]> lines = new ArrayList<>();
+
         try
         {
             input = new Scanner(file);
-
-            while(input.hasNextLine())
+            while (input.hasNextLine())
             {
                 String line = input.nextLine();
+
                 if (!StringUtils.isNullOrEmpty(line))
                 {
                     lines.add(new String[] { line.trim() });
@@ -86,8 +85,8 @@ public abstract class OSGiBundleConfig
             }
         }
 
-        return lines.isEmpty()
-            ? null : lines.toArray(new String[lines.size()][]);
+        return
+            lines.isEmpty() ? null : lines.toArray(new String[lines.size()][]);
     }
 
     /**
@@ -103,14 +102,8 @@ public abstract class OSGiBundleConfig
     public String[][] getBundles()
     {
         String[][] bundlesFromFile = loadBundlesFromFile(BUNDLES_FILE);
-        if (bundlesFromFile != null)
-        {
-            return bundlesFromFile;
-        }
-        else
-        {
-            return getBundlesImpl();
-        }
+
+        return (bundlesFromFile == null) ? getBundlesImpl() : bundlesFromFile;
     }
 
     /**
@@ -124,41 +117,35 @@ public abstract class OSGiBundleConfig
     protected abstract String[][] getBundlesImpl();
 
     /**
-     * Returns a map which contains default system properties map common for all
-     * server components. Currently we have the following values there:
+     * Returns a {@code Map} which contains default system properties common to
+     * all server components. Currently, we have the following values there:
      * <li>{@link ConfigurationService#PNAME_CONFIGURATION_FILE_IS_READ_ONLY}
      * = true</li>
      * <li>{@link MediaServiceImpl#DISABLE_AUDIO_SUPPORT_PNAME} = true</li>
      * <li>{@link MediaServiceImpl#DISABLE_VIDEO_SUPPORT_PNAME} = true</li>
+     *
+     * @return a {@code Map} which contains default system properties common to
+     * all server components
      */
     protected Map<String, String> getSystemPropertyDefaults()
     {
-        /*
-         * XXX A default System property value specified bellow will eventually
-         * be set only if the System property in question does not have a value
-         * set yet.
-         */
+        // XXX A default System property value specified bellow will eventually
+        // be set only if the System property in question does not have a value
+        // set yet.
 
-        Map<String,String> defaults = new HashMap<String,String>();
+        Map<String,String> defaults = new HashMap<>();
         String true_ = Boolean.toString(true);
         //String false_ = Boolean.toString(false);
 
-        /*
-         * The design at the time of this writing considers the configuration
-         * file read-only (in a read-only directory) and provides only manual
-         * editing for it.
-         */
+        // The design at the time of this writing considers the configuration
+        // file read-only (in a read-only directory) and provides only manual
+        // editing for it.
         defaults.put(
-            ConfigurationService.PNAME_CONFIGURATION_FILE_IS_READ_ONLY,
-            true_);
+                ConfigurationService.PNAME_CONFIGURATION_FILE_IS_READ_ONLY,
+                true_);
 
-        defaults.put(
-            MediaServiceImpl.DISABLE_AUDIO_SUPPORT_PNAME,
-            true_);
-
-        defaults.put(
-            MediaServiceImpl.DISABLE_VIDEO_SUPPORT_PNAME,
-            true_);
+        defaults.put(MediaServiceImpl.DISABLE_AUDIO_SUPPORT_PNAME, true_);
+        defaults.put(MediaServiceImpl.DISABLE_VIDEO_SUPPORT_PNAME, true_);
 
         return defaults;
     }
@@ -171,6 +158,7 @@ public abstract class OSGiBundleConfig
     public void setSystemPropertyDefaults()
     {
         Map<String, String> defaults = getSystemPropertyDefaults();
+
         for (Map.Entry<String,String> e : defaults.entrySet())
         {
             String key = e.getKey();
