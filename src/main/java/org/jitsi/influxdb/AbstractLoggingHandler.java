@@ -118,7 +118,7 @@ public abstract class AbstractLoggingHandler
             throw new Exception(s + PASS_PNAME);
 
         String urlStr
-            = urlBase +  "/db/" + database + "/series?u=" + user +"&p=" +pass;
+            = urlBase +  "/write?db=" + database + "&u=" + user +"&p=" +pass;
 
         url = new URL(urlStr);
 
@@ -136,79 +136,117 @@ public abstract class AbstractLoggingHandler
     @SuppressWarnings("unchecked")
     protected void logEvent(InfluxDBEvent e)
     {
-        // The following is a sample JSON message in the format used by InfluxDB
-        //  [
-        //    {
-        //     "name": "series_name",
-        //     "columns": ["column1", "column2"],
-        //     "points": [
-        //           ["value1", 1234],
-        //           ["value2", 5678]
-        //          ]
-        //    }
-        //  ]
-
-        boolean useLocalTime = e.useLocalTime();
-        long now = System.currentTimeMillis();
-        boolean multipoint = false;
-        int pointCount = 1;
-        JSONArray columns = new JSONArray();
-        JSONArray points = new JSONArray();
-        Object[] values = e.getValues();
-
-        if (useLocalTime)
-            columns.add("time");
-        Collections.addAll(columns, e.getColumns());
-
-        if (values[0] instanceof Object[])
-        {
-            multipoint = true;
-            pointCount = values.length;
-        }
-
-        if (multipoint)
-        {
-            for (int i = 0; i < pointCount; i++)
-            {
-                if (!(values[i] instanceof Object[]))
-                    continue;
-
-                JSONArray point = new JSONArray();
-                if (useLocalTime)
-                    point.add(now);
-                Collections.addAll(point, (Object[]) values[i]);
-                points.add(point);
-            }
-        }
-        else
-        {
-            JSONArray point = new JSONArray();
-            if (useLocalTime)
-                point.add(now);
-            Collections.addAll(point, values);
-            points.add(point);
-        }
-
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("name", e.getName());
-        jsonObject.put("columns", columns);
-        jsonObject.put("points", points);
-
-        JSONArray jsonArray = new JSONArray();
-        jsonArray.add(jsonObject);
-
-        // TODO: this is probably a good place to optimize by grouping multiple
-        // events in a single POST message and/or multiple points for events
-        // of the same type together).
-        final String jsonString = jsonArray.toJSONString();
+        final String writeString = formatEntry(e);
         executor.execute(new Runnable()
         {
             @Override
             public void run()
             {
-                sendPost(jsonString);
+                sendPost(writeString);
             }
         });
+    }
+
+    /**
+     *
+     * @param key
+     * @return
+     */
+    private String escapeKey(String key)
+    {
+        String escKey = key.replaceAll(" ", "\\\\ ");
+        escKey = escKey.replaceAll(",", "\\\\,");
+        return escKey;
+    }
+
+    private String formatFieldValue(Object value)
+    {
+        String formattedVal = "";
+
+        //TODO there are better ways to do this
+        if (value instanceof Integer || value instanceof Double)
+        {
+            formattedVal = value + "i";
+        }
+        else if (value instanceof Float ||
+                value instanceof Double ||
+                value instanceof Boolean)
+        {
+            System.out.println("I'm a float or Boolean dewd = " + value);
+            formattedVal = value.toString();
+        }
+        else {
+            // We are a string
+            formattedVal = value.toString();
+            formattedVal = formattedVal.replaceAll("\"", "\\\\\"");
+            formattedVal = "\"" + formattedVal + "\"";
+        }
+
+        return formattedVal;
+    }
+
+    /**
+     *
+     * @param e the <tt>Event</tt> to log.
+     * @return
+     */
+    public String formatEntry(InfluxDBEvent e)
+    {
+        // measurement value=12
+        // measurement value=12 1439587925
+        // measurement,foo=bar value=12
+        // measurement,foo=bar value=12 1439587925
+        // measurement,foo=bar,bat=baz value=12,otherval=21 1439587925
+
+        boolean useLocalTime = e.useLocalTime();
+        long now = System.currentTimeMillis();
+        String measurement = escapeKey(e.getName());
+        String[] cols = e.getColumns();
+        Object[] vals = e.getValues();
+        boolean multipoint = false;
+        int pointCount = 1;
+        int fieldCount = cols.length;
+
+        if (vals[0] instanceof Object[])
+        {
+            multipoint = true;
+            pointCount = vals.length;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        // one line per point
+        for (int i = 0; i < pointCount; i++)
+        {
+            //Add key section
+            sb.append(measurement);
+            sb.append(" ");
+
+            //Add fields and values
+            String[] fields = new String[fieldCount];
+            Object[] fieldsVals;
+
+            if (multipoint)
+                fieldsVals = (Object[]) vals[i];
+            else
+                fieldsVals = vals;
+
+            for (int j = 0; j < fieldCount; j++)
+            {
+                fields[j] = escapeKey(cols[j]) + "=" +
+                        formatFieldValue(fieldsVals[j]);
+            }
+            sb.append(String.join(",", fields));
+
+            //Add timestamp
+            if (e.useLocalTime())
+            {
+                sb.append(" ");
+                sb.append(now);
+            }
+            sb.append("\n");
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -224,8 +262,6 @@ public abstract class AbstractLoggingHandler
                 = (HttpURLConnection) url.openConnection();
 
             connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-type",
-                "application/json");
 
             connection.setDoOutput(true);
             DataOutputStream outputStream
@@ -235,7 +271,7 @@ public abstract class AbstractLoggingHandler
             outputStream.close();
 
             int responseCode = connection.getResponseCode();
-            if (responseCode != 200)
+            if (responseCode != 204)
                 throw new IOException("HTTP response code: "
                     + responseCode);
         }
