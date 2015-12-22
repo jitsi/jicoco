@@ -73,12 +73,12 @@ public abstract class AbstractLoggingHandler
         = "org.jitsi.videobridge.log.INFLUX_PASS";
 
     /**
-     * depend
+     * The influxdb object used to build the line protocol for writing.
      */
     private final InfluxDB influxDB;
 
     /**
-     *
+     * The influxdb database name that data will be written to.
      */
     private final String database;
 
