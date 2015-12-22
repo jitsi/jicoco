@@ -51,7 +51,7 @@ public class LineProtocolTest
         String[] cols = {"col1", "col2"};
 
         Random rnd = new Random();
-        int num = rnd.nextInt(100);
+        int num = rnd.nextInt(100 - 2) + 2;
         Object[] row = { "one", "two" };
         Object[] vals = new Object[num];
         for (int i = 0; i < num; i++)
