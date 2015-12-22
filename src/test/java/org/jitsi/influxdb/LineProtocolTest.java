@@ -59,9 +59,7 @@ public class LineProtocolTest
 
         InfluxDBEvent event = new InfluxDBEvent(name, cols, vals);
 
-        System.out.println("Number of points: " + num);
         alh.logEvent(event);
-
         verify(alh, times(num)).writePoint((Point) anyObject());
     }
 
