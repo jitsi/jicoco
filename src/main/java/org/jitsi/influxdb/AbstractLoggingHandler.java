@@ -39,38 +39,38 @@ public abstract class AbstractLoggingHandler
      * The logger.
      */
     private final static Logger logger
-            = Logger.getLogger(AbstractLoggingHandler.class);
+        = Logger.getLogger(AbstractLoggingHandler.class);
 
     /**
      * The name of the property which specifies whether logging to an
      * <tt>InfluxDB</tt> is enabled.
      */
     public static final java.lang.String ENABLED_PNAME
-            = "org.jitsi.videobridge.log.INFLUX_DB_ENABLED";
+        = "org.jitsi.videobridge.log.INFLUX_DB_ENABLED";
     /**
      * The name of the property which specifies the protocol, hostname and
      * port number (in URL format) to use to connect to <tt>InfluxDB</tt>.
      */
     public static final String URL_BASE_PNAME
-            = "org.jitsi.videobridge.log.INFLUX_URL_BASE";
+        = "org.jitsi.videobridge.log.INFLUX_URL_BASE";
     /**
      * The name of the property which specifies the name of the
      * <tt>InfluxDB</tt> database.
      */
     public static final String DATABASE_PNAME
-            = "org.jitsi.videobridge.log.INFLUX_DATABASE";
+        = "org.jitsi.videobridge.log.INFLUX_DATABASE";
     /**
      * The name of the property which specifies the username to use to connect
      * to <tt>InfluxDB</tt>.
      */
     public static final String USER_PNAME
-            = "org.jitsi.videobridge.log.INFLUX_USER";
+        = "org.jitsi.videobridge.log.INFLUX_USER";
     /**
      * The name of the property which specifies the password to use to connect
      * to <tt>InfluxDB</tt>.
      */
     public static final String PASS_PNAME
-            = "org.jitsi.videobridge.log.INFLUX_PASS";
+        = "org.jitsi.videobridge.log.INFLUX_PASS";
 
     /**
      * depend
@@ -91,7 +91,7 @@ public abstract class AbstractLoggingHandler
      * @throws Exception if initialization fails
      */
     public AbstractLoggingHandler(ConfigurationService cfg)
-            throws Exception
+        throws Exception
     {
         if (cfg == null)
             throw new NullPointerException("cfg");
@@ -119,7 +119,7 @@ public abstract class AbstractLoggingHandler
         influxDB.enableBatch(2000, 100, TimeUnit.MILLISECONDS);
 
         logger.info("Initialized InfluxDBLoggingService for " + urlBase
-                + ", database \"" + database + "\"");
+            + ", database \"" + database + "\"");
     }
 
 

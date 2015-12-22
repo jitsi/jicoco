@@ -28,7 +28,7 @@ import org.junit.runners.*;
 @Suite.SuiteClasses({
     CmdLineArgsTest.class,
     RetryStrategyTest.class,
-        LineProtocolTest.class
+    LineProtocolTest.class
 })
 public class JiCoCoTestSuite
 {
