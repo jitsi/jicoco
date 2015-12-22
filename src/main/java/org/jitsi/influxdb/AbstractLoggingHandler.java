@@ -17,14 +17,12 @@ package org.jitsi.influxdb;
 
 import net.java.sip.communicator.util.Logger;
 
+import org.influxdb.InfluxDB;
+import org.influxdb.InfluxDBFactory;
+import org.influxdb.dto.Point;
 import org.jitsi.eventadmin.*;
 import org.jitsi.service.configuration.*;
-import org.jitsi.util.*;
-import org.json.simple.*;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -41,61 +39,59 @@ public abstract class AbstractLoggingHandler
      * The logger.
      */
     private final static Logger logger
-        = Logger.getLogger(AbstractLoggingHandler.class);
+            = Logger.getLogger(AbstractLoggingHandler.class);
 
     /**
      * The name of the property which specifies whether logging to an
      * <tt>InfluxDB</tt> is enabled.
      */
     public static final java.lang.String ENABLED_PNAME
-        = "org.jitsi.videobridge.log.INFLUX_DB_ENABLED";
+            = "org.jitsi.videobridge.log.INFLUX_DB_ENABLED";
     /**
      * The name of the property which specifies the protocol, hostname and
      * port number (in URL format) to use to connect to <tt>InfluxDB</tt>.
      */
     public static final String URL_BASE_PNAME
-        = "org.jitsi.videobridge.log.INFLUX_URL_BASE";
+            = "org.jitsi.videobridge.log.INFLUX_URL_BASE";
     /**
      * The name of the property which specifies the name of the
      * <tt>InfluxDB</tt> database.
      */
     public static final String DATABASE_PNAME
-        = "org.jitsi.videobridge.log.INFLUX_DATABASE";
+            = "org.jitsi.videobridge.log.INFLUX_DATABASE";
     /**
      * The name of the property which specifies the username to use to connect
      * to <tt>InfluxDB</tt>.
      */
     public static final String USER_PNAME
-        = "org.jitsi.videobridge.log.INFLUX_USER";
+            = "org.jitsi.videobridge.log.INFLUX_USER";
     /**
      * The name of the property which specifies the password to use to connect
      * to <tt>InfluxDB</tt>.
      */
     public static final String PASS_PNAME
-        = "org.jitsi.videobridge.log.INFLUX_PASS";
+            = "org.jitsi.videobridge.log.INFLUX_PASS";
+
     /**
-     * The <tt>URL</tt> to be used to POST to <tt>InfluxDB</tt>. Besides the
-     * protocol, host and port also encodes the database name, user name and
-     * password.
+     * depend
      */
-    protected final URL url;
+    private final InfluxDB influxDB;
+
     /**
-     * The <tt>Executor</tt> which is to perform the task of sending data to
-     * <tt>InfluxDB</tt>.
+     *
      */
-    private final Executor executor
-        = ExecutorUtils
-            .newCachedThreadPool(true, AbstractLoggingHandler.class.getName());
+    private final String database;
+
 
     /**
      * Initializes a new <tt>LoggingHandler</tt> instance, by reading
      * its configuration from <tt>cfg</tt>.
-     * @param cfg the <tt>ConfigurationService</tt> to use.
      *
+     * @param cfg the <tt>ConfigurationService</tt> to use.
      * @throws Exception if initialization fails
      */
     public AbstractLoggingHandler(ConfigurationService cfg)
-        throws Exception
+            throws Exception
     {
         if (cfg == null)
             throw new NullPointerException("cfg");
@@ -105,10 +101,6 @@ public abstract class AbstractLoggingHandler
         if (urlBase == null)
             throw new Exception(s + URL_BASE_PNAME);
 
-        String database = cfg.getString(DATABASE_PNAME, null);
-        if (database == null)
-            throw new Exception(s + DATABASE_PNAME);
-
         String user = cfg.getString(USER_PNAME, null);
         if (user == null)
             throw new Exception(s + USER_PNAME);
@@ -117,167 +109,66 @@ public abstract class AbstractLoggingHandler
         if (pass == null)
             throw new Exception(s + PASS_PNAME);
 
-        String urlStr
-            = urlBase +  "/write?db=" + database + "&u=" + user +"&p=" +pass;
+        database = cfg.getString(DATABASE_PNAME, null);
+        if (database == null)
+            throw new Exception(s + DATABASE_PNAME);
 
-        url = new URL(urlStr);
+        influxDB = InfluxDBFactory.connect(urlBase, user, pass);
+        influxDB.createDatabase(database);
+        // Flush every 2000 Points, at least every 100ms
+        influxDB.enableBatch(2000, 100, TimeUnit.MILLISECONDS);
 
         logger.info("Initialized InfluxDBLoggingService for " + urlBase
-            + ", database \"" + database + "\"");
+                + ", database \"" + database + "\"");
     }
 
+
     /**
-     * Logs an <tt>InfluxDBEvent</tt> to an <tt>InfluxDB</tt> database. This
-     * method returns without blocking, the blocking operations are performed
-     * by a thread from {@link #executor}.
-     *
+     * Logs an <tt>InfluxDBEvent</tt> to an <tt>InfluxDB</tt> database.
      * @param e the <tt>Event</tt> to log.
      */
     @SuppressWarnings("unchecked")
     protected void logEvent(InfluxDBEvent e)
     {
-        final String writeString = formatEntry(e);
-        executor.execute(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                sendPost(writeString);
-            }
-        });
-    }
-
-    /**
-     *
-     * @param key
-     * @return
-     */
-    private String escapeKey(String key)
-    {
-        String escKey = key.replaceAll(" ", "\\\\ ");
-        escKey = escKey.replaceAll(",", "\\\\,");
-        return escKey;
-    }
-
-    private String formatFieldValue(Object value)
-    {
-        String formattedVal = "";
-
-        //TODO there are better ways to do this
-        if (value instanceof Integer || value instanceof Double)
-        {
-            formattedVal = value + "i";
-        }
-        else if (value instanceof Float ||
-                value instanceof Double ||
-                value instanceof Boolean)
-        {
-            System.out.println("I'm a float or Boolean dewd = " + value);
-            formattedVal = value.toString();
-        }
-        else {
-            // We are a string
-            formattedVal = value.toString();
-            formattedVal = formattedVal.replaceAll("\"", "\\\\\"");
-            formattedVal = "\"" + formattedVal + "\"";
-        }
-
-        return formattedVal;
-    }
-
-    /**
-     *
-     * @param e the <tt>Event</tt> to log.
-     * @return
-     */
-    public String formatEntry(InfluxDBEvent e)
-    {
-        // measurement value=12
-        // measurement value=12 1439587925
-        // measurement,foo=bar value=12
-        // measurement,foo=bar value=12 1439587925
-        // measurement,foo=bar,bat=baz value=12,otherval=21 1439587925
-
         boolean useLocalTime = e.useLocalTime();
         long now = System.currentTimeMillis();
-        String measurement = escapeKey(e.getName());
-        String[] cols = e.getColumns();
-        Object[] vals = e.getValues();
-        boolean multipoint = false;
-        int pointCount = 1;
-        int fieldCount = cols.length;
+        String measurement = e.getName();
+        String[] columns = e.getColumns();
+        Object[] values = e.getValues();
 
-        if (vals[0] instanceof Object[])
-        {
-            multipoint = true;
-            pointCount = vals.length;
-        }
+        int pointCount = values[0] instanceof Object[] ? values.length : 1;
+        int fieldCount = columns.length;
 
-        StringBuilder sb = new StringBuilder();
-        // one line per point
-        for (int i = 0; i < pointCount; i++)
-        {
-            //Add key section
-            sb.append(measurement);
-            sb.append(" ");
+        for (int i = 0; i < pointCount; i++) {
+            if (pointCount > 1 && !(values[i] instanceof Object[]))
+                continue;
 
-            //Add fields and values
-            String[] fields = new String[fieldCount];
-            Object[] fieldsVals;
+            Point.Builder ptBuilder = Point.measurement(measurement);
 
-            if (multipoint)
-                fieldsVals = (Object[]) vals[i];
+            if (useLocalTime)
+                ptBuilder.time(now, TimeUnit.MILLISECONDS);
+
+            Object[] fieldValues;
+            if (pointCount > 1)
+                fieldValues = (Object[]) values[i];
             else
-                fieldsVals = vals;
+                fieldValues = values;
 
             for (int j = 0; j < fieldCount; j++)
-            {
-                fields[j] = escapeKey(cols[j]) + "=" +
-                        formatFieldValue(fieldsVals[j]);
-            }
-            sb.append(String.join(",", fields));
+                ptBuilder.field(columns[j], fieldValues[j]);
 
-            //Add timestamp
-            if (e.useLocalTime())
-            {
-                sb.append(" ");
-                sb.append(now);
-            }
-            sb.append("\n");
+            Point pt = ptBuilder.build();
+            writePoint(pt);
         }
-
-        return sb.toString();
     }
 
     /**
-     * Sends the string <tt>s</tt> as the contents of an HTTP POST request to
-     * {@link #url}.
-     * @param s the content of the POST request.
+     * Writes a data point to influxdb
+     * @param pt
      */
-    private void sendPost(final String s)
+    public void writePoint(Point pt)
     {
-        try
-        {
-            HttpURLConnection connection
-                = (HttpURLConnection) url.openConnection();
-
-            connection.setRequestMethod("POST");
-
-            connection.setDoOutput(true);
-            DataOutputStream outputStream
-                = new DataOutputStream(connection.getOutputStream());
-            outputStream.writeBytes(s);
-            outputStream.flush();
-            outputStream.close();
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode != 204)
-                throw new IOException("HTTP response code: "
-                    + responseCode);
-        }
-        catch (IOException ioe)
-        {
-            logger.info("Failed to post to influxdb: " + ioe);
-        }
+        influxDB.write(database, "default", pt);
     }
 }
+
