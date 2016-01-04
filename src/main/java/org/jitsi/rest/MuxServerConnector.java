@@ -23,7 +23,6 @@ import java.util.*;
 
 import org.eclipse.jetty.server.*;
 import org.ice4j.socket.*;
-import org.ice4j.socket.jdk8.*;
 
 /**
  * Implements a Jetty {@code ServerConnector} which is capable of sharing its
