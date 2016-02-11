@@ -350,10 +350,8 @@ public abstract class ComponentBase
                         return; // cancelled
 
                     String domain = getDomain();
-
-                    // domain = domain.substring(domain.indexOf(".") + 1);
-
-                    KeepAliveEvent ping = new KeepAliveEvent(null, domain);
+                    String subdomain = getSubdomain();
+                    KeepAliveEvent ping = new KeepAliveEvent(subdomain + "." + domain, domain);
 
                     IQ pingIq = IQUtils.convert(ping);
 
