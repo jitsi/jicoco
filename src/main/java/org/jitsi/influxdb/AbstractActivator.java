@@ -70,16 +70,11 @@ public abstract class AbstractActivator
                 return;
             }
 
-            Dictionary props = new Hashtable();
             String[] topics = { "org/jitsi/*" };
 
-            props.put(EventConstants.EVENT_TOPIC, topics);
-
             serviceRegistration
-                = bundleContext.registerService(
-                        EventHandler.class,
-                        handler,
-                        props);
+                = EventUtil.registerEventHandler(
+                    bundleContext, topics, handler);
         }
     }
 
