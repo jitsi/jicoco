@@ -15,11 +15,10 @@
  */
 package org.jitsi.influxdb;
 
-import net.java.sip.communicator.util.Logger;
+import net.java.sip.communicator.util.*;
 
-import org.influxdb.InfluxDB;
-import org.influxdb.InfluxDBFactory;
-import org.influxdb.dto.Point;
+import org.influxdb.*;
+import org.influxdb.dto.*;
 import org.jitsi.eventadmin.*;
 import org.jitsi.service.configuration.*;
 
@@ -31,6 +30,7 @@ import java.util.concurrent.*;
  * @author Boris Grozev
  * @author George Politis
  * @author Pawel Domas
+ * @author Justin Martinez
  */
 public abstract class AbstractLoggingHandler
     implements EventHandler
@@ -47,24 +47,28 @@ public abstract class AbstractLoggingHandler
      */
     public static final java.lang.String ENABLED_PNAME
         = "org.jitsi.videobridge.log.INFLUX_DB_ENABLED";
+
     /**
      * The name of the property which specifies the protocol, hostname and
      * port number (in URL format) to use to connect to <tt>InfluxDB</tt>.
      */
     public static final String URL_BASE_PNAME
         = "org.jitsi.videobridge.log.INFLUX_URL_BASE";
+
     /**
      * The name of the property which specifies the name of the
      * <tt>InfluxDB</tt> database.
      */
     public static final String DATABASE_PNAME
         = "org.jitsi.videobridge.log.INFLUX_DATABASE";
+
     /**
      * The name of the property which specifies the username to use to connect
      * to <tt>InfluxDB</tt>.
      */
     public static final String USER_PNAME
         = "org.jitsi.videobridge.log.INFLUX_USER";
+
     /**
      * The name of the property which specifies the password to use to connect
      * to <tt>InfluxDB</tt>.
@@ -81,7 +85,6 @@ public abstract class AbstractLoggingHandler
      * The influxdb database name that data will be written to.
      */
     private final String database;
-
 
     /**
      * Initializes a new <tt>LoggingHandler</tt> instance, by reading
@@ -121,7 +124,6 @@ public abstract class AbstractLoggingHandler
         logger.info("Initialized InfluxDBLoggingService for " + urlBase
             + ", database \"" + database + "\"");
     }
-
 
     /**
      * Logs an <tt>InfluxDBEvent</tt> to an <tt>InfluxDB</tt> database.
