@@ -22,6 +22,7 @@ import java.util.*;
  * subscribe to the topic of the event.
  *
  * @author George Politis
+ * @author Pawel Domas
  */
 public class Event
 {
@@ -42,5 +43,12 @@ public class Event
     public String getTopic()
     {
         return topic;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "org.jitsi.eventadmin.Event[topic=" + topic
+            +", props: " + properties+ "]@" + hashCode();
     }
 }
