@@ -51,6 +51,49 @@ public class EventAdminImpl
     private Map<ServiceReference<EventHandler>, HandlerRef> handlers
         = new HashMap<>();
 
+    /**
+     * Creates {@link Pattern} that is supposed to match all the topics
+     * described by <tt>topic</tt> array. It does combine all the topics with
+     * 'or' regular expression. Also wildcard sign '*' is converted to Java
+     * regular expression equivalent '.*'.
+     *
+     * @param topics the array of event topics to be converted into
+     *               <tt>Pattern</tt>.
+     *
+     * @return <tt>Pattern</tt> that will match all the topics from
+     *         <tt>topic</tt> array.
+     */
+    static private Pattern createTopicsPattern(String[] topics)
+    {
+        StringBuilder combined = new StringBuilder();
+        for (int i=0; i<topics.length; i++)
+        {
+            String topic = topics[i].replace("*", ".*");
+
+            combined.append("(").append(topic).append(")");
+
+            if (i < topics.length - 1)
+            {
+                combined.append("|");
+            }
+        }
+
+        try
+        {
+            String patternStr = combined.toString();
+
+            logger.debug(
+                "Created: " + patternStr + " from: " + Arrays.toString(topics));
+
+            return Pattern.compile(patternStr);
+        }
+        catch (PatternSyntaxException exc)
+        {
+            logger.error("Failed to parse: " + combined);
+            return null;
+        }
+    }
+
     public void start(BundleContext ctx)
         throws InvalidSyntaxException
     {
@@ -108,49 +151,6 @@ public class EventAdminImpl
                     logger.error("EventHandler exception", e);
                 }
             }
-        }
-    }
-
-    /**
-     * Creates {@link Pattern} that is supposed to match all the topics
-     * described by <tt>topic</tt> array. It does combine all the topics with
-     * 'or' regular expression. Also wildcard sign '*' is converted to Java
-     * regular expression equivalent '.*'.
-     *
-     * @param topics the array of event topics to be converted into
-     *               <tt>Pattern</tt>.
-     *
-     * @return <tt>Pattern</tt> that will match all the topics from
-     *         <tt>topic</tt> array.
-     */
-    Pattern createTopicsPattern(String[] topics)
-    {
-        StringBuilder combined = new StringBuilder();
-        for (int i=0; i<topics.length; i++)
-        {
-            String topic = topics[i].replace("*", ".*");
-
-            combined.append("(").append(topic).append(")");
-
-            if (i < topics.length - 1)
-            {
-                combined.append("|");
-            }
-        }
-
-        try
-        {
-            String patternStr = combined.toString();
-
-            logger.debug(
-                "Created: " + patternStr + " from: " + Arrays.toString(topics));
-
-            return Pattern.compile(patternStr);
-        }
-        catch (PatternSyntaxException exc)
-        {
-            logger.error("Failed to parse: " + combined);
-            return null;
         }
     }
 
