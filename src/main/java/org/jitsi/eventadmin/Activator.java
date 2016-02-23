@@ -15,42 +15,33 @@
  */
 package org.jitsi.eventadmin;
 
-import org.jitsi.osgi.*;
 import org.osgi.framework.*;
-
-import java.util.*;
 
 /**
  * Registers an <tt>EventAdmin</tt> to a <tt>BundleContext</tt>.
  *
  * @author George Politis
+ * @author Pawel Domas
  */
+@SuppressWarnings("unused")
 public class Activator implements BundleActivator
 {
+    /**
+     * <tt>EventAdminImpl</tt> service instance.
+     */
+    private EventAdminImpl eventAdmin;
+
     private ServiceRegistration<EventAdmin> serviceRegistration;
 
     @Override
     public void start(final BundleContext bundleContext) throws Exception
     {
-        serviceRegistration = bundleContext.registerService(
-            EventAdmin.class, new EventAdmin()
-            {
-                @Override
-                public void sendEvent(Event event)
-                {
-                    Collection<EventHandler> eventHandlers
-                        = ServiceUtils2.getServices(bundleContext,
-                                EventHandler.class);
+        eventAdmin = new EventAdminImpl();
 
-                    if (eventHandlers != null && !eventHandlers.isEmpty())
-                    {
-                        for (EventHandler eventHandler : eventHandlers)
-                        {
-                            eventHandler.handleEvent(event);
-                        }
-                    }
-                }
-            }, null);
+        eventAdmin.start(bundleContext);
+
+        serviceRegistration = bundleContext.registerService(
+            EventAdmin.class, eventAdmin, null);
     }
 
     @Override
@@ -59,6 +50,13 @@ public class Activator implements BundleActivator
         if (serviceRegistration != null)
         {
             serviceRegistration.unregister();
+            serviceRegistration = null;
+        }
+
+        if (eventAdmin != null)
+        {
+            eventAdmin.stop(bundleContext);
+            eventAdmin = null;
         }
     }
 }
