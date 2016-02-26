@@ -151,7 +151,7 @@ public final class IQUtils
             parser.setInput(new StringReader(iq.toXML()));
 
             int eventType = parser.next();
-
+            // Abort processing if we're not at the beginning of <iq> element
             if (XmlPullParser.START_TAG != eventType)
             {
                 throw new IllegalStateException(
@@ -160,7 +160,7 @@ public final class IQUtils
             }
 
             String name = parser.getName();
-
+            // Stop processing if the element is not <iq>
             if (!"iq".equals(name))
             {
                 throw new IllegalStateException(name + " != iq");
@@ -200,6 +200,7 @@ public final class IQUtils
             }
             while (true);
 
+            // Throw an exception if we have not consumed the whole <iq> element
             eventType = parser.getEventType();
             if (XmlPullParser.END_TAG != eventType)
             {
