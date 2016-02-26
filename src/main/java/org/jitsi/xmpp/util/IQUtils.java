@@ -98,31 +98,40 @@ public final class IQUtils
      * represents the same stanza as the specified <tt>iq</tt>
      * @throws Exception if anything goes wrong during the conversion
      */
+    // It is safe to cast as ProviderManager verifies classes
+    // the warning is about cast 'providerOrClass' var to '? extends IQ'
+    @SuppressWarnings("unchecked")
     public static org.jivesoftware.smack.packet.IQ convert(
             org.xmpp.packet.IQ iq)
         throws Exception
     {
         Element element = iq.getChildElement();
-        IQProvider iqProvider;
+        IQProvider iqProvider = null;
+        Class<? extends IQ> iqClass = null;
 
-        if (element == null)
+        if (element != null)
         {
-            iqProvider = null;
-        }
-        else
-        {
-            iqProvider
-                = (IQProvider)
-                    ProviderManager.getInstance().getIQProvider(
-                            element.getName(),
-                            element.getNamespaceURI());
+            Object providerOrClass
+                = ProviderManager.getInstance().getIQProvider(
+                        element.getName(),
+                        element.getNamespaceURI());
+            if (providerOrClass instanceof IQProvider)
+            {
+                iqProvider = (IQProvider) providerOrClass;
+            }
+            else
+            {
+                // The cast is safe as ProviderManager allows only
+                // IQ or IQProvider here
+                iqClass = (Class<? extends IQ>) providerOrClass;
+            }
         }
 
         IQ.Type type = iq.getType();
         org.jivesoftware.smack.packet.IQ smackIQ = null;
         org.jivesoftware.smack.packet.XMPPError smackError = null;
 
-        if (iqProvider != null || iq.getError() != null)
+        if (iqProvider != null || iqClass != null || iq.getError() != null)
         {
             XmlPullParserFactory xmlPullParserFactory;
 
@@ -173,6 +182,12 @@ public final class IQUtils
                     else if (smackIQ == null && iqProvider != null)
                     {
                         smackIQ = iqProvider.parseIQ(parser);
+                    }
+                    else if (smackIQ == null && iqClass != null)
+                    {
+                        smackIQ = (org.jivesoftware.smack.packet.IQ)
+                            PacketParserUtils.parseWithIntrospection(
+                                    name, iqClass, parser);
                     }
                 }
                 else if ((XmlPullParser.END_TAG == eventType
