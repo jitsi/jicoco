@@ -98,31 +98,40 @@ public final class IQUtils
      * represents the same stanza as the specified <tt>iq</tt>
      * @throws Exception if anything goes wrong during the conversion
      */
+    // It is safe to cast as ProviderManager verifies classes
+    // the warning is about cast 'providerOrClass' var to '? extends IQ'
+    @SuppressWarnings("unchecked")
     public static org.jivesoftware.smack.packet.IQ convert(
             org.xmpp.packet.IQ iq)
         throws Exception
     {
         Element element = iq.getChildElement();
-        IQProvider iqProvider;
+        IQProvider iqProvider = null;
+        Class<? extends IQ> iqClass = null;
 
-        if (element == null)
+        if (element != null)
         {
-            iqProvider = null;
-        }
-        else
-        {
-            iqProvider
-                = (IQProvider)
-                    ProviderManager.getInstance().getIQProvider(
-                            element.getName(),
-                            element.getNamespaceURI());
+            Object providerOrClass
+                = ProviderManager.getInstance().getIQProvider(
+                        element.getName(),
+                        element.getNamespaceURI());
+            if (providerOrClass instanceof IQProvider)
+            {
+                iqProvider = (IQProvider) providerOrClass;
+            }
+            else
+            {
+                // The cast is safe as ProviderManager allows only
+                // IQ or IQProvider here
+                iqClass = (Class<? extends IQ>) providerOrClass;
+            }
         }
 
         IQ.Type type = iq.getType();
         org.jivesoftware.smack.packet.IQ smackIQ = null;
         org.jivesoftware.smack.packet.XMPPError smackError = null;
 
-        if (iqProvider != null || iq.getError() != null)
+        if (iqProvider != null || iqClass != null || iq.getError() != null)
         {
             XmlPullParserFactory xmlPullParserFactory;
 
@@ -143,60 +152,60 @@ public final class IQUtils
 
             int eventType = parser.next();
 
-            if (XmlPullParser.START_TAG == eventType)
+            if (XmlPullParser.START_TAG != eventType)
             {
-                String name = parser.getName();
+                throw new IllegalStateException(
+                    Integer.toString(eventType)
+                        + " != XmlPullParser.START_TAG");
+            }
 
-                if ("iq".equals(name))
+            String name = parser.getName();
+
+            if (!"iq".equals(name))
+            {
+                throw new IllegalStateException(name + " != iq");
+            }
+
+            do
+            {
+                eventType = parser.next();
+                name = parser.getName();
+                if (XmlPullParser.START_TAG == eventType)
                 {
-                    do
+                    // 7. An IQ stanza of type "error" MAY include the
+                    // child element contained in the associated "get"
+                    // or "set" and MUST include an <error/> child.
+                    if (IQ.Type.error.equals(type) && "error".equals(name))
                     {
-                        eventType = parser.next();
-                        name = parser.getName();
-                        if (XmlPullParser.START_TAG == eventType)
-                        {
-                            // 7. An IQ stanza of type "error" MAY include the
-                            // child element contained in the associated "get"
-                            // or "set" and MUST include an <error/> child.
-                            if (IQ.Type.error.equals(type)
-                                && "error".equals(name))
-                            {
-                                smackError
-                                    = PacketParserUtils.parseError(parser);
-                            }
-                            else if (smackIQ == null && iqProvider != null)
-                            {
-                                smackIQ = iqProvider.parseIQ(parser);
-                            }
-                        }
-                        else if ((XmlPullParser.END_TAG == eventType
-                                        && "iq".equals(name))
-                                || (smackIQ != null && smackError != null)
-                                || XmlPullParser.END_DOCUMENT == eventType)
-                        {
-                            break;
-                        }
+                        smackError = PacketParserUtils.parseError(parser);
                     }
-                    while (true);
-
-                    eventType = parser.getEventType();
-                    if (XmlPullParser.END_TAG != eventType)
+                    else if (smackIQ == null && iqProvider != null)
                     {
-                        throw new IllegalStateException(
-                                Integer.toString(eventType)
-                                    + " != XmlPullParser.END_TAG");
+                        smackIQ = iqProvider.parseIQ(parser);
+                    }
+                    else if (smackIQ == null && iqClass != null)
+                    {
+                        smackIQ = (org.jivesoftware.smack.packet.IQ)
+                            PacketParserUtils.parseWithIntrospection(
+                                    name, iqClass, parser);
                     }
                 }
-                else
+                else if ((XmlPullParser.END_TAG == eventType
+                            && "iq".equals(name))
+                        || (smackIQ != null && smackError != null)
+                        || XmlPullParser.END_DOCUMENT == eventType)
                 {
-                    throw new IllegalStateException(name + " != iq");
+                    break;
                 }
             }
-            else
+            while (true);
+
+            eventType = parser.getEventType();
+            if (XmlPullParser.END_TAG != eventType)
             {
                 throw new IllegalStateException(
                         Integer.toString(eventType)
-                            + " != XmlPullParser.START_TAG");
+                            + " != XmlPullParser.END_TAG");
             }
         }
 
