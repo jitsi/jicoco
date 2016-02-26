@@ -143,60 +143,54 @@ public final class IQUtils
 
             int eventType = parser.next();
 
-            if (XmlPullParser.START_TAG == eventType)
+            if (XmlPullParser.START_TAG != eventType)
             {
-                String name = parser.getName();
+                throw new IllegalStateException(
+                    Integer.toString(eventType)
+                        + " != XmlPullParser.START_TAG");
+            }
 
-                if ("iq".equals(name))
+            String name = parser.getName();
+
+            if (!"iq".equals(name))
+            {
+                throw new IllegalStateException(name + " != iq");
+            }
+
+            do
+            {
+                eventType = parser.next();
+                name = parser.getName();
+                if (XmlPullParser.START_TAG == eventType)
                 {
-                    do
+                    // 7. An IQ stanza of type "error" MAY include the
+                    // child element contained in the associated "get"
+                    // or "set" and MUST include an <error/> child.
+                    if (IQ.Type.error.equals(type) && "error".equals(name))
                     {
-                        eventType = parser.next();
-                        name = parser.getName();
-                        if (XmlPullParser.START_TAG == eventType)
-                        {
-                            // 7. An IQ stanza of type "error" MAY include the
-                            // child element contained in the associated "get"
-                            // or "set" and MUST include an <error/> child.
-                            if (IQ.Type.error.equals(type)
-                                && "error".equals(name))
-                            {
-                                smackError
-                                    = PacketParserUtils.parseError(parser);
-                            }
-                            else if (smackIQ == null && iqProvider != null)
-                            {
-                                smackIQ = iqProvider.parseIQ(parser);
-                            }
-                        }
-                        else if ((XmlPullParser.END_TAG == eventType
-                                        && "iq".equals(name))
-                                || (smackIQ != null && smackError != null)
-                                || XmlPullParser.END_DOCUMENT == eventType)
-                        {
-                            break;
-                        }
+                        smackError = PacketParserUtils.parseError(parser);
                     }
-                    while (true);
-
-                    eventType = parser.getEventType();
-                    if (XmlPullParser.END_TAG != eventType)
+                    else if (smackIQ == null && iqProvider != null)
                     {
-                        throw new IllegalStateException(
-                                Integer.toString(eventType)
-                                    + " != XmlPullParser.END_TAG");
+                        smackIQ = iqProvider.parseIQ(parser);
                     }
                 }
-                else
+                else if ((XmlPullParser.END_TAG == eventType
+                            && "iq".equals(name))
+                        || (smackIQ != null && smackError != null)
+                        || XmlPullParser.END_DOCUMENT == eventType)
                 {
-                    throw new IllegalStateException(name + " != iq");
+                    break;
                 }
             }
-            else
+            while (true);
+
+            eventType = parser.getEventType();
+            if (XmlPullParser.END_TAG != eventType)
             {
                 throw new IllegalStateException(
                         Integer.toString(eventType)
-                            + " != XmlPullParser.START_TAG");
+                            + " != XmlPullParser.END_TAG");
             }
         }
 
