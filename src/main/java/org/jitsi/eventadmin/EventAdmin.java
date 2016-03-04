@@ -24,6 +24,15 @@ package org.jitsi.eventadmin;
 public interface EventAdmin
 {
     /**
+     * Initiate asynchronous delivery of an event. This method returns to
+     * the caller before delivery of the event is completed.
+     *
+     * @param event The event to send to all listeners which subscribe to the
+     * topic of the event.
+     */
+    void postEvent(Event event);
+
+    /**
      * Initiate synchronous delivery of an event. This method does not return to
      * the caller until delivery of the event is completed.
      *
