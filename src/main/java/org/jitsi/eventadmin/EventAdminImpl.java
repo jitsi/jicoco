@@ -20,6 +20,7 @@ import org.jitsi.util.*;
 import org.osgi.framework.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.regex.*;
 
 /**
@@ -43,6 +44,11 @@ public class EventAdminImpl
      * The OSGi bundle context this instance is running on.
      */
     private BundleContext bundleContext;
+
+    /**
+     * Event callback executor for async events.
+     */
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     /**
      * Maps service reference to <tt>HandlerRef</tt> for convenience in
@@ -127,7 +133,21 @@ public class EventAdminImpl
      * {@inheritDoc}
      */
     @Override
-    synchronized public void sendEvent(Event event)
+    synchronized public void postEvent(Event event)
+    {
+        eventImpl(event, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    synchronized public void sendEvent(final Event event)
+    {
+        eventImpl(event, true);
+    }
+
+    private void eventImpl(final Event event, boolean synchronous)
     {
         String eventTopic = event.getTopic();
 
@@ -138,19 +158,45 @@ public class EventAdminImpl
             return;
         }
 
-        for (HandlerRef handlerRef : handlers.values())
+        for (final HandlerRef handlerRef : handlers.values())
         {
             if (hasTopic(handlerRef, eventTopic))
             {
-                try
+                if (synchronous)
                 {
-                    handlerRef.handler.handleEvent(event);
+                    callEventHandler(handlerRef, event);
                 }
-                catch (Exception e)
+                else
                 {
-                    logger.error("EventHandler exception", e);
+                    executor.submit(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            callEventHandler(handlerRef, event);
+                        }
+                    });
                 }
             }
+        }
+    }
+
+    synchronized private void callEventHandler(final HandlerRef handlerRef,
+                                               final Event           event)
+    {
+        if (handlerRef.handler == null)
+        {
+            // EventHandler has been unregistered
+            return;
+        }
+
+        try
+        {
+            handlerRef.handler.handleEvent(event);
+        }
+        catch (Exception e)
+        {
+            logger.error("EventHandler exception", e);
         }
     }
 
@@ -212,7 +258,13 @@ public class EventAdminImpl
                 }
                 break;
             case ServiceEvent.UNREGISTERING:
-                handlers.remove(svcHandlerRef);
+                HandlerRef ref = handlers.remove(svcHandlerRef);
+                if (ref != null)
+                {
+                    // Cancel execution if service has been unregistered, but
+                    // the async task has been scheduled already
+                    ref.handler = null;
+                }
                 break;
         }
     }
