@@ -58,6 +58,13 @@ public class EventAdminImpl
         = new HashMap<>();
 
     /**
+     * The field is used to cache the current list of all <tt>HandlerRef</tt> to
+     * iterate over when firing an event. It is cleared on every modification
+     * to {@link #handlers} map.
+     */
+    private List<HandlerRef> handlerRefListCache;
+
+    /**
      * Creates {@link Pattern} that is supposed to match all the topics
      * described by <tt>topic</tt> array. It does combine all the topics with
      * 'or' regular expression. Also wildcard sign '*' is converted to Java
@@ -133,7 +140,7 @@ public class EventAdminImpl
      * {@inheritDoc}
      */
     @Override
-    synchronized public void postEvent(Event event)
+    public void postEvent(Event event)
     {
         eventImpl(event, false);
     }
@@ -142,7 +149,7 @@ public class EventAdminImpl
      * {@inheritDoc}
      */
     @Override
-    synchronized public void sendEvent(final Event event)
+    public void sendEvent(final Event event)
     {
         eventImpl(event, true);
     }
@@ -158,7 +165,10 @@ public class EventAdminImpl
             return;
         }
 
-        for (final HandlerRef handlerRef : handlers.values())
+        // Get handler list cache - call is synchronized with handler remove/add
+        List<HandlerRef> handlerRefs = getCurrentHandlerList();
+
+        for (final HandlerRef handlerRef : handlerRefs)
         {
             if (hasTopic(handlerRef, eventTopic))
             {
@@ -181,10 +191,11 @@ public class EventAdminImpl
         }
     }
 
-    synchronized private void callEventHandler(final HandlerRef handlerRef,
-                                               final Event           event)
+    private void callEventHandler(final HandlerRef handlerRef,
+                                  final Event           event)
     {
-        if (handlerRef.handler == null)
+        final EventHandler handler = handlerRef.handler;
+        if (handler == null)
         {
             // EventHandler has been unregistered
             return;
@@ -192,7 +203,7 @@ public class EventAdminImpl
 
         try
         {
-            handlerRef.handler.handleEvent(event);
+            handler.handleEvent(event);
         }
         catch (Exception e)
         {
@@ -236,6 +247,22 @@ public class EventAdminImpl
     }
 
     /**
+     * This method will return current list of all <tt>HandlerRef</tt>. The call
+     * is synchronized with {@link #serviceChanged(ServiceEvent)} and the cache
+     * is cleared whenever the new handler is added/removed.
+     *
+     * @return the current list of all <tt>HandlerRef</tt>.
+     */
+    synchronized private List<HandlerRef> getCurrentHandlerList()
+    {
+        if (handlerRefListCache == null)
+        {
+            handlerRefListCache = new ArrayList<>(handlers.values());
+        }
+        return handlerRefListCache;
+    }
+
+    /**
      * Listens for new <tt>EventHandler</tt> service instance registrations.
      * {@inheritDoc}
      */
@@ -255,6 +282,8 @@ public class EventAdminImpl
                 if (newHandlerRef != null)
                 {
                     handlers.put(svcHandlerRef, newHandlerRef);
+                    // Clear the cache
+                    handlerRefListCache = null;
                 }
                 break;
             case ServiceEvent.UNREGISTERING:
@@ -264,6 +293,8 @@ public class EventAdminImpl
                     // Cancel execution if service has been unregistered, but
                     // the async task has been scheduled already
                     ref.handler = null;
+                    // Clear the cache
+                    handlerRefListCache = null;
                 }
                 break;
         }
