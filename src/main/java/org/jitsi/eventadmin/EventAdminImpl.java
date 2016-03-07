@@ -51,11 +51,21 @@ public class EventAdminImpl
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     /**
-     * Maps service reference to <tt>HandlerRef</tt> for convenience in
-     * add/remove operations.
+     * Maps {@link ServiceReference} to <tt>HandlerRef</tt> for convenience
+     * during add/remove operations in {@link #serviceChanged(ServiceEvent)}.
      */
-    private Map<ServiceReference<EventHandler>, HandlerRef> handlers
+    private final Map<ServiceReference<EventHandler>, HandlerRef> handlers
         = new HashMap<>();
+
+    /**
+     * Caches the current list of all <tt>HandlerRef</tt>s to iterate over when
+     * firing an event (i.e. {@link #eventImpl(Event, boolean)}). Represents a
+     * copy of the values of the {@link #handlers} {@code Map}. It is updated
+     * on every modification of {@code handlers}. Introduced as a copy-on-write
+     * complement to {@code handlers} to reduce synchronized blocks and, thus,
+     * deadlock risks.
+     */
+    private List<HandlerRef> handlerRefListCache = Collections.emptyList();
 
     /**
      * Creates {@link Pattern} that is supposed to match all the topics
@@ -133,18 +143,18 @@ public class EventAdminImpl
      * {@inheritDoc}
      */
     @Override
-    synchronized public void postEvent(Event event)
+    public void postEvent(Event event)
     {
-        eventImpl(event, false);
+        eventImpl(event, /* synchronous */ false);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    synchronized public void sendEvent(final Event event)
+    public void sendEvent(final Event event)
     {
-        eventImpl(event, true);
+        eventImpl(event, /* synchronous */ true);
     }
 
     private void eventImpl(final Event event, boolean synchronous)
@@ -158,7 +168,8 @@ public class EventAdminImpl
             return;
         }
 
-        for (final HandlerRef handlerRef : handlers.values())
+        List<HandlerRef> handlerRefs = getCurrentHandlerList();
+        for (final HandlerRef handlerRef : handlerRefs)
         {
             if (hasTopic(handlerRef, eventTopic))
             {
@@ -181,10 +192,11 @@ public class EventAdminImpl
         }
     }
 
-    synchronized private void callEventHandler(final HandlerRef handlerRef,
-                                               final Event           event)
+    private void callEventHandler(final HandlerRef handlerRef,
+                                  final Event           event)
     {
-        if (handlerRef.handler == null)
+        final EventHandler handler = handlerRef.handler;
+        if (handler == null)
         {
             // EventHandler has been unregistered
             return;
@@ -192,7 +204,7 @@ public class EventAdminImpl
 
         try
         {
-            handlerRef.handler.handleEvent(event);
+            handler.handleEvent(event);
         }
         catch (Exception e)
         {
@@ -214,8 +226,7 @@ public class EventAdminImpl
      */
     private HandlerRef newHandlerRef(ServiceReference<EventHandler> handlerRef)
     {
-        Object topicsObj
-            = handlerRef.getProperty(EventConstants.EVENT_TOPIC);
+        Object topicsObj = handlerRef.getProperty(EventConstants.EVENT_TOPIC);
 
         if (!(topicsObj instanceof String[]))
             return null;
@@ -236,6 +247,20 @@ public class EventAdminImpl
     }
 
     /**
+     * Gets the current list of all <tt>HandlerRef</tt>s. The cache reference is
+     * updated whenever a new handler is added/removed. However, the returned
+     * value is not updated in order to enable unsynchronized looping without
+     * risks of {@link ConcurrentModificationException}. In order words, the
+     * method is to be invoked whenever an up-to-date value is required.
+     *
+     * @return the current list of all <tt>HandlerRef</tt>s.
+     */
+    private List<HandlerRef> getCurrentHandlerList()
+    {
+        return handlerRefListCache;
+    }
+
+    /**
      * Listens for new <tt>EventHandler</tt> service instance registrations.
      * {@inheritDoc}
      */
@@ -250,33 +275,46 @@ public class EventAdminImpl
 
         switch (serviceEvent.getType())
         {
-            case ServiceEvent.REGISTERED:
-                HandlerRef newHandlerRef = newHandlerRef(svcHandlerRef);
-                if (newHandlerRef != null)
-                {
-                    handlers.put(svcHandlerRef, newHandlerRef);
-                }
-                break;
-            case ServiceEvent.UNREGISTERING:
-                HandlerRef ref = handlers.remove(svcHandlerRef);
-                if (ref != null)
-                {
-                    // Cancel execution if service has been unregistered, but
-                    // the async task has been scheduled already
-                    ref.handler = null;
-                }
-                break;
+        case ServiceEvent.REGISTERED:
+            HandlerRef newHandlerRef = newHandlerRef(svcHandlerRef);
+            if (newHandlerRef != null)
+            {
+                handlers.put(svcHandlerRef, newHandlerRef);
+                // Update cached reference
+                handlerRefListCache = new ArrayList<>(handlers.values());
+            }
+            break;
+        case ServiceEvent.UNREGISTERING:
+            HandlerRef ref = handlers.remove(svcHandlerRef);
+            if (ref != null)
+            {
+                // Update cached reference
+                handlerRefListCache = new ArrayList<>(handlers.values());
+                // Cancel execution if service has been unregistered, but the
+                // async task has been scheduled already.
+                ref.handler = null;
+            }
+            break;
         }
     }
 
     /**
      * Structure holding <tt>EventHandler</tt> and it's topics.
      */
-    private class HandlerRef
+    private static class HandlerRef
     {
+        /**
+         * The {@code EventHandler} which handles {@code Event}s with topics
+         * matching {@link #topicsPattern}. The field will be assigned
+         * {@code null} when the {@code EventHandler} is being unregistered (as
+         * an OSGi service).
+         */
         EventHandler handler;
 
-        Pattern topicsPattern;
+        /**
+         * The topics of {@link #handler} expresses as a regex {@code Pattern}.
+         */
+        final Pattern topicsPattern;
 
         HandlerRef(EventHandler handler, Pattern topicsRegExpr)
         {
