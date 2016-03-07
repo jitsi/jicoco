@@ -26,7 +26,9 @@ import org.ice4j.socket.*;
 
 /**
  * Implements a Jetty {@code ServerConnector} which is capable of sharing its
- * listening endpoint by utilizing {@link MuxServerSocketChannel}.
+ * listening endpoint by utilizing
+ * {@link org.ice4j.socket.jdk8.MuxServerSocketChannel} (if available/usable at
+ * runtime).
  *
  * @author Lyubomir Marinov
  */
@@ -41,7 +43,8 @@ public class MuxServerConnector
 
     /**
      * The {@code DatagramPacketFilter} which demultiplexes HTTP(S) from
-     * {@link MuxServerSocketChannel} into {@code MuxServerConnector}.
+     * {@link org.ice4j.socket.jdk8.MuxServerSocketChannel} into
+     * {@code MuxServerConnector}.
      */
     private static final DatagramPacketFilter HTTP_DEMUX_FILTER;
 
@@ -60,7 +63,7 @@ public class MuxServerConnector
 
         try
         {
-            java.lang.Class<ServerConnector> clazz = ServerConnector.class;
+            Class<ServerConnector> clazz = ServerConnector.class;
 
             acceptChannelField = clazz.getDeclaredField("_acceptChannel");
             localPortField = clazz.getDeclaredField("_localPort");
@@ -68,11 +71,14 @@ public class MuxServerConnector
             acceptChannelField.setAccessible(true);
             localPortField.setAccessible(true);
         }
-        catch (NoSuchFieldException nsfe)
+        catch (NoSuchFieldException | SecurityException e)
         {
-        }
-        catch (SecurityException se)
-        {
+            // The class MuxServerConnector will not be able to modify the
+            // private state of the class ServerConnector and, consequently, a
+            // server will fail to bind if a sharing of its listening endpoint
+            // is necessary. The situation is probably acceptable because the
+            // sharing of the listening endpoint may not be requested at all (at
+            // runtime).
         }
         if (acceptChannelField != null && localPortField != null)
         {
