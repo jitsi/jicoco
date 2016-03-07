@@ -31,13 +31,13 @@ public class AbstractEventFactory
     public static final String EVENT_SOURCE = "event.source";
 
     /**
-     * Creates <tt>Dictionary</tt> that contains {@link #EVENT_SOURCE} object.
+     * Creates <tt>Dictionary<String, Object></tt> that contains {@link #EVENT_SOURCE} object.
      * @param source the {@link #EVENT_SOURCE} object to be included in the
      *               dictionary.
      */
-    protected static Dictionary makeProperties(Object source)
+    protected static Dictionary<String, Object> makeProperties(Object source)
     {
-        Dictionary properties = new Hashtable(1);
+        Dictionary<String, Object> properties = new Hashtable<String, Object>(1);
 
         properties.put(EVENT_SOURCE, source);
 
