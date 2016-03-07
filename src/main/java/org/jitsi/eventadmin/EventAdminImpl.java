@@ -59,10 +59,10 @@ public class EventAdminImpl
 
     /**
      * The field is used to cache the current list of all <tt>HandlerRef</tt> to
-     * iterate over when firing an event. It is cleared on every modification
+     * iterate over when firing an event. It is updated on every modification
      * to {@link #handlers} map.
      */
-    private List<HandlerRef> handlerRefListCache;
+    private List<HandlerRef> handlerRefListCache = new ArrayList<>();
 
     /**
      * Creates {@link Pattern} that is supposed to match all the topics
@@ -165,9 +165,7 @@ public class EventAdminImpl
             return;
         }
 
-        // Get handler list cache - call is synchronized with handler remove/add
         List<HandlerRef> handlerRefs = getCurrentHandlerList();
-
         for (final HandlerRef handlerRef : handlerRefs)
         {
             if (hasTopic(handlerRef, eventTopic))
@@ -247,18 +245,13 @@ public class EventAdminImpl
     }
 
     /**
-     * This method will return current list of all <tt>HandlerRef</tt>. The call
-     * is synchronized with {@link #serviceChanged(ServiceEvent)} and the cache
-     * is cleared whenever the new handler is added/removed.
+     * This method will return current list of all <tt>HandlerRef</tt>. The
+     * cache reference is updated whenever the new handler is added/removed.
      *
      * @return the current list of all <tt>HandlerRef</tt>.
      */
-    synchronized private List<HandlerRef> getCurrentHandlerList()
+    private List<HandlerRef> getCurrentHandlerList()
     {
-        if (handlerRefListCache == null)
-        {
-            handlerRefListCache = new ArrayList<>(handlers.values());
-        }
         return handlerRefListCache;
     }
 
@@ -282,19 +275,19 @@ public class EventAdminImpl
                 if (newHandlerRef != null)
                 {
                     handlers.put(svcHandlerRef, newHandlerRef);
-                    // Clear the cache
-                    handlerRefListCache = null;
+                    // Update cached reference
+                    handlerRefListCache = new ArrayList<>(handlers.values());
                 }
                 break;
             case ServiceEvent.UNREGISTERING:
                 HandlerRef ref = handlers.remove(svcHandlerRef);
                 if (ref != null)
                 {
+                    // Update cached reference
+                    handlerRefListCache = new ArrayList<>(handlers.values());
                     // Cancel execution if service has been unregistered, but
                     // the async task has been scheduled already
                     ref.handler = null;
-                    // Clear the cache
-                    handlerRefListCache = null;
                 }
                 break;
         }
