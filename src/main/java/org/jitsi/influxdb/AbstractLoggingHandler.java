@@ -17,14 +17,12 @@ package org.jitsi.influxdb;
 
 import net.java.sip.communicator.util.Logger;
 
+import org.influxdb.InfluxDB;
+import org.influxdb.InfluxDBFactory;
+import org.influxdb.dto.Point;
 import org.jitsi.eventadmin.*;
 import org.jitsi.service.configuration.*;
-import org.jitsi.util.*;
-import org.json.simple.*;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -73,25 +71,23 @@ public abstract class AbstractLoggingHandler
      */
     public static final String PASS_PNAME
         = "org.jitsi.videobridge.log.INFLUX_PASS";
+
     /**
-     * The <tt>URL</tt> to be used to POST to <tt>InfluxDB</tt>. Besides the
-     * protocol, host and port also encodes the database name, user name and
-     * password.
+     * The influxdb object used to build the line protocol for writing.
      */
-    protected final URL url;
+    private final InfluxDB influxDB;
+
     /**
-     * The <tt>Executor</tt> which is to perform the task of sending data to
-     * <tt>InfluxDB</tt>.
+     * The influxdb database name that data will be written to.
      */
-    private final Executor executor
-        = ExecutorUtils
-            .newCachedThreadPool(true, AbstractLoggingHandler.class.getName());
+    private final String database;
+
 
     /**
      * Initializes a new <tt>LoggingHandler</tt> instance, by reading
      * its configuration from <tt>cfg</tt>.
-     * @param cfg the <tt>ConfigurationService</tt> to use.
      *
+     * @param cfg the <tt>ConfigurationService</tt> to use.
      * @throws Exception if initialization fails
      */
     public AbstractLoggingHandler(ConfigurationService cfg)
@@ -105,10 +101,6 @@ public abstract class AbstractLoggingHandler
         if (urlBase == null)
             throw new Exception(s + URL_BASE_PNAME);
 
-        String database = cfg.getString(DATABASE_PNAME, null);
-        if (database == null)
-            throw new Exception(s + DATABASE_PNAME);
-
         String user = cfg.getString(USER_PNAME, null);
         if (user == null)
             throw new Exception(s + USER_PNAME);
@@ -117,131 +109,66 @@ public abstract class AbstractLoggingHandler
         if (pass == null)
             throw new Exception(s + PASS_PNAME);
 
-        String urlStr
-            = urlBase +  "/db/" + database + "/series?u=" + user +"&p=" +pass;
+        database = cfg.getString(DATABASE_PNAME, null);
+        if (database == null)
+            throw new Exception(s + DATABASE_PNAME);
 
-        url = new URL(urlStr);
+        influxDB = InfluxDBFactory.connect(urlBase, user, pass);
+        influxDB.createDatabase(database);
+        // Flush every 2000 Points, at least every 100ms
+        influxDB.enableBatch(2000, 100, TimeUnit.MILLISECONDS);
 
         logger.info("Initialized InfluxDBLoggingService for " + urlBase
             + ", database \"" + database + "\"");
     }
 
+
     /**
-     * Logs an <tt>InfluxDBEvent</tt> to an <tt>InfluxDB</tt> database. This
-     * method returns without blocking, the blocking operations are performed
-     * by a thread from {@link #executor}.
-     *
+     * Logs an <tt>InfluxDBEvent</tt> to an <tt>InfluxDB</tt> database.
      * @param e the <tt>Event</tt> to log.
      */
     @SuppressWarnings("unchecked")
     protected void logEvent(InfluxDBEvent e)
     {
-        // The following is a sample JSON message in the format used by InfluxDB
-        //  [
-        //    {
-        //     "name": "series_name",
-        //     "columns": ["column1", "column2"],
-        //     "points": [
-        //           ["value1", 1234],
-        //           ["value2", 5678]
-        //          ]
-        //    }
-        //  ]
-
         boolean useLocalTime = e.useLocalTime();
         long now = System.currentTimeMillis();
-        boolean multipoint = false;
-        int pointCount = 1;
-        JSONArray columns = new JSONArray();
-        JSONArray points = new JSONArray();
+        String measurement = e.getName();
+        String[] columns = e.getColumns();
         Object[] values = e.getValues();
 
-        if (useLocalTime)
-            columns.add("time");
-        Collections.addAll(columns, e.getColumns());
+        int pointCount = values[0] instanceof Object[] ? values.length : 1;
+        int fieldCount = columns.length;
 
-        if (values[0] instanceof Object[])
-        {
-            multipoint = true;
-            pointCount = values.length;
-        }
+        for (int i = 0; i < pointCount; i++) {
+            if (pointCount > 1 && !(values[i] instanceof Object[]))
+                continue;
 
-        if (multipoint)
-        {
-            for (int i = 0; i < pointCount; i++)
-            {
-                if (!(values[i] instanceof Object[]))
-                    continue;
+            Point.Builder ptBuilder = Point.measurement(measurement);
 
-                JSONArray point = new JSONArray();
-                if (useLocalTime)
-                    point.add(now);
-                Collections.addAll(point, (Object[]) values[i]);
-                points.add(point);
-            }
-        }
-        else
-        {
-            JSONArray point = new JSONArray();
             if (useLocalTime)
-                point.add(now);
-            Collections.addAll(point, values);
-            points.add(point);
+                ptBuilder.time(now, TimeUnit.MILLISECONDS);
+
+            Object[] fieldValues;
+            if (pointCount > 1)
+                fieldValues = (Object[]) values[i];
+            else
+                fieldValues = values;
+
+            for (int j = 0; j < fieldCount; j++)
+                ptBuilder.field(columns[j], fieldValues[j]);
+
+            Point pt = ptBuilder.build();
+            writePoint(pt);
         }
-
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("name", e.getName());
-        jsonObject.put("columns", columns);
-        jsonObject.put("points", points);
-
-        JSONArray jsonArray = new JSONArray();
-        jsonArray.add(jsonObject);
-
-        // TODO: this is probably a good place to optimize by grouping multiple
-        // events in a single POST message and/or multiple points for events
-        // of the same type together).
-        final String jsonString = jsonArray.toJSONString();
-        executor.execute(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                sendPost(jsonString);
-            }
-        });
     }
 
     /**
-     * Sends the string <tt>s</tt> as the contents of an HTTP POST request to
-     * {@link #url}.
-     * @param s the content of the POST request.
+     * Writes a data point to influxdb
+     * @param pt
      */
-    private void sendPost(final String s)
+    public void writePoint(Point pt)
     {
-        try
-        {
-            HttpURLConnection connection
-                = (HttpURLConnection) url.openConnection();
-
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-type",
-                "application/json");
-
-            connection.setDoOutput(true);
-            DataOutputStream outputStream
-                = new DataOutputStream(connection.getOutputStream());
-            outputStream.writeBytes(s);
-            outputStream.flush();
-            outputStream.close();
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode != 200)
-                throw new IOException("HTTP response code: "
-                    + responseCode);
-        }
-        catch (IOException ioe)
-        {
-            logger.info("Failed to post to influxdb: " + ioe);
-        }
+        influxDB.write(database, "default", pt);
     }
 }
+
