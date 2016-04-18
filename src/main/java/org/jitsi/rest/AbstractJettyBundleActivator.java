@@ -88,6 +88,27 @@ public abstract class AbstractJettyBundleActivator
     private static final Logger logger
         = Logger.getLogger(AbstractJettyBundleActivator.class);
 
+    static
+    {
+        // Allow the logging level of Jetty to be configured through the logger
+        // of AbstractJettyBundleActivator.
+        String jettyLogLevelProperty = "org.eclipse.jetty.LEVEL";
+
+        if (System.getProperty(jettyLogLevelProperty) == null)
+        {
+            String jettyLogLevelValue;
+
+            if (logger.isDebugEnabled())
+                jettyLogLevelValue = "DEBUG";
+            else if (logger.isInfoEnabled())
+                jettyLogLevelValue = "INFO";
+            else
+                jettyLogLevelValue = null;
+            if (jettyLogLevelValue != null)
+                System.setProperty(jettyLogLevelProperty, jettyLogLevelValue);
+        }
+    }
+
     /**
      * Initializes a new {@code Handler} which handles HTTP requests by
      * delegating to a specific (consecutive) list of {@code Handler}s.
