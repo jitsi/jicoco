@@ -377,6 +377,21 @@ public final class IQUtils
         return smackIQ;
     }
 
+    /**
+     * Utility method which can be used for logging XML of response packets.
+     * It deals with the timeout case where the response is <tt>null</tt>.
+     *
+     * @param response a <tt>Packet</tt> instance returned by XMPP connection as
+     *        a response to some request.
+     *
+     * @return {@link Packet#toXML()} or "(timeout)" <tt>String</tt> if given
+     *         <tt>response</tt> is <tt>null</tt>.
+     */
+    public static String responseToXML(Packet response)
+    {
+        return response != null ? response.toXML() : "(timeout)";
+    }
+
     /** Prevents the initialization of new <tt>IQUtils</tt> instances. */
     private IQUtils()
     {
