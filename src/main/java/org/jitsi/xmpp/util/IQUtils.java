@@ -387,7 +387,8 @@ public final class IQUtils
      * @return {@link Packet#toXML()} or "(timeout)" <tt>String</tt> if given
      *         <tt>response</tt> is <tt>null</tt>.
      */
-    public static String responseToXML(Packet response)
+    public static String responseToXML(
+            org.jivesoftware.smack.packet.Packet response)
     {
         return response != null ? response.toXML() : "(timeout)";
     }
