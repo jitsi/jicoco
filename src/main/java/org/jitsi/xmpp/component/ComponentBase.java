@@ -15,15 +15,19 @@
  */
 package org.jitsi.xmpp.component;
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.keepalive.*;
-import net.java.sip.communicator.util.*;
-import org.jitsi.service.configuration.*;
-import org.jitsi.xmpp.util.*;
-import org.jivesoftware.smack.provider.*;
-import org.xmpp.component.*;
-import org.xmpp.packet.*;
+import net.java.sip.communicator.impl.protocol.jabber.extensions.keepalive.KeepAliveEvent;
+import net.java.sip.communicator.impl.protocol.jabber.extensions.keepalive.KeepAliveEventProvider;
+import net.java.sip.communicator.util.Logger;
+import org.jitsi.service.configuration.ConfigurationService;
+import org.jitsi.xmpp.util.IQUtils;
+import org.jivesoftware.smack.provider.ProviderManager;
+import org.xmpp.component.AbstractComponent;
+import org.xmpp.packet.IQ;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Base class for XMPP components.
@@ -54,6 +58,11 @@ public abstract class ComponentBase
      * The name of the property which configures {@link #pingThreshold}.
      */
     private final static String PING_THRESHOLD_PNAME = "PING_THRESHOLD";
+
+    /**
+     * The name of the property used to determine if we should reconnect on ping failures
+     */
+    private final static String RECONNECT_ON_PING_FAILURES = "RECONNECT_ON_PING_FAILURES";
 
     /**
      * The hostname or IP address to which this component will be connected.
@@ -111,6 +120,12 @@ public abstract class ComponentBase
      * How many times the ping has failed so far ?
      */
     private int pingFailures = 0;
+
+    /**
+     * If we exceed the maximum number of ping failures should we trigger a reconnect
+     * to the xmpp server
+     */
+    private boolean reconnectOnPingFailure = false;
 
     /**
      * Time used to schedule ping and timeout tasks.
@@ -173,10 +188,14 @@ public abstract class ComponentBase
         pingThreshold = config.getInt(
             configPropertiesBase + PING_THRESHOLD_PNAME, 3);
 
+        reconnectOnPingFailure = config.getBoolean(
+            configPropertiesBase + RECONNECT_ON_PING_FAILURES, false);
+
         logger.info("Component " + configPropertiesBase  + " config: ");
         logger.info("  ping interval: " + pingInterval + " ms");
         logger.info("  ping timeout: " + pingTimeout + " ms");
         logger.info("  ping threshold: " + pingThreshold);
+        logger.info("  reconnect on ping failures: " + reconnectOnPingFailure);
     }
 
     /**
@@ -253,6 +272,7 @@ public abstract class ComponentBase
             }
 
             timeouts.clear();
+            pingFailures = 0;
         }
     }
 
@@ -269,6 +289,18 @@ public abstract class ComponentBase
         {
             return pingFailures < pingThreshold;
         }
+    }
+
+    /**
+     * Restart the component connection if we have exceeded the threshold for ping failures
+     */
+    public void reconnectComponent() {
+        // need to make externalComponent here
+        logger.info("Restarting xmpp component connection that failed");
+
+        this.shutdown();
+        timeouts.clear();
+        this.start();
     }
 
     @Override
@@ -411,8 +443,11 @@ public abstract class ComponentBase
                     pingFailures++;
 
                     logger.error("Ping timeout for ID: " + packetId);
-
                     timeouts.remove(packetId);
+
+                    if(!isConnectionAlive() && reconnectOnPingFailure) {
+                        reconnectComponent();
+                    }
                 }
             }
         }
