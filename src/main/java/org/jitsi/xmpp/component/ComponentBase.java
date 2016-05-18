@@ -297,10 +297,17 @@ public abstract class ComponentBase
     public void reconnectComponent() {
         // need to make externalComponent here
         logger.info("Restarting xmpp component connection that failed");
-
-        this.shutdown();
+        shutdown();
         timeouts.clear();
-        this.start();
+        try {
+            compMan.removeComponent(this.getSubdomain());
+            dispose();
+            compMan.addComponent(getSubdomain(), this);
+        } catch (Exception ex) {
+            logger.error("Failed to restart xmpp component");
+        }
+
+//        this.start();
     }
 
     @Override
