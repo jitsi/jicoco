@@ -15,19 +15,15 @@
  */
 package org.jitsi.xmpp.component;
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.keepalive.KeepAliveEvent;
-import net.java.sip.communicator.impl.protocol.jabber.extensions.keepalive.KeepAliveEventProvider;
-import net.java.sip.communicator.util.Logger;
-import org.jitsi.service.configuration.ConfigurationService;
-import org.jitsi.xmpp.util.IQUtils;
-import org.jivesoftware.smack.provider.ProviderManager;
-import org.xmpp.component.AbstractComponent;
-import org.xmpp.packet.IQ;
+import net.java.sip.communicator.impl.protocol.jabber.extensions.keepalive.*;
+import net.java.sip.communicator.util.*;
+import org.jitsi.service.configuration.*;
+import org.jitsi.xmpp.util.*;
+import org.jivesoftware.smack.provider.*;
+import org.xmpp.component.*;
+import org.xmpp.packet.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /**
  * Base class for XMPP components.
