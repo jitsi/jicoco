@@ -56,7 +56,8 @@ public abstract class ComponentBase
     private final static String PING_THRESHOLD_PNAME = "PING_THRESHOLD";
 
     /**
-     * The name of the property used to determine if we should reconnect on ping failures
+     * The name of the property used to determine if we should
+     * reconnect on ping failures
      */
     private final static String RECONNECT_ON_PING_FAILURES = "RECONNECT_ON_PING_FAILURES";
 
@@ -288,7 +289,8 @@ public abstract class ComponentBase
     }
 
     /**
-     * Restart the component connection if we have exceeded the threshold for ping failures
+     * Restart the component connection if we have exceeded the
+     * threshold for ping failures
      */
     public void reconnectComponent() {
         // need to make externalComponent here
@@ -302,8 +304,6 @@ public abstract class ComponentBase
         } catch (Exception ex) {
             logger.error("Failed to restart xmpp component");
         }
-
-//        this.start();
     }
 
     @Override
