@@ -119,8 +119,8 @@ public abstract class ComponentBase
     private int pingFailures = 0;
 
     /**
-     * If we exceed the maximum number of ping failures should we trigger a reconnect
-     * to the xmpp server
+     * If we exceed the maximum number of ping failures should we trigger a
+     * reconnect to the xmpp server
      */
     private boolean reconnectOnPingFailure = false;
 
