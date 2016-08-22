@@ -18,10 +18,13 @@ package org.jitsi.xmpp.util;
 import org.dom4j.*;
 import org.dom4j.io.*;
 import org.jitsi.util.StringUtils;
+import org.jivesoftware.smack.packet.*;
 import org.jivesoftware.smack.provider.*;
 import org.jivesoftware.smack.util.*;
 import org.xmlpull.v1.*;
 import org.xmpp.packet.*;
+import org.xmpp.packet.IQ;
+import org.xmpp.packet.Packet;
 
 import java.io.*;
 
@@ -283,6 +286,43 @@ public final class IQUtils
             org.xmpp.packet.IQ.Type type)
     {
         return org.jivesoftware.smack.packet.IQ.Type.fromString(type.name());
+    }
+
+    /**
+     * Method overload for {@link #createError(
+     * org.jivesoftware.smack.packet.IQ, XMPPError.Condition, String)} with
+     * no error message text.
+     *
+     * @see #createError(org.jivesoftware.smack.packet.IQ, XMPPError.Condition,
+     * String)
+     */
+    public static org.jivesoftware.smack.packet.IQ createError(
+            org.jivesoftware.smack.packet.IQ    request,
+            XMPPError.Condition                 errorCondition)
+    {
+        return createError(request, errorCondition, null);
+    }
+
+    /**
+     * A shortcut for <tt>new XMPPError(request,
+     * new XMPPError(errorCondition, errorMessage));</tt>. Create error response
+     * to given <tt>request</tt> IQ.
+     *
+     * @param request the request IQ for which the error response will be
+     *                created.
+     * @param errorCondition the XMPP error condition for the error response.
+     * @param errorMessage the error text message to be included in the error
+     *                     response.
+     *
+     * @return an IQ which is an XMPP error response to given <tt>request</tt>.
+     */
+    public static org.jivesoftware.smack.packet.IQ createError(
+            org.jivesoftware.smack.packet.IQ    request,
+            XMPPError.Condition                 errorCondition,
+            String                              errorMessage)
+    {
+        return org.jivesoftware.smack.packet.IQ.createErrorResponse(
+                request, new XMPPError(errorCondition, errorMessage));
     }
 
     /**
