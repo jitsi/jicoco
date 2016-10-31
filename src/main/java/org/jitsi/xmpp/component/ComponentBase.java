@@ -144,6 +144,8 @@ public abstract class ComponentBase
                          String     subDomain,
                          String        secret)
     {
+        super(1 /* executor pool size */, 1000 /* packet queue size */, true);
+
         this.hostname = host;
         this.port = port;
         this.domain = domain;
