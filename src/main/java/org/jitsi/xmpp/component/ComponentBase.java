@@ -546,7 +546,8 @@ public abstract class ComponentBase
 
                     String domain = getDomain();
                     String subdomain = getSubdomain();
-                    KeepAliveEvent ping = new KeepAliveEvent(subdomain + "." + domain, domain);
+                    KeepAliveEvent ping
+                        = new KeepAliveEvent(subdomain + "." + domain, domain);
 
                     IQ pingIq = IQUtils.convert(ping);
 
