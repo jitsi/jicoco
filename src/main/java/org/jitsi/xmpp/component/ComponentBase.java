@@ -320,9 +320,10 @@ public abstract class ComponentBase
     final protected IQ handleIQGet(IQ iq)
         throws Exception
     {
-        processingTimer.processingStarted(iq);
         try
         {
+            processingTimer.processingStarted(iq);
+
             return handleIQGetImpl(iq);
         }
         finally
@@ -365,9 +366,10 @@ public abstract class ComponentBase
     final protected IQ handleIQSet(IQ iq)
         throws Exception
     {
-        processingTimer.processingStarted(iq);
         try
         {
+            processingTimer.processingStarted(iq);
+
             return handleIQSetImpl(iq);
         }
         finally
@@ -461,9 +463,10 @@ public abstract class ComponentBase
     @Override
     final protected void handleIQError(IQ iq)
     {
-        processingTimer.processingStarted(iq);
         try
         {
+            processingTimer.processingStarted(iq);
+
             handleIQErrorImpl(iq);
         }
         finally
