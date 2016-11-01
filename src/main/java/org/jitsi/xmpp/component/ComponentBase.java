@@ -42,28 +42,28 @@ public abstract class ComponentBase
     /**
      * The default value of 100 ms for {@link #processingTimeLimit}.
      */
-    private final static long DEFAULT_PROCESSING_TIME_LIMIT = 100;
+    public final static long DEFAULT_PROCESSING_TIME_LIMIT = 100;
 
     /**
      * The name of the property which configures ping interval in ms. -1 to
      * disable pings.
      */
-    private final static String PING_INTERVAL_PNAME = "PING_INTERVAL";
+    public final static String PING_INTERVAL_PNAME = "PING_INTERVAL";
 
     /**
      * The name of the property used to configure ping timeout in ms.
      */
-    private final static String PING_TIMEOUT_PNAME = "PING_TIMEOUT";
+    public final static String PING_TIMEOUT_PNAME = "PING_TIMEOUT";
 
     /**
      * The name of the property which configures {@link #pingThreshold}.
      */
-    private final static String PING_THRESHOLD_PNAME = "PING_THRESHOLD";
+    public final static String PING_THRESHOLD_PNAME = "PING_THRESHOLD";
 
     /**
      * The name of the property which configures {@link #processingTimeLimit}.
      */
-    private final static String PROCESSING_TIME_LIMIT_PNAME
+    public final static String PROCESSING_TIME_LIMIT_PNAME
         = "PROCESSING_TIME_LIMIT";
 
     /**
