@@ -173,6 +173,11 @@ public abstract class ComponentBase
                          String     subDomain,
                          String        secret)
     {
+        // NOTE measurement of the packet processing time currently depends
+        // on the executor pool size being set to 1. If multiple packets would
+        // be processed at the same time then the threads would overwrite
+        // the values in the ProcessingTimer which means that each thread will
+        // require a separate (possibly local) instance.
         super(1 /* executor pool size */, 1000 /* packet queue size */, true);
 
         this.hostname = host;
