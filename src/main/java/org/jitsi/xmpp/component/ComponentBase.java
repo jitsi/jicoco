@@ -143,7 +143,7 @@ public abstract class ComponentBase
      * of the eventual issues.
      *
      * NOTE the current implementation depends on the assumption that
-     * the packets are processed by a single thread(see the first value passed
+     * the packets are processed by a single thread (see the first value passed
      * to the superclass constructor).
      */
     private long processingTimeLimit;
@@ -617,8 +617,8 @@ public abstract class ComponentBase
 
     /**
      * Utility class for measuring and logging an error if the recommended
-     * processing time limit has been exceeded(configurable with
-     * {@link #PROCESSING_TIME_LIMIT_PNAME}.
+     * processing time limit has been exceeded (configurable with
+     * {@link #PROCESSING_TIME_LIMIT_PNAME}).
      *
      * NOTE The best way for implementing this timer would be in
      * {@link AbstractComponent#processQueuedPacket(Packet)}, but the method
@@ -657,7 +657,7 @@ public abstract class ComponentBase
          * with {@link #processingStarted(IQ)} has ended. It will check if
          * the {@link #processingTimeLimit} has been exceeded and print
          * a warning message. If the current logging level is set to debug it
-         * will print the processing time for every IQ(event if the limit was
+         * will print the processing time for every IQ (event if the limit was
          * not exceeded).
          */
         private void processingEnded()
