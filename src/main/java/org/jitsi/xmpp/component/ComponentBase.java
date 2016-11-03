@@ -40,20 +40,31 @@ public abstract class ComponentBase
     private final static Logger logger = Logger.getLogger(ComponentBase.class);
 
     /**
+     * The default value of 100 ms for {@link #processingTimeLimit}.
+     */
+    public final static long DEFAULT_PROCESSING_TIME_LIMIT = 100;
+
+    /**
      * The name of the property which configures ping interval in ms. -1 to
      * disable pings.
      */
-    private final static String PING_INTERVAL_PNAME = "PING_INTERVAL";
+    public final static String PING_INTERVAL_PNAME = "PING_INTERVAL";
 
     /**
      * The name of the property used to configure ping timeout in ms.
      */
-    private final static String PING_TIMEOUT_PNAME = "PING_TIMEOUT";
+    public final static String PING_TIMEOUT_PNAME = "PING_TIMEOUT";
 
     /**
      * The name of the property which configures {@link #pingThreshold}.
      */
-    private final static String PING_THRESHOLD_PNAME = "PING_THRESHOLD";
+    public final static String PING_THRESHOLD_PNAME = "PING_THRESHOLD";
+
+    /**
+     * The name of the property which configures {@link #processingTimeLimit}.
+     */
+    public final static String PROCESSING_TIME_LIMIT_PNAME
+        = "PROCESSING_TIME_LIMIT";
 
     /**
      * The name of the property used to determine if we should
@@ -139,6 +150,13 @@ public abstract class ComponentBase
     private boolean started;
 
     /**
+     * The time limit for processing IQs by the component implementation which
+     * will be used to log error messages for easier detection/debugging
+     * of the eventual issues.
+     */
+    private long processingTimeLimit;
+
+    /**
      * Default constructor for <tt>ComponentBase</tt>.
      * @param host the hostname or IP address to which this component will be
      *             connected.
@@ -156,6 +174,8 @@ public abstract class ComponentBase
                          String     subDomain,
                          String        secret)
     {
+        super(17 /* executor pool size */, 1000 /* packet queue size */, true);
+
         this.hostname = host;
         this.port = port;
         this.domain = domain;
@@ -184,6 +204,10 @@ public abstract class ComponentBase
 
         pingThreshold = config.getInt(
             configPropertiesBase + PING_THRESHOLD_PNAME, 3);
+
+        processingTimeLimit = config.getLong(
+            configPropertiesBase + PROCESSING_TIME_LIMIT_PNAME,
+            DEFAULT_PROCESSING_TIME_LIMIT);
 
         reconnectOnPingFailure = config.getBoolean(
             configPropertiesBase + RECONNECT_ON_PING_FAILURES, false);
@@ -306,10 +330,133 @@ public abstract class ComponentBase
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Should *NEVER* be called by the subclass directly.
+     *
+     * The method is final in order to enforce measurement of the IQ processing
+     * time. Subclasses should implement the processing in
+     * {@link #handleIQGetImpl(IQ)}. The semantics of that method remain
+     * the same as of {@link AbstractComponent#handleIQGet(IQ)}.
+     */
     @Override
-    protected void handleIQResult(IQ iq)
+    final protected IQ handleIQGet(IQ iq)
+        throws Exception
+    {
+        final long startTimestamp = System.currentTimeMillis();
+        try
+        {
+            return handleIQGetImpl(iq);
+        }
+        finally
+        {
+            verifyProcessingTime(startTimestamp, iq);
+        }
+    }
+
+    /**
+     * Handles an <tt>IQ</tt> stanza of type <tt>get</tt>.
+     *
+     * @param iq the <tt>IQ</tt> stanza of type <tt>get</tt> which represents
+     * the request to handle.
+     *
+     * @return an <tt>IQ</tt> stanza which represents the response to
+     * the specified request or <tt>null</tt> to reply with
+     * <tt>feature-not-implemented</tt>.
+     *
+     * @throws Exception to reply with <tt>internal-server-error</tt> to the
+     * specified request.
+     *
+     * @see AbstractComponent#handleIQGet(IQ)
+     */
+    protected IQ handleIQGetImpl(IQ iq) throws Exception
+    {
+        return super.handleIQGet(iq);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Should *NEVER* be called by the subclass directly.
+     *
+     * The method is final in order to enforce measurement of the IQ processing
+     * time. Subclasses should implement the processing in
+     * {@link #handleIQSetImpl(IQ)}. The semantics of that method remain
+     * the same as of {@link AbstractComponent#handleIQSet(IQ)}.
+     */
+    @Override
+    final protected IQ handleIQSet(IQ iq)
+        throws Exception
+    {
+        final long startTimestamp = System.currentTimeMillis();
+        try
+        {
+            return handleIQSetImpl(iq);
+        }
+        finally
+        {
+            verifyProcessingTime(startTimestamp, iq);
+        }
+    }
+
+    /**
+     * Handles an <tt>IQ</tt> stanza of type <tt>set</tt>.
+     *
+     * @param iq the <tt>IQ</tt> stanza of type <tt>set</tt> which represents
+     * the request to handle.
+     *
+     * @return an <tt>IQ</tt> stanza which represents the response to
+     * the specified request or <tt>null</tt> to reply with
+     * <tt>feature-not-implemented</tt>.
+     *
+     * @throws Exception to reply with <tt>internal-server-error</tt> to the
+     * specified request.
+     *
+     * @see AbstractComponent#handleIQSet(IQ)
+     */
+    protected IQ handleIQSetImpl(IQ iq) throws Exception
+    {
+        return super.handleIQSet(iq);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     *  Should *NEVER* be called by the subclass directly.
+     *
+     * The method is final in order to enforce measurement of the IQ processing
+     * time. Subclasses should implement the processing in
+     * {@link #handleIQResultImpl(IQ)}. The semantics of that method remain
+     * the same as of {@link AbstractComponent#handleIQResult(IQ)}.
+     */
+    @Override
+    final protected void handleIQResult(IQ iq)
+    {
+        final long startTimestamp = System.currentTimeMillis();
+        try
+        {
+            handleIQResultImpl(iq);
+        }
+        finally
+        {
+            verifyProcessingTime(startTimestamp, iq);
+        }
+    }
+
+    /**
+     * Handles an <tt>IQ</tt> stanza of type <tt>result</tt>.
+     *
+     * @param iq the <tt>IQ</tt> stanza of type <tt>result</tt> which represents
+     * the response to one of the IQs previously sent by this component
+     * instance.
+     *
+     * @see AbstractComponent#handleIQResult(IQ)
+     */
+    protected void handleIQResultImpl(IQ iq)
     {
         super.handleIQResult(iq);
+
         synchronized (timeouts)
         {
             String packetId = iq.getID();
@@ -322,6 +469,44 @@ public abstract class ComponentBase
                 pingFailures = 0;
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Should *NEVER* be called by the subclass directly.
+     *
+     * The method is final in order to enforce measurement of the IQ processing
+     * time. Subclasses should implement the processing in
+     * {@link #handleIQErrorImpl(IQ)}. The semantics of that method remain
+     * the same as of {@link AbstractComponent#handleIQError(IQ)}.
+     */
+    @Override
+    final protected void handleIQError(IQ iq)
+    {
+        final long startTimestamp = System.currentTimeMillis();
+        try
+        {
+            handleIQErrorImpl(iq);
+        }
+        finally
+        {
+            verifyProcessingTime(startTimestamp, iq);
+        }
+    }
+
+    /**
+     * Handles an <tt>IQ</tt> stanza of type <tt>error</tt>.
+     *
+     * @param iq the <tt>IQ</tt> stanza of type <tt>error</tt> which represents
+     * an error response to one of the IQs previously sent by this component
+     * instance.
+     *
+     * @see AbstractComponent#handleIQError(IQ)
+     */
+    protected void handleIQErrorImpl(IQ iq)
+    {
+        super.handleIQError(iq);
     }
 
     /**
@@ -368,6 +553,36 @@ public abstract class ComponentBase
     }
 
     /**
+     * Utility method for measuring and logging an error if the recommended
+     * processing time limit has been exceeded (configurable with
+     * {@link #PROCESSING_TIME_LIMIT_PNAME}).
+     *
+     * NOTE The best way for implementing this timer would be in
+     * {@link AbstractComponent#processQueuedPacket(Packet)}, but the method
+     * is final.
+     *
+     * @param startTimestamp the timestamp obtained using
+     * {@link System#currentTimeMillis()} when the IQ processing has started
+     * @param iq the <tt>IQ</tt> for which the processing time will be validated
+     */
+    private void verifyProcessingTime(long startTimestamp, IQ iq)
+    {
+        long processingTime = System.currentTimeMillis() - startTimestamp;
+        if (processingTime > processingTimeLimit)
+        {
+            logger.warn(
+                    "PROCESSING TIME LIMIT EXCEEDED - it took "
+                        + processingTime + "ms to process: " + iq.toXML());
+        }
+        else if (logger.isDebugEnabled())
+        {
+            logger.debug(
+                    "It took " + processingTime  + "ms to process packet: "
+                        + iq.getID());
+        }
+    }
+
+    /**
      * Tasks sends ping to the server and schedules timeout task.
      */
     private class PingTask extends TimerTask
@@ -384,7 +599,8 @@ public abstract class ComponentBase
 
                     String domain = getDomain();
                     String subdomain = getSubdomain();
-                    KeepAliveEvent ping = new KeepAliveEvent(subdomain + "." + domain, domain);
+                    KeepAliveEvent ping
+                        = new KeepAliveEvent(subdomain + "." + domain, domain);
 
                     IQ pingIq = IQUtils.convert(ping);
 
