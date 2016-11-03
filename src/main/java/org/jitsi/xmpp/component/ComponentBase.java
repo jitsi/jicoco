@@ -141,19 +141,8 @@ public abstract class ComponentBase
      * The time limit for processing IQs by the component implementation which
      * will be used to log error messages for easier detection/debugging
      * of the eventual issues.
-     *
-     * NOTE the current implementation depends on the assumption that
-     * the packets are processed by a single thread (see the first value passed
-     * to the superclass constructor).
      */
     private long processingTimeLimit;
-
-    /**
-     * The timer instance used to measure packet processing time.
-     *
-     * @see #processingTimeLimit
-     */
-    private final ProcessingTimer processingTimer = new ProcessingTimer();
 
     /**
      * Default constructor for <tt>ComponentBase</tt>.
@@ -173,12 +162,7 @@ public abstract class ComponentBase
                          String     subDomain,
                          String        secret)
     {
-        // NOTE measurement of the packet processing time currently depends
-        // on the executor pool size being set to 1. If multiple packets would
-        // be processed at the same time then the threads would overwrite
-        // the values in the ProcessingTimer which means that each thread will
-        // require a separate (possibly local) instance.
-        super(1 /* executor pool size */, 1000 /* packet queue size */, true);
+        super(17 /* executor pool size */, 1000 /* packet queue size */, true);
 
         this.hostname = host;
         this.port = port;
@@ -325,15 +309,14 @@ public abstract class ComponentBase
     final protected IQ handleIQGet(IQ iq)
         throws Exception
     {
+        final long startTimestamp = System.currentTimeMillis();
         try
         {
-            processingTimer.processingStarted(iq);
-
             return handleIQGetImpl(iq);
         }
         finally
         {
-            processingTimer.processingEnded();
+            verifyProcessingTime(startTimestamp, iq);
         }
     }
 
@@ -371,15 +354,14 @@ public abstract class ComponentBase
     final protected IQ handleIQSet(IQ iq)
         throws Exception
     {
+        final long startTimestamp = System.currentTimeMillis();
         try
         {
-            processingTimer.processingStarted(iq);
-
             return handleIQSetImpl(iq);
         }
         finally
         {
-            processingTimer.processingEnded();
+            verifyProcessingTime(startTimestamp, iq);
         }
     }
 
@@ -416,15 +398,14 @@ public abstract class ComponentBase
     @Override
     final protected void handleIQResult(IQ iq)
     {
+        final long startTimestamp = System.currentTimeMillis();
         try
         {
-            processingTimer.processingStarted(iq);
-
             handleIQResultImpl(iq);
         }
         finally
         {
-            processingTimer.processingEnded();
+            verifyProcessingTime(startTimestamp, iq);
         }
     }
 
@@ -468,15 +449,14 @@ public abstract class ComponentBase
     @Override
     final protected void handleIQError(IQ iq)
     {
+        final long startTimestamp = System.currentTimeMillis();
         try
         {
-            processingTimer.processingStarted(iq);
-
             handleIQErrorImpl(iq);
         }
         finally
         {
-            processingTimer.processingEnded();
+            verifyProcessingTime(startTimestamp, iq);
         }
     }
 
@@ -535,6 +515,36 @@ public abstract class ComponentBase
     public String getSecret()
     {
         return secret;
+    }
+
+    /**
+     * Utility method for measuring and logging an error if the recommended
+     * processing time limit has been exceeded (configurable with
+     * {@link #PROCESSING_TIME_LIMIT_PNAME}).
+     *
+     * NOTE The best way for implementing this timer would be in
+     * {@link AbstractComponent#processQueuedPacket(Packet)}, but the method
+     * is final.
+     *
+     * @param startTimestamp the timestamp obtained using
+     * {@link System#currentTimeMillis()} when the IQ processing has started
+     * @param iq the <tt>IQ</tt> for which the processing time will be validated
+     */
+    private void verifyProcessingTime(long startTimestamp, IQ iq)
+    {
+        long processingTime = System.currentTimeMillis() - startTimestamp;
+        if (processingTime > processingTimeLimit)
+        {
+            logger.warn(
+                    "PROCESSING TIME LIMIT EXCEEDED - it took "
+                        + processingTime + "ms to process: " + iq.toXML());
+        }
+        else if (logger.isDebugEnabled())
+        {
+            logger.debug(
+                    "It took " + processingTime  + "ms to process packet: "
+                        + iq.getID());
+        }
     }
 
     /**
@@ -621,78 +631,6 @@ public abstract class ComponentBase
                     timeouts.remove(packetId);
                 }
             }
-        }
-    }
-
-    /**
-     * Utility class for measuring and logging an error if the recommended
-     * processing time limit has been exceeded (configurable with
-     * {@link #PROCESSING_TIME_LIMIT_PNAME}).
-     *
-     * NOTE The best way for implementing this timer would be in
-     * {@link AbstractComponent#processQueuedPacket(Packet)}, but the method
-     * is final.
-     *
-     * @author Pawel Domas
-     */
-    private class ProcessingTimer
-    {
-        /**
-         * The IQ for which the processing time will be measured.
-         */
-        private IQ iq;
-
-        /**
-         * Stores the timestamp on when the processing has started.
-         */
-        private long startTime;
-
-        /**
-         * Informs this timer instance that the processing for given <tt>iq</tt>
-         * has just started.
-         *
-         * @param iq the <tt>IQ</tt> for which the processing has just started.
-         */
-        private void processingStarted(IQ iq)
-        {
-            Objects.requireNonNull(iq, "iq");
-
-            this.startTime = System.currentTimeMillis();
-            this.iq = iq;
-        }
-
-        /**
-         * Method must be called when the processing of the IQ registered
-         * with {@link #processingStarted(IQ)} has ended. It will check if
-         * the {@link #processingTimeLimit} has been exceeded and print
-         * a warning message. If the current logging level is set to debug it
-         * will print the processing time for every IQ (event if the limit was
-         * not exceeded).
-         */
-        private void processingEnded()
-        {
-            // processingStarted was not called ?
-            if (iq == null)
-            {
-                return;
-            }
-
-            long processingTime = System.currentTimeMillis() - startTime;
-            if (processingTime > processingTimeLimit)
-            {
-                logger.warn(
-                        "PROCESSING TIME LIMIT EXCEEDED - it took "
-                            + processingTime + "ms to process: " + iq.toXML());
-            }
-            else if (logger.isDebugEnabled())
-            {
-                logger.debug(
-                        "It took " + processingTime  + "ms to process packet: "
-                            + iq.getID());
-            }
-
-            // XXX set to null to require the processingStarted to be called
-            iq = null;
         }
     }
 }
