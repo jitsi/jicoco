@@ -70,7 +70,8 @@ public abstract class ComponentBase
      * The name of the property used to determine if we should
      * reconnect on ping failures
      */
-    private final static String RECONNECT_ON_PING_FAILURES = "RECONNECT_ON_PING_FAILURES";
+    private final static String RECONNECT_ON_PING_FAILURES
+            = "RECONNECT_ON_PING_FAILURES";
 
     /**
      * The hostname or IP address to which this component will be connected.
