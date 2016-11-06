@@ -25,25 +25,7 @@ import org.jitsi.util.*;
 public class Assert
 {
     /**
-     * Will thrown a <tt>NullPointerException</tt> if given <tt>var</tt> is
-     * <tt>null</tt>.
-     *
-     * @param var the variable to check
-     * @param errorMsg the error message that wil be passed to the constructor
-     *                 of <tt>NullPointerException</tt>.
-     *
-     * @throws NullPointerException if <tt>var</tt> is <tt>null</tt>
-     */
-    static public void notNull(Object var, String errorMsg)
-    {
-        if (var == null)
-        {
-            throw new NullPointerException(errorMsg);
-        }
-    }
-
-    /**
-     * Wil thrown an <tt>IllegalArgumentException</tt> if given <tt>str</tt>
+     * Will thrown an <tt>IllegalArgumentException</tt> if given <tt>str</tt>
      * is either <tt>null</tt> or is empty.
      *
      * @param str the <tt>String</tt> instance to be verified.
