@@ -34,12 +34,14 @@ public class Assert
      *
      * @throws IllegalArgumentException if given <tt>str</tt> is either
      *         <tt>null</tt> or empty.
+     * @return the string.
      */
-    static public void notNullNorEmpty(String str, String errorMsg)
+    static public String notNullNorEmpty(String str, String errorMsg)
     {
         if (StringUtils.isNullOrEmpty(str))
         {
             throw new IllegalArgumentException(errorMsg);
         }
+        return str;
     }
 }
