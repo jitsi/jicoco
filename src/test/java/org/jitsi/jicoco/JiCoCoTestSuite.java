@@ -16,7 +16,6 @@
 package org.jitsi.jicoco;
 
 import org.jitsi.cmd.*;
-import org.jitsi.influxdb.LineProtocolTest;
 import org.jitsi.retry.*;
 import org.junit.runner.*;
 import org.junit.runners.*;
@@ -27,7 +26,6 @@ import org.junit.runners.*;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     CmdLineArgsTest.class,
-    LineProtocolTest.class,
     RetryStrategyTest.class
 })
 public class JiCoCoTestSuite
