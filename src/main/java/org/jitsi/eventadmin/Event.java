@@ -27,15 +27,15 @@ import java.util.*;
 public class Event
 {
     private final String topic;
-    private final Dictionary properties;
+    private final Dictionary<String, Object> properties;
 
-    public Event(String topic, Dictionary properties)
+    public Event(String topic, Dictionary<String, Object> properties)
     {
         this.topic = topic;
         this.properties = properties;
     }
 
-    public Object getProperty(Object key)
+    public Object getProperty(String key)
     {
         return this.properties != null ? properties.get(key) : null;
     }
