@@ -43,11 +43,6 @@
       <groupId>org.igniterealtime.whack</groupId>
       <artifactId>core</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.influxdb</groupId>
-      <artifactId>influxdb-java</artifactId>
-      <version>2.1</version>
-    </dependency>
     <!-- org.jitsi -->
     <dependency>
       <groupId>${project.groupId}</groupId>
