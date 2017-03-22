@@ -29,24 +29,30 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * Implements an abstract {@code BundleActivator} which starts and stops a Jetty
- * HTTP(S) server instance within OSGi.
+ * Implements an abstract {@code BundleActivator} which starts and stops a pair
+ * of Jetty HTTP(S) Server instances within OSGi.
+ * One is a private instance, and other other is public. They are meant to
+ * differ in the endpoints which they handle (e.g. a control interface may
+ * only be added to the private server, while a proxy serving static files
+ * may be public).
  *
  * @author Lyubomir Marinov
+ * @author Boris Grozev
  */
 public abstract class AbstractJettyBundleActivator
     implements BundleActivator
 {
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the Jetty HTTP server host.
+     * property which specifies the Jetty HTTP Server host for the private
+     * server.
      */
-    private static final String JETTY_HOST_PNAME = ".jetty.host";
+     static final String JETTY_HOST_PNAME = ".jetty.host";
 
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the Jetty HTTP server port. The default value is
-     * {@code 8080}.
+     * property which specifies the Jetty HTTP port for the private server. The
+     * default value is {@code 8080}.
      */
     static final String JETTY_PORT_PNAME = ".jetty.port";
 
@@ -76,8 +82,8 @@ public abstract class AbstractJettyBundleActivator
 
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the Jetty HTTPS server port. The default value
-     * is {@code 8443}.
+     * property which specifies the Jetty HTTPS port on the private server. The
+     * default value is {@code 8443}.
      */
     static final String JETTY_TLS_PORT_PNAME = ".jetty.tls.port";
 
@@ -149,9 +155,10 @@ public abstract class AbstractJettyBundleActivator
     protected final String propertyPrefix;
 
     /**
-     * The Jetty {@code Server} which provides an HTTP(S) interface.
+     * The Jetty {@code Server} which provides an HTTP(S) interface for private
+     * (restricted) use.
      */
-    protected Server server;
+    protected Server privateServer;
 
     /**
      * Initializes a new {@code AbstractJettyBundleActivator} instance.
@@ -166,13 +173,12 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * Notifies this {@code AbstractJettyBundleActivator} that a new Jetty
-     * {@code Server} instance was initialized and started in a specific
-     * {@code BundleContext}.
+     * Initializes and starts a new pair of Jetty {@code Server} instances (one
+     * public and one private) in a specific {@code BundleContext}.
      *
      * @param bundleContext the {@code BundleContext} in which this
-     * {@code BundleActivator} was started and initialized and started a new
-     * Jetty {@code Server} instance
+     * {@code BundleActivator} was started and in which to initialize and start
+     * a new Jetty {@code Server} instance.
      * @throws Exception
      */
     protected void didStart(BundleContext bundleContext)
@@ -214,7 +220,7 @@ public abstract class AbstractJettyBundleActivator
             // keep the application running on success.
             server.start();
 
-            this.server = server;
+            this.privateServer = server;
         }
         catch (Throwable t)
         {
@@ -244,10 +250,10 @@ public abstract class AbstractJettyBundleActivator
     protected void doStop(BundleContext bundleContext)
         throws Exception
     {
-        if (server != null)
+        if (privateServer != null)
         {
-            server.stop();
-            server = null;
+            privateServer.stop();
+            privateServer = null;
         }
     }
 
@@ -302,12 +308,12 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * Gets the port on which the Jetty server is to listen for HTTP requests by
-     * default in the absence of a user specification through
+     * Gets the port on which the private Jetty server is to listen for HTTP
+     * requests by default in the absence of a user specification through
      * {@link #JETTY_PORT_PNAME}.
      *
-     * @return the port on which the Jetty server is to listen for HTTP requests
-     * by default
+     * @return the port on which the private Jetty server is to listen for HTTP
+     * requests by default
      */
     protected int getDefaultPort()
     {
@@ -315,11 +321,11 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * Gets the port on which the Jetty server is to listen for HTTPS requests
-     * by default in the absence of a user specification through
+     * Gets the port on which the private Jetty server is to listen for HTTPS
+     * requests by default in the absence of a user specification through
      * {@link #JETTY_TLS_PORT_PNAME}.
      *
-     * @return the port on which the Jetty server is to listen for HTTPS
+     * @return the port on which the private Jetty server is to listen for HTTPS
      * requests by default
      */
     protected int getDefaultTlsPort()
@@ -377,7 +383,7 @@ public abstract class AbstractJettyBundleActivator
         Connector connector
             = factory.initializeConnector(bundleContext, server);
 
-        // host        
+        // host
         String host = getCfgString(JETTY_HOST_PNAME, null);
 
         if (host != null)
