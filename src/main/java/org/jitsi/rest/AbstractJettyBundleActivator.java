@@ -29,26 +29,40 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * Implements an abstract {@code BundleActivator} which starts and stops a Jetty
- * HTTP(S) server instance within OSGi.
+ * Implements an abstract {@code BundleActivator} which starts and stops a pair
+ * of Jetty HTTP(S) Server instances within OSGi.
+ * One is a private instance, and other other is public. They are meant to
+ * differ in the endpoints which they handle (e.g. a control interface may
+ * only be added to the private server, while a proxy serving static files
+ * may be public).
  *
  * @author Lyubomir Marinov
+ * @author Boris Grozev
  */
 public abstract class AbstractJettyBundleActivator
     implements BundleActivator
 {
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the Jetty HTTP server host.
+     * property which specifies the Jetty HTTP Server host.
+     * server.
      */
-    private static final String JETTY_HOST_PNAME = ".jetty.host";
+     static final String JETTY_HOST_PNAME = ".jetty.host";
 
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the Jetty HTTP server port. The default value is
-     * {@code 8080}.
+     * property which specifies the Jetty HTTP port for the private server. The
+     * default value is {@code 8080}.
      */
     static final String JETTY_PORT_PNAME = ".jetty.port";
+
+    /**
+     * The name of the {@code ConfigurationService} and/or {@code System}
+     * property which specifies the Jetty HTTP port for the public server. The
+     * default value is {@code -1} (i.e. the public interface is disabled by
+     * default).
+     */
+    static final String JETTY_PUBLIC_PORT_PNAME = ".jetty.public.port";
 
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
@@ -60,11 +74,27 @@ public abstract class AbstractJettyBundleActivator
 
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
+     * property which specifies the keystore password to be utilized by
+     * {@code SslContextFactory} when the public Jetty Server serves over HTTPS.
+     */
+    static final String JETTY_PUBLIC_SSLCONTEXTFACTORY_KEYSTOREPASSWORD
+        = ".jetty.public.sslContextFactory.keyStorePassword";
+
+    /**
+     * The name of the {@code ConfigurationService} and/or {@code System}
      * property which specifies the keystore path to be utilized by
      * {@code SslContextFactory} when Jetty serves over HTTPS.
      */
     static final String JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH
         = ".jetty.sslContextFactory.keyStorePath";
+
+    /**
+     * The name of the {@code ConfigurationService} and/or {@code System}
+     * property which specifies the keystore path to be utilized by
+     * {@code SslContextFactory} when the public Jetty Server serves over HTTPS.
+     */
+    static final String JETTY_PUBLIC_SSLCONTEXTFACTORY_KEYSTOREPATH
+        = ".jetty.public.sslContextFactory.keyStorePath";
 
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
@@ -76,10 +106,18 @@ public abstract class AbstractJettyBundleActivator
 
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the Jetty HTTPS server port. The default value
-     * is {@code 8443}.
+     * property which specifies the Jetty HTTPS port on the private server. The
+     * default value is {@code 8443}.
      */
     static final String JETTY_TLS_PORT_PNAME = ".jetty.tls.port";
+
+    /**
+     * The name of the {@code ConfigurationService} and/or {@code System}
+     * property which specifies the Jetty HTTPS port on the public server. The
+     * default value is {@code -1} (i.e. the public interface is disabled by
+     * default).
+     */
+    static final String JETTY_PUBLIC_TLS_PORT_PNAME = ".jetty.public.tls.port";
 
     /**
      * The {@code Logger} used by the {@code AbstractJettyBundleActivator} class
@@ -120,7 +158,11 @@ public abstract class AbstractJettyBundleActivator
      */
     protected static Handler initializeHandlerList(List<Handler> handlers)
     {
-        int handlerCount = handlers.size();
+        int handlerCount;
+        if (handlers == null || (handlerCount = handlers.size()) == 0)
+        {
+            return null;
+        }
 
         if (handlerCount == 1)
         {
@@ -149,9 +191,16 @@ public abstract class AbstractJettyBundleActivator
     protected final String propertyPrefix;
 
     /**
-     * The Jetty {@code Server} which provides an HTTP(S) interface.
+     * The Jetty {@code Server} which provides an HTTP(S) interface for private
+     * (restricted) use.
      */
-    protected Server server;
+    protected Server privateServer;
+
+    /**
+     * The Jetty {@code Server} which provides an HTTP(S) interface for public
+     * use.
+     */
+    protected Server publicServer;
 
     /**
      * Initializes a new {@code AbstractJettyBundleActivator} instance.
@@ -166,13 +215,12 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * Notifies this {@code AbstractJettyBundleActivator} that a new Jetty
-     * {@code Server} instance was initialized and started in a specific
-     * {@code BundleContext}.
+     * Initializes and starts a new pair of Jetty {@code Server} instances (one
+     * public and one private) in a specific {@code BundleContext}.
      *
      * @param bundleContext the {@code BundleContext} in which this
-     * {@code BundleActivator} was started and initialized and started a new
-     * Jetty {@code Server} instance
+     * {@code BundleActivator} was started and in which to initialize and start
+     * a new Jetty {@code Server} instance.
      * @throws Exception
      */
     protected void didStart(BundleContext bundleContext)
@@ -208,13 +256,20 @@ public abstract class AbstractJettyBundleActivator
     {
         try
         {
-            Server server = initializeServer(bundleContext);
+            Server[] servers = initializeServers(bundleContext);
 
-            // The server will start a non-daemon background Thread which will
-            // keep the application running on success.
-            server.start();
+            for (Server server : servers)
+            {
+                if (server != null)
+                {
+                    // The server will start a non-daemon background Thread
+                    // which will keep the application running on success.
+                    server.start();
+                }
+            }
 
-            this.server = server;
+            this.privateServer = servers[0];
+            this.publicServer = servers[1];
         }
         catch (Throwable t)
         {
@@ -244,10 +299,15 @@ public abstract class AbstractJettyBundleActivator
     protected void doStop(BundleContext bundleContext)
         throws Exception
     {
-        if (server != null)
+        if (privateServer != null)
         {
-            server.stop();
-            server = null;
+            privateServer.stop();
+            privateServer = null;
+        }
+        if (publicServer != null)
+        {
+            publicServer.stop();
+            publicServer = null;
         }
     }
 
@@ -302,12 +362,12 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * Gets the port on which the Jetty server is to listen for HTTP requests by
-     * default in the absence of a user specification through
+     * Gets the port on which the private Jetty server is to listen for HTTP
+     * requests by default in the absence of a user specification through
      * {@link #JETTY_PORT_PNAME}.
      *
-     * @return the port on which the Jetty server is to listen for HTTP requests
-     * by default
+     * @return the port on which the private Jetty server is to listen for HTTP
+     * requests by default
      */
     protected int getDefaultPort()
     {
@@ -315,11 +375,24 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * Gets the port on which the Jetty server is to listen for HTTPS requests
-     * by default in the absence of a user specification through
+     * Gets the port on which the public Jetty server is to listen for HTTP
+     * requests by default in the absence of a user specification through
+     * {@link #JETTY_PUBLIC_PORT_PNAME}.
+     *
+     * @return the port on which the public Jetty server is to listen for HTTP
+     * requests by default
+     */
+    protected int getDefaultPublicPort()
+    {
+        return -1;
+    }
+
+    /**
+     * Gets the port on which the private Jetty server is to listen for HTTPS
+     * requests by default in the absence of a user specification through
      * {@link #JETTY_TLS_PORT_PNAME}.
      *
-     * @return the port on which the Jetty server is to listen for HTTPS
+     * @return the port on which the private Jetty server is to listen for HTTPS
      * requests by default
      */
     protected int getDefaultTlsPort()
@@ -328,21 +401,38 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * Initializes a new {@code Connector} instance to be added to a specific
-     * {@code Server} which is to be started in a specific
+     * Gets the port on which the public Jetty server is to listen for HTTPS
+     * requests by default in the absence of a user specification through
+     * {@link #JETTY_PUBLIC_TLS_PORT_PNAME}.
+     *
+     * @return the port on which the public Jetty server is to listen for HTTPS
+     * requests by default
+     */
+    protected int getDefaultPublicTlsPort()
+    {
+        return -1;
+    }
+
+    /**
+     * Initializes new {@code Connector} instances to be added to a specific
+     * pair of {@code Server}s and which are to be started in a specific
      * {@code BundleContext}.
      *
      * @param bundleContext the {@code BundleContext} in which {@code server} is
      * to be started
-     * @param server the {@code Server} to which the new {@code Connector}
-     * instance is to be added
-     * @return a new {@code Connector} instance which is to be added to
-     * {@code server}
+     * @param privateServer the private {@link Server} to which a new
+     * {@code Connector} instance is to be added.
+     * @param publicServer the public {@link Server} to which a new
+     * {@code Connector} instance is to be added.
+     * @return an array containing the {@link Connector} instances which were
+     * created and are to be added to {@code privateServer} (at index 0) and
+     * {@code publicServer} (at index 1).
      * @throws Exception 
      */
-    protected Connector initializeConnector(
+    protected Connector[] initializeConnectors(
             BundleContext bundleContext,
-            Server server)
+            Server privateServer,
+            Server publicServer)
         throws Exception
     {
         // Detect whether we are running on Jetty 9. If not, fall back to Jetty
@@ -374,76 +464,125 @@ public abstract class AbstractJettyBundleActivator
 
         ConnectorFactory factory
             = (ConnectorFactory) constructor.newInstance(this);
-        Connector connector
-            = factory.initializeConnector(bundleContext, server);
 
-        // host        
+
+        Connector[] connectors
+            = factory.initializeConnectors(
+                bundleContext, privateServer, publicServer);
+
+        // host
         String host = getCfgString(JETTY_HOST_PNAME, null);
 
         if (host != null)
-            setHost(connector, host);
+        {
+            setHost(connectors[0], host);
+            setHost(connectors[1], host);
+        }
 
-        return connector;
+        return connectors;
     }
 
     /**
-     * Initializes a new {@link Handler} instance to be set on a specific
-     * {@code Server} instance. The default implementation delegates to
-     * {@link #initializeHandlerList(BundleContext, Server)}.
+     * Initializes new {@link Handler} instances to be set on a specific pair
+     * of private and public {@code Server} instances. The default
+     * implementation delegates to
+     * {@link #initializeHandlerLists(BundleContext, Server, Server)}
      *
-     * @param bundleContext the {@code BundleContext} in which the new instance
-     * is to be initialized
-     * @param server the {@code Server} on which the new instance will be set
-     * @return the new {code Handler} instance to be set on {@code server}
+     * @param bundleContext the {@code BundleContext} in which the new instances
+     * are to be initialized.
+     * @param privateServer the private {@code Server} for which to initialize
+     * handlers.
+     * @param publicServer the public {@code Server} for which to initialize
+     * handlers.
+     * @return an array of two {@link Handler} instances, one to be set on the
+     * private server (at index 0) and one to be set on the public server (at
+     * index 1).
      * @throws Exception
      */
-    protected Handler initializeHandler(
+    protected Handler[] initializeHandlers(
             BundleContext bundleContext,
-            Server server)
+            Server privateServer,
+            Server publicServer)
         throws Exception
     {
-        return initializeHandlerList(bundleContext, server);
+        return initializeHandlerLists(
+            bundleContext, privateServer, publicServer);
     }
 
     /**
-     * Initializes a new {@link HandlerList} instance to be set on a specific
-     * {@code Server} instance.
+     * Initializes new {@link Handler} instances to be set on a specific pair
+     * of private and public {@code Server} instances.
      *
-     * @param bundleContext the {@code BundleContext} in which the new instance
-     * is to be initialized
-     * @param server the {@code Server} on which the new instance will be set
-     * @return the new {code HandlerList} instance to be set on {@code server}
+     * @param bundleContext the {@code BundleContext} in which the new instances
+     * are to be initialized.
+     * @param privateServer the private {@code Server} for which to initialize
+     * handlers.
+     * @param publicServer the public {@code Server} for which to initialize
+     * handlers.
+     * @return an array of two {@link Handler} instances, one to be set on the
+     * private server (at index 0) and one to be set on the public server (at
+     * index 1).
      * @throws Exception
      */
-    protected abstract Handler initializeHandlerList(
+    protected abstract Handler[] initializeHandlerLists(
             BundleContext bundleContext,
-            Server server)
+            Server privateServer,
+            Server publicServer)
         throws Exception;
 
     /**
-     * Initializes a new {@code Server} instance to be started in a specific
+     * Initializes new {@code Server} instances to be started in a specific
      * {@code BundleContext}.
      *
      * @param bundleContext the {@code BundleContext} in which the new
-     * {@code Server} instance is to be started
-     * @return a new {@code Server} instance to be started in
-     * {@code bundleContext}
+     * {@code Server} instances are to be started
+     * @return an array containing the new {@code Server} instances to be
+     * started in {@code bundleContext}
      * @throws Exception 
      */
-    protected Server initializeServer(BundleContext bundleContext)
+    protected Server[] initializeServers(BundleContext bundleContext)
         throws Exception
     {
-        Server server = new Server();
-        Connector connector = initializeConnector(bundleContext, server);
+        Server privateServer = new Server();
+        Server publicServer = new Server();
+        Connector[] connectors
+            = initializeConnectors(bundleContext, privateServer, publicServer);
 
-        server.addConnector(connector);
+        if (connectors[0] != null)
+        {
+            privateServer.addConnector(connectors[0]);
+        }
+        else
+        {
+            // If it doesn't have a connector (e.g. because the configuration
+            // disabled it), don't start the server.
+            privateServer = null;
+        }
 
-        Handler handler = initializeHandler(bundleContext, server);
+        if (connectors[1] != null)
+        {
+            publicServer.addConnector(connectors[1]);
+        }
+        else
+        {
+            // If it doesn't have a connector (e.g. because the configuration
+            // disabled it), don't start the server.
+            publicServer = null;
+        }
 
-        if (handler != null)
-            server.setHandler(handler);
+        Handler[] handlers
+            = initializeHandlers(bundleContext, privateServer, publicServer);
 
-        return server;
+        if (handlers[0] != null && privateServer != null)
+        {
+            privateServer.setHandler(handlers[0]);
+        }
+        if (handlers[1] != null && publicServer != null)
+        {
+            publicServer.setHandler(handlers[1]);
+        }
+
+        return new Server[]{ privateServer, publicServer};
     }
 
     /**
@@ -484,10 +623,13 @@ public abstract class AbstractJettyBundleActivator
         // Provide compatibility with Jetty 8 and invoke the method
         // setHost(String) using reflection because it is in different
         // interfaces/classes in Jetty 8 and 9.
-        connector
-            .getClass()
-                .getMethod("setHost", String.class)
-                    .invoke(connector, host);
+        if (connector != null)
+        {
+            connector
+                .getClass()
+                   .getMethod("setHost", String.class)
+                        .invoke(connector, host);
+        }
     }
 
     /**
@@ -616,21 +758,25 @@ public abstract class AbstractJettyBundleActivator
     private interface ConnectorFactory
     {
         /**
-         * Initializes a new {@code Connector} instance to be added to a
-         * specific {@code Server} which is to be started in a specific
-         * {@code BundleContext}.
+         * Initializes new {@code Connector} instances to be added to a
+         * specific pair of {@code Server}s which are to be started in a
+         * specific {@code BundleContext}.
          *
          * @param bundleContext the {@code BundleContext} in which
          * {@code server} is to be started
-         * @param server the {@code Server} to which the new {@code Connector}
-         * instance is to be added
-         * @return a new {@code Connector} instance which is to be added to
-         * {@code server}
+         * @param privateServer the private {@code Server} to which a new
+         * {@code Connector} instance is to be added.
+         * @param publicServer the public {@code Server} to which a new
+         * {@code Connector} instance is to be added.
+         * @return an array containing the new {@code Connector} instance which
+         * were created and are to be added to {@code privateServer} and
+         * {@code publicServer}
          * @throws Exception 
          */
-        Connector initializeConnector(
+        Connector[] initializeConnectors(
             BundleContext bundleContext,
-            Server server)
+            Server privateServer,
+            Server publicServer)
             throws Exception;
     }
 
@@ -647,9 +793,10 @@ public abstract class AbstractJettyBundleActivator
          * (API) and is not (necessarily) compatible with Jetty 9.
          */
         @Override
-        public Connector initializeConnector(
+        public Connector[] initializeConnectors(
                 BundleContext bundleContext,
-                Server server)
+                Server privateServer,
+                Server publicServer)
             throws Exception
         {
             // The source code is compiled in the environment of Jetty 9. Unless
@@ -658,12 +805,27 @@ public abstract class AbstractJettyBundleActivator
             String className
                 = "org.eclipse.jetty.server.nio.SelectChannelConnector";
             Class<?> clazz = Class.forName(className);
-            Connector connector = (Connector) clazz.newInstance();
 
-            // port
-            setPort(connector, getCfgInt(JETTY_PORT_PNAME, getDefaultPort()));
+            Connector privateConnector = null;
+            Connector publicConnector = null;
 
-            return connector;
+            // ports
+            int privatePort = getCfgInt(JETTY_PORT_PNAME, getDefaultPort());
+            if (privatePort > 0)
+            {
+                privateConnector = (Connector) clazz.newInstance();
+                setPort(privateConnector, privatePort);
+            }
+
+            int publicPort
+                = getCfgInt(JETTY_PUBLIC_PORT_PNAME, getDefaultPublicPort());
+            if (publicPort > 0)
+            {
+                publicConnector = (Connector) clazz.newInstance();
+                setPort(publicConnector, publicPort);
+            }
+
+            return new Connector[] { privateConnector, publicConnector };
         }
     }
 
@@ -680,31 +842,66 @@ public abstract class AbstractJettyBundleActivator
          * (API) and is not (necessarily) compatible with Jetty 8.
          */
         @Override
-        public Connector initializeConnector(
+        public Connector[] initializeConnectors(
                 BundleContext bundleContext,
-                Server server)
+                Server privateServer,
+                Server publicServer)
             throws Exception
         {
-            HttpConfiguration httpCfg = new HttpConfiguration();
-            int tlsPort = getCfgInt(JETTY_TLS_PORT_PNAME, getDefaultTlsPort());
+            Connector privateConnector = createConnector(privateServer, true);
+            Connector publicConnector = createConnector(publicServer, false);
+            return new Connector[] { privateConnector, publicConnector };
+        }
 
-            httpCfg.setSecurePort(tlsPort);
-            httpCfg.setSecureScheme("https");
+        /**
+         * Creates a connector for a specific {@link Server} instance.
+         * @param server the {@link Server} for which the connector is to be
+         * created.
+         * @param private_ whether the connector is to be created for the
+         * private or public server instance.
+         * @return the created connector (or {@code null} if the configuration
+         * disabled the use of the server).
+         */
+        private Connector createConnector(Server server, boolean private_)
+        {
+            HttpConfiguration httpCfg = new HttpConfiguration();
+            int tlsPort
+                = private_
+                    ? getCfgInt(JETTY_TLS_PORT_PNAME, getDefaultTlsPort())
+                    : getCfgInt(JETTY_PUBLIC_TLS_PORT_PNAME,
+                                getDefaultPublicTlsPort());
+
+            if (tlsPort > 0)
+            {
+                httpCfg.setSecurePort(tlsPort);
+                httpCfg.setSecureScheme("https");
+            }
 
             String sslContextFactoryKeyStorePath
-                = getCfgString(JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH, null);
-            Connector connector;
-            int port;
+                = getCfgString(
+                    private_ ? JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH
+                        : JETTY_PUBLIC_SSLCONTEXTFACTORY_KEYSTOREPATH,
+                    null);
+            Connector connector = null;
+            int port = -1;
 
             // If HTTPS is not enabled, serve over HTTP.
             if (sslContextFactoryKeyStorePath == null)
             {
                 // HTTP
-                connector
-                    = new MuxServerConnector(
+                port
+                    = private_
+                        ? getCfgInt(JETTY_PORT_PNAME, getDefaultPort())
+                        : getCfgInt(JETTY_PUBLIC_PORT_PNAME,
+                                    getDefaultPublicPort());
+
+                if (port > 0)
+                {
+                    connector =
+                        new MuxServerConnector(
                             server,
                             new HttpConnectionFactory(httpCfg));
-                port = getCfgInt(JETTY_PORT_PNAME, getDefaultPort());
+                }
             }
             else
             {
@@ -716,7 +913,8 @@ public abstract class AbstractJettyBundleActivator
                 SslContextFactory sslContextFactory = new SslContextFactory();
                 String sslContextFactoryKeyStorePassword
                     = getCfgString(
-                            JETTY_SSLCONTEXTFACTORY_KEYSTOREPASSWORD,
+                            private_ ? JETTY_SSLCONTEXTFACTORY_KEYSTOREPASSWORD
+                                : JETTY_PUBLIC_SSLCONTEXTFACTORY_KEYSTOREPASSWORD,
                             null);
                 boolean sslContextFactoryNeedClientAuth
                     = getCfgBoolean(
@@ -751,18 +949,32 @@ public abstract class AbstractJettyBundleActivator
 
                 httpsCfg.addCustomizer(new SecureRequestCustomizer());
 
-                connector
-                    = new MuxServerConnector(
-                            server,
-                            new SslConnectionFactory(
+                if (tlsPort > 0)
+                {
+                    connector
+                        = new MuxServerConnector(
+                                server,
+                                new SslConnectionFactory(
                                     sslContextFactory,
                                     "http/1.1"),
-                            new HttpConnectionFactory(httpsCfg));
-                port = tlsPort;
+                                new HttpConnectionFactory(httpsCfg));
+                    port = tlsPort;
+                }
             }
 
             // port
-            setPort(connector, port);
+            if (connector != null && port > 0)
+            {
+                try
+                {
+                    setPort(connector, port);
+                }
+                catch (Exception e)
+                {
+                    logger.error("Failed to set port to a connector: " + e);
+                    connector = null;
+                }
+            }
 
             return connector;
         }
