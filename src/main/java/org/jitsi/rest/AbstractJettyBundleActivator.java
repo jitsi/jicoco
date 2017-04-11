@@ -328,6 +328,26 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
+     * @return the port which the configuration specifies should be used by
+     * this {@link AbstractJettyBundleActivator}, or -1 if the configuration
+     * specifies that this instance should be disabled.
+     */
+    private int getPort()
+    {
+        String sslContextFactoryKeyStorePath
+            = getCfgString(JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH, null);
+
+        if (sslContextFactoryKeyStorePath == null)
+        {
+            return getCfgInt(JETTY_PORT_PNAME, getDefaultPort());
+        }
+        else
+        {
+            return getCfgInt(JETTY_TLS_PORT_PNAME, getDefaultTlsPort());
+        }
+    }
+
+    /**
      * Initializes a new {@code Connector} instance to be added to a specific
      * {@code Server} which is to be started in a specific
      * {@code BundleContext}.
@@ -538,6 +558,11 @@ public abstract class AbstractJettyBundleActivator
                 didStart(bundleContext);
                 started = true;
             }
+            else
+            {
+                logger.info("Not starting the Jetty service for "
+                        + getClass().getName() + "(port=" + getPort() + ")");
+            }
         }
         finally
         {
@@ -588,7 +613,7 @@ public abstract class AbstractJettyBundleActivator
     protected boolean willStart(BundleContext bundleContext)
         throws Exception
     {
-        return true;
+        return getPort() > 0;
     }
 
     /**
@@ -694,7 +719,6 @@ public abstract class AbstractJettyBundleActivator
             String sslContextFactoryKeyStorePath
                 = getCfgString(JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH, null);
             Connector connector;
-            int port;
 
             // If HTTPS is not enabled, serve over HTTP.
             if (sslContextFactoryKeyStorePath == null)
@@ -704,7 +728,6 @@ public abstract class AbstractJettyBundleActivator
                     = new MuxServerConnector(
                             server,
                             new HttpConnectionFactory(httpCfg));
-                port = getCfgInt(JETTY_PORT_PNAME, getDefaultPort());
             }
             else
             {
@@ -758,11 +781,10 @@ public abstract class AbstractJettyBundleActivator
                                     sslContextFactory,
                                     "http/1.1"),
                             new HttpConnectionFactory(httpsCfg));
-                port = tlsPort;
             }
 
             // port
-            setPort(connector, port);
+            setPort(connector, getPort());
 
             return connector;
         }
