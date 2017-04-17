@@ -334,17 +334,26 @@ public abstract class AbstractJettyBundleActivator
      */
     private int getPort()
     {
-        String sslContextFactoryKeyStorePath
-            = getCfgString(JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH, null);
-
-        if (sslContextFactoryKeyStorePath == null)
-        {
-            return getCfgInt(JETTY_PORT_PNAME, getDefaultPort());
-        }
-        else
+        if (isTls())
         {
             return getCfgInt(JETTY_TLS_PORT_PNAME, getDefaultTlsPort());
         }
+        else
+        {
+            return getCfgInt(JETTY_PORT_PNAME, getDefaultPort());
+        }
+    }
+
+    /**
+     * @return true if this instance is configured to use TLS, and false
+     * otherwise.
+     */
+    protected boolean isTls()
+    {
+        String sslContextFactoryKeyStorePath
+            = getCfgString(JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH, null);
+
+        return sslContextFactoryKeyStorePath != null;
     }
 
     /**
