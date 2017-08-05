@@ -130,7 +130,7 @@ public class RetryStrategyTest
         assertEquals(1, retryTask.counter);
     }
 
-    class TestCounterTask
+    private class TestCounterTask
         extends RetryTask
     {
         int counter;

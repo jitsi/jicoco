@@ -16,13 +16,13 @@
 package org.jitsi.xmpp.util;
 
 import org.dom4j.*;
+import org.dom4j.Element;
 import org.dom4j.io.*;
-import org.jitsi.util.StringUtils;
 import org.jivesoftware.smack.packet.*;
 import org.jivesoftware.smack.provider.*;
 import org.jivesoftware.smack.util.*;
+import org.jxmpp.jid.impl.*;
 import org.xmlpull.v1.*;
-import org.xmpp.packet.*;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.Packet;
 
@@ -62,36 +62,22 @@ public final class IQUtils
             org.jivesoftware.smack.packet.IQ smackIQ)
         throws Exception
     {
-        String xml = smackIQ.toXML();
-        Element element = null;
+        XmlStringBuilder xml = smackIQ.toXML();
 
-        if (!StringUtils.isNullOrEmpty(xml))
-        {
-            SAXReader saxReader = new SAXReader();
-            Document document = saxReader.read(new StringReader(xml));
-
-            element = document.getRootElement();
-        }
+        SAXReader saxReader = new SAXReader();
+        Document document = saxReader.read(new StringReader(xml.toString()));
+        Element element = document.getRootElement();
 
         org.xmpp.packet.IQ iq = new org.xmpp.packet.IQ(element);
 
-        String from = smackIQ.getFrom();
-
-        if (!StringUtils.isNullOrEmpty(from))
-            iq.setFrom(new JID(from));
-        iq.setID(smackIQ.getPacketID());
-
-        String to = smackIQ.getTo();
-
-        if (!StringUtils.isNullOrEmpty(to))
-            iq.setTo(new JID(to));
+        iq.setID(smackIQ.getStanzaId());
         iq.setType(convert(smackIQ.getType()));
 
         return iq;
     }
 
     /**
-     * Converts a specific <tt>org.xmpp.packet.iQ</tt> instance into a new
+     * Converts a specific <tt>org.xmpp.packet.IQ</tt> instance into a new
      * <tt>org.jivesoftware.smack.packet.IQ</tt> instance which represents the
      * same stanza.
      *
@@ -109,32 +95,21 @@ public final class IQUtils
         throws Exception
     {
         Element element = iq.getChildElement();
-        IQProvider iqProvider = null;
-        Class<? extends IQ> iqClass = null;
+        IQProvider<org.jivesoftware.smack.packet.IQ> iqProvider = null;
 
         if (element != null)
         {
-            Object providerOrClass
-                = ProviderManager.getInstance().getIQProvider(
+            iqProvider
+                = ProviderManager.getIQProvider(
                         element.getName(),
                         element.getNamespaceURI());
-            if (providerOrClass instanceof IQProvider)
-            {
-                iqProvider = (IQProvider) providerOrClass;
-            }
-            else
-            {
-                // The cast is safe as ProviderManager allows only
-                // IQ or IQProvider here
-                iqClass = (Class<? extends IQ>) providerOrClass;
-            }
         }
 
         IQ.Type type = iq.getType();
         org.jivesoftware.smack.packet.IQ smackIQ = null;
-        org.jivesoftware.smack.packet.XMPPError smackError = null;
+        org.jivesoftware.smack.packet.XMPPError.Builder smackError = null;
 
-        if (iqProvider != null || iqClass != null || iq.getError() != null)
+        if (iqProvider != null || iq.getError() != null)
         {
             XmlPullParserFactory xmlPullParserFactory;
 
@@ -184,13 +159,7 @@ public final class IQUtils
                     }
                     else if (smackIQ == null && iqProvider != null)
                     {
-                        smackIQ = iqProvider.parseIQ(parser);
-                    }
-                    else if (smackIQ == null && iqClass != null)
-                    {
-                        smackIQ = (org.jivesoftware.smack.packet.IQ)
-                            PacketParserUtils.parseWithIntrospection(
-                                    name, iqClass, parser);
+                        smackIQ = iqProvider.parse(parser);
                     }
                 }
                 else if ((XmlPullParser.END_TAG == eventType
@@ -221,15 +190,15 @@ public final class IQUtils
         if (smackIQ == null
                 && (IQ.Type.error.equals(type) || IQ.Type.result.equals(type)))
         {
-            smackIQ
-                = new org.jivesoftware.smack.packet.IQ()
+            smackIQ = new org.jivesoftware.smack.packet.IQ((String)null)
+            {
+                @Override
+                protected IQChildElementXmlStringBuilder
+                    getIQChildElementBuilder(IQChildElementXmlStringBuilder xml)
                 {
-                    @Override
-                    public String getChildElementXML()
-                    {
-                        return "";
-                    }
-                };
+                    return xml;
+                }
+            };
         }
 
         if (smackIQ != null)
@@ -238,15 +207,15 @@ public final class IQUtils
             org.xmpp.packet.JID fromJID = iq.getFrom();
 
             if (fromJID != null)
-                smackIQ.setFrom(fromJID.toString());
+                smackIQ.setFrom(JidCreate.from(fromJID.toString()));
             // id
-            smackIQ.setPacketID(iq.getID());
+            smackIQ.setStanzaId(iq.getID());
 
             // to
             org.xmpp.packet.JID toJID = iq.getTo();
 
             if (toJID != null)
-                smackIQ.setTo(toJID.toString());
+                smackIQ.setTo(JidCreate.from(toJID.toString()));
             // type
             smackIQ.setType(convert(type));
 
@@ -322,7 +291,7 @@ public final class IQUtils
             String                              errorMessage)
     {
         return org.jivesoftware.smack.packet.IQ.createErrorResponse(
-                request, new XMPPError(errorCondition, errorMessage));
+                request, XMPPError.getBuilder(errorCondition).setConditionText(errorMessage).build());
     }
 
     /**
@@ -334,12 +303,12 @@ public final class IQUtils
      *         <tt>iqProvider</tt>.
      * @throws Exception if anything goes wrong
      */
-    public static org.jivesoftware.smack.packet.IQ parse(
+    public static <T extends org.jivesoftware.smack.packet.IQ> T parse(
         String iqStr,
-        IQProvider iqProvider)
+        IQProvider<T> iqProvider)
         throws Exception
     {
-        org.jivesoftware.smack.packet.IQ smackIQ = null;
+        T smackIQ = null;
 
         if (iqProvider != null)
         {
@@ -376,7 +345,7 @@ public final class IQUtils
                     eventType = parser.next();
                     if (XmlPullParser.START_TAG == eventType)
                     {
-                        smackIQ = iqProvider.parseIQ(parser);
+                        smackIQ = iqProvider.parse(parser);
 
                         if (smackIQ != null)
                         {
@@ -391,9 +360,9 @@ public final class IQUtils
                             smackIQ.setType(
                                 org.jivesoftware.smack.packet.IQ.Type
                                     .fromString(type));
-                            smackIQ.setPacketID(packetId);
-                            smackIQ.setFrom(from);
-                            smackIQ.setTo(to);
+                            smackIQ.setStanzaId(packetId);
+                            smackIQ.setFrom(JidCreate.from(from));
+                            smackIQ.setTo(JidCreate.from(to));
                         }
                     }
                     else
@@ -428,9 +397,9 @@ public final class IQUtils
      *         <tt>response</tt> is <tt>null</tt>.
      */
     public static String responseToXML(
-            org.jivesoftware.smack.packet.Packet response)
+            org.jivesoftware.smack.packet.Stanza response)
     {
-        return response != null ? response.toXML() : "(timeout)";
+        return response != null ? response.toXML().toString() : "(timeout)";
     }
 
     /** Prevents the initialization of new <tt>IQUtils</tt> instances. */

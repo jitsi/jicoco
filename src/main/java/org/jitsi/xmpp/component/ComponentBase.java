@@ -15,11 +15,13 @@
  */
 package org.jitsi.xmpp.component;
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.keepalive.*;
 import net.java.sip.communicator.util.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.provider.*;
+import org.jivesoftware.smackx.ping.packet.*;
+import org.jivesoftware.smackx.ping.provider.*;
+import org.jxmpp.jid.impl.*;
 import org.xmpp.component.*;
 import org.xmpp.packet.*;
 
@@ -241,8 +243,8 @@ public abstract class ComponentBase
         {
             if (pingInterval > 0)
             {
-                ProviderManager.getInstance().addIQProvider(
-                    "ping", "urn:xmpp:ping", new KeepAliveEventProvider());
+                ProviderManager.addIQProvider(
+                    "ping", "urn:xmpp:ping", new PingProvider());
 
                 pingTimer = new Timer();
                 pingTimer.schedule(new PingTask(), pingInterval, pingInterval);
@@ -564,8 +566,9 @@ public abstract class ComponentBase
 
                     String domain = getDomain();
                     String subdomain = getSubdomain();
-                    KeepAliveEvent ping
-                        = new KeepAliveEvent(subdomain + "." + domain, domain);
+                    Ping ping = new Ping(JidCreate.domainBareFrom(domain));
+                    ping.setFrom(JidCreate.domainBareFrom(
+                            subdomain + "." + domain));
 
                     IQ pingIq = IQUtils.convert(ping);
 
