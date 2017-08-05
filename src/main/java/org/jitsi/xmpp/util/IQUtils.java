@@ -290,8 +290,14 @@ public final class IQUtils
             XMPPError.Condition                 errorCondition,
             String                              errorMessage)
     {
+        XMPPError.Builder error = XMPPError.getBuilder(errorCondition);
+        if (errorMessage != null)
+        {
+            error.setDescriptiveEnText(errorMessage);
+        }
+
         return org.jivesoftware.smack.packet.IQ.createErrorResponse(
-                request, XMPPError.getBuilder(errorCondition).setConditionText(errorMessage).build());
+                request, error);
     }
 
     /**
