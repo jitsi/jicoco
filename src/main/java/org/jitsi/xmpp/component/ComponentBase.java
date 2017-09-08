@@ -67,6 +67,13 @@ public abstract class ComponentBase
         = "PROCESSING_TIME_LIMIT";
 
     /**
+     * The name of the property used to determine if we should
+     * reconnect on ping failures
+     */
+    private final static String RECONNECT_ON_PING_FAILURES
+            = "RECONNECT_ON_PING_FAILURES";
+
+    /**
      * The hostname or IP address to which this component will be connected.
      */
     private final String hostname;
@@ -122,6 +129,12 @@ public abstract class ComponentBase
      * How many times the ping has failed so far ?
      */
     private int pingFailures = 0;
+
+    /**
+     * If we exceed the maximum number of ping failures should we trigger a
+     * reconnect to the xmpp server
+     */
+    private boolean reconnectOnPingFailure = false;
 
     /**
      * Time used to schedule ping and timeout tasks.
@@ -197,10 +210,14 @@ public abstract class ComponentBase
             configPropertiesBase + PROCESSING_TIME_LIMIT_PNAME,
             DEFAULT_PROCESSING_TIME_LIMIT);
 
+        reconnectOnPingFailure = config.getBoolean(
+            configPropertiesBase + RECONNECT_ON_PING_FAILURES, false);
+
         logger.info("Component " + configPropertiesBase  + " config: ");
         logger.info("  ping interval: " + pingInterval + " ms");
         logger.info("  ping timeout: " + pingTimeout + " ms");
         logger.info("  ping threshold: " + pingThreshold);
+        logger.info("  reconnect on ping failures: " + reconnectOnPingFailure);
     }
 
     /**
@@ -277,6 +294,7 @@ public abstract class ComponentBase
             }
 
             timeouts.clear();
+            pingFailures = 0;
         }
     }
 
@@ -292,6 +310,24 @@ public abstract class ComponentBase
         synchronized (timeouts)
         {
             return pingFailures < pingThreshold;
+        }
+    }
+
+    /**
+     * Restart the component connection if we have exceeded the
+     * threshold for ping failures
+     */
+    public void reconnectComponent() {
+        // need to make externalComponent here
+        logger.info("Restarting xmpp component connection that failed");
+        shutdown();
+        timeouts.clear();
+        try {
+            compMan.removeComponent(this.getSubdomain());
+            dispose();
+            compMan.addComponent(getSubdomain(), this);
+        } catch (Exception ex) {
+            logger.error("Failed to restart xmpp component");
         }
     }
 
@@ -627,8 +663,11 @@ public abstract class ComponentBase
                     pingFailures++;
 
                     logger.error("Ping timeout for ID: " + packetId);
-
                     timeouts.remove(packetId);
+
+                    if(!isConnectionAlive() && reconnectOnPingFailure) {
+                        reconnectComponent();
+                    }
                 }
             }
         }
