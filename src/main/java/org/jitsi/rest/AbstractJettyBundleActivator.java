@@ -41,14 +41,14 @@ public abstract class AbstractJettyBundleActivator
      * The name of the {@code ConfigurationService} and/or {@code System}
      * property which specifies the Jetty HTTP server host.
      */
-    private static final String JETTY_HOST_PNAME = ".jetty.host";
+    public static final String JETTY_HOST_PNAME = ".jetty.host";
 
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
      * property which specifies the Jetty HTTP server port. The default value is
      * {@code 8080}.
      */
-    static final String JETTY_PORT_PNAME = ".jetty.port";
+    public static final String JETTY_PORT_PNAME = ".jetty.port";
 
     /**
      * The name of the {@code ConfigurationService} and/or {@code System}
@@ -79,7 +79,7 @@ public abstract class AbstractJettyBundleActivator
      * property which specifies the Jetty HTTPS server port. The default value
      * is {@code 8443}.
      */
-    static final String JETTY_TLS_PORT_PNAME = ".jetty.tls.port";
+    public static final String JETTY_TLS_PORT_PNAME = ".jetty.tls.port";
 
     /**
      * The {@code Logger} used by the {@code AbstractJettyBundleActivator} class
