@@ -186,7 +186,7 @@ public class ComponentMain
         String host = component.getHostname();
         int port = component.getPort();
 
-        this.componentManager = new ExternalComponentManager(host, port);
+        this.componentManager = new ExternalComponentManager(host, port, false);
 
         String componentSubDomain = component.getSubdomain();
         componentManager.setSecretKey(

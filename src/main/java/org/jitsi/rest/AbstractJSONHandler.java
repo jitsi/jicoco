@@ -15,7 +15,6 @@
  */
 package org.jitsi.rest;
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.colibri.*;
 import net.java.sip.communicator.util.*;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;
@@ -78,19 +77,19 @@ public abstract class AbstractJSONHandler
      * Analyzes response IQ returned by {@code AbstractJSONHandler#handle()}
      * method(s) and translates XMPP error into HTTP status code.
      *
-     * @param responseIQ the IQ that is not {@link ColibriConferenceIQ} from
+     * @param responseIQ the IQ that is not ColibriConferenceIQ from
      *        which XMPP error will be extracted.
      * @return HTTP status code
      */
     protected static int getHttpStatusCodeForResultIq(IQ responseIQ)
     {
-        String condition = responseIQ.getError().getCondition();
+        XMPPError.Condition condition = responseIQ.getError().getCondition();
 
-        if (XMPPError.Condition.not_authorized.toString().equals(condition))
+        if (XMPPError.Condition.not_authorized.equals(condition))
         {
             return HttpServletResponse.SC_UNAUTHORIZED;
         }
-        else if (XMPPError.Condition.service_unavailable.toString().equals(
+        else if (XMPPError.Condition.service_unavailable.equals(
                 condition))
         {
             return HttpServletResponse.SC_SERVICE_UNAVAILABLE;
