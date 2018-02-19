@@ -28,6 +28,7 @@ import org.jivesoftware.whack.*;
 
 import org.osgi.framework.*;
 
+import org.xeustechnologies.jcl.*;
 import org.xmpp.component.*;
 
 import java.util.concurrent.*;
@@ -108,6 +109,9 @@ public class ComponentMain
 
         bundleConfig.setSystemPropertyDefaults();
 
+        ClassLoader classLoader = loadBundlesJars(bundleConfig);
+        OSGi.setClassLoader(classLoader);
+
         /*
          * Start OSGi. It will invoke the application programming interfaces
          * (APIs) of Jitsi Videobridge. Each of them will keep the application
@@ -172,6 +176,18 @@ public class ComponentMain
         stopComponent();
 
         OSGi.stop(activator);
+    }
+
+    private ClassLoader loadBundlesJars(OSGiBundleConfig bundleConfig) {
+        String bundlesJarsPath = bundleConfig.getBundlesJarsPath();
+        if (bundlesJarsPath == null)
+        {
+            return ClassLoader.getSystemClassLoader();
+        }
+
+        JarClassLoader jcl = new JarClassLoader();
+        jcl.add(bundlesJarsPath + "/");
+        return new OSGiClassLoader(jcl, ClassLoader.getSystemClassLoader());
     }
 
     /**
