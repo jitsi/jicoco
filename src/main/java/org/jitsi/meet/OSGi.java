@@ -56,10 +56,12 @@ public class OSGi
         if (OSGi.bundleConfig == null)
             throw new IllegalStateException("Bundle config not initialized");
 
+        if (classLoader == null)
+            throw new IllegalStateException("Class Loader not initialized");
+
         if (launcher == null)
         {
             String[][] bundles = bundleConfig.getBundles();
-
             launcher = new OSGiLauncher(bundles, classLoader);
         }
 
