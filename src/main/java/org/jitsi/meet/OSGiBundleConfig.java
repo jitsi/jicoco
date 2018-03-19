@@ -40,6 +40,13 @@ public abstract class OSGiBundleConfig
     private static final String BUNDLES_FILE = "bundles.txt";
 
     /**
+     * The default filename of the additional bundles launch sequence file.
+     * This class expects to find that file in
+     * SC_HOME_DIR_LOCATION/SC_HOME_DIR_NAME.
+     */
+    private static final String EXTENSION_FILE = "extension_bundles.txt";
+
+    /**
      * Loads list of OSGi bundles to run from specified file.
      *
      * @param filename the name of the file that contains a list of OSGi
@@ -94,6 +101,8 @@ public abstract class OSGiBundleConfig
      * from SC_HOME_DIR_LOCATION/SC_HOME_DIR_NAME/BUNDLES_FILE, or, if that file
      * doesn't exist, from the result of {@link #getBundlesImpl()}.
      *
+     * Also concat result with bundles from  {@link #EXTENSION_FILE} file.
+     *
      * @return  The locations of the OSGi bundles (or rather of the class files
      * of their <tt>BundleActivator</tt> implementations). An element of the
      * <tt>BUNDLES</tt> array is an array of <tt>String</tt>s and represents an
@@ -102,8 +111,17 @@ public abstract class OSGiBundleConfig
     public String[][] getBundles()
     {
         String[][] bundlesFromFile = loadBundlesFromFile(BUNDLES_FILE);
-
-        return (bundlesFromFile == null) ? getBundlesImpl() : bundlesFromFile;
+        String[][] extensionsBundlesFromFile = loadBundlesFromFile(EXTENSION_FILE);
+        if (bundlesFromFile == null) {
+            bundlesFromFile = getBundlesImpl();
+        }
+        String[][] allBundles;
+        if (bundlesFromFile == null) {
+            allBundles = extensionsBundlesFromFile;
+        } else {
+            allBundles = ArrayUtils.concat(bundlesFromFile, extensionsBundlesFromFile);
+        }
+        return allBundles;
     }
 
     /**
