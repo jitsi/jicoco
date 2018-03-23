@@ -17,7 +17,6 @@ package org.jitsi.meet;
 
 import net.java.sip.communicator.service.shutdown.*;
 import net.java.sip.communicator.util.*;
-import net.java.sip.communicator.util.Logger;
 
 import org.jitsi.impl.configuration.*;
 import org.jitsi.retry.*;
@@ -31,8 +30,7 @@ import org.osgi.framework.*;
 import org.xeustechnologies.jcl.*;
 import org.xmpp.component.*;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.concurrent.*;
 
 /**
