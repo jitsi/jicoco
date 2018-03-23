@@ -184,23 +184,25 @@ public class ComponentMain
         String bundlesJarsPath = bundleConfig.getBundlesJarsPath();
         if (bundlesJarsPath == null)
         {
-            return getClassLoader();
+            return getPlatformClassLoader();
         }
 
         JarClassLoader jcl = new JarClassLoader();
         jcl.add(bundlesJarsPath + "/");
-        return new OSGiClassLoader(jcl, getClassLoader());
+        return new OSGiClassLoader(jcl, getPlatformClassLoader());
     }
 
-    private ClassLoader getClassLoader() {
+    private ClassLoader getPlatformClassLoader() {
         ClassLoader cl;
         //JDK 9
         try
         {
-            Method getPlatformClassLoader = ClassLoader.class.getMethod("getPlatformClassLoader");
+            Method getPlatformClassLoader =
+                    ClassLoader.class.getMethod("getPlatformClassLoader");
             cl = (ClassLoader) getPlatformClassLoader.invoke(null);
         }
-        catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException t)
+        catch (NoSuchMethodException | IllegalAccessException |
+                InvocationTargetException t)
         {
             // pre-JDK9
             cl = ClassLoader.getSystemClassLoader();
