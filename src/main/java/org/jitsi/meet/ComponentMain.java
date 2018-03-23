@@ -31,6 +31,8 @@ import org.osgi.framework.*;
 import org.xeustechnologies.jcl.*;
 import org.xmpp.component.*;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.concurrent.*;
 
 /**
@@ -182,12 +184,28 @@ public class ComponentMain
         String bundlesJarsPath = bundleConfig.getBundlesJarsPath();
         if (bundlesJarsPath == null)
         {
-            return ClassLoader.getSystemClassLoader();
+            return getClassLoader();
         }
 
         JarClassLoader jcl = new JarClassLoader();
         jcl.add(bundlesJarsPath + "/");
-        return new OSGiClassLoader(jcl, ClassLoader.getSystemClassLoader());
+        return new OSGiClassLoader(jcl, getClassLoader());
+    }
+
+    private ClassLoader getClassLoader() {
+        ClassLoader cl;
+        //JDK 9
+        try
+        {
+            Method getPlatformClassLoader = ClassLoader.class.getMethod("getPlatformClassLoader");
+            cl = (ClassLoader) getPlatformClassLoader.invoke(null);
+        }
+        catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException t)
+        {
+            // pre-JDK9
+            cl = ClassLoader.getSystemClassLoader();
+        }
+        return cl;
     }
 
     /**
