@@ -178,6 +178,12 @@ public class ComponentMain
         OSGi.stop(activator);
     }
 
+    /**
+     * Creates class loader that able to load classes from jars of selected by
+     * bundleConfig {@link OSGiBundleConfig#BUNDLES_JARS_PATH} parameter.
+     * @param bundleConfig - instance with path to extended bundles jar.
+     * @return OSGi class loader for bundles.
+     */
     private ClassLoader loadBundlesJars(OSGiBundleConfig bundleConfig) {
         String bundlesJarsPath = bundleConfig.getBundlesJarsPath();
         if (bundlesJarsPath == null)
@@ -190,6 +196,11 @@ public class ComponentMain
         return new OSGiClassLoader(jcl, getPlatformClassLoader());
     }
 
+    /**
+     * For Java9 returns getPlatformClassLoader, otherwise
+     * getSystemClassLoader.
+     * @return default system class loader or platform class loader.
+     */
     private ClassLoader getPlatformClassLoader() {
         ClassLoader cl;
         //JDK 9

@@ -105,6 +105,11 @@ public class OSGi
         OSGi.bundleConfig = bundleConfig;
     }
 
+    /**
+     * Modifies OSGi class loader.
+     * @param classLoader this class loader would be used to load and
+     *                    instantiate bundles.
+     */
     public static void setClassLoader(ClassLoader classLoader) {
         OSGi.classLoader = classLoader;
     }
