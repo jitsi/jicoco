@@ -38,6 +38,11 @@ public class OSGi
     private static OSGiBundleConfig bundleConfig;
 
     /**
+     * OSGi class loader
+     */
+    private static ClassLoader classLoader;
+
+    /**
      * Starts the OSGi infrastructure.
      *
      * @param activator the <tt>BundleActivator</tt> that will be launched after
@@ -51,11 +56,13 @@ public class OSGi
         if (OSGi.bundleConfig == null)
             throw new IllegalStateException("Bundle config not initialized");
 
+        if (classLoader == null)
+            throw new IllegalStateException("Class Loader not initialized");
+
         if (launcher == null)
         {
             String[][] bundles = bundleConfig.getBundles();
-
-            launcher = new OSGiLauncher(bundles);
+            launcher = new OSGiLauncher(bundles, classLoader);
         }
 
         launcher.start(activator);
@@ -97,4 +104,14 @@ public class OSGi
     {
         OSGi.bundleConfig = bundleConfig;
     }
+
+    /**
+     * Modifies OSGi class loader.
+     * @param classLoader this class loader would be used to load and
+     *                    instantiate bundles.
+     */
+    public static void setClassLoader(ClassLoader classLoader) {
+        OSGi.classLoader = classLoader;
+    }
+
 }

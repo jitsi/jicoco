@@ -17,7 +17,6 @@ package org.jitsi.meet;
 
 import net.java.sip.communicator.service.shutdown.*;
 import net.java.sip.communicator.util.*;
-import net.java.sip.communicator.util.Logger;
 
 import org.jitsi.impl.configuration.*;
 import org.jitsi.retry.*;
@@ -28,8 +27,10 @@ import org.jivesoftware.whack.*;
 
 import org.osgi.framework.*;
 
+import org.xeustechnologies.jcl.*;
 import org.xmpp.component.*;
 
+import java.lang.reflect.*;
 import java.util.concurrent.*;
 
 /**
@@ -108,6 +109,9 @@ public class ComponentMain
 
         bundleConfig.setSystemPropertyDefaults();
 
+        ClassLoader classLoader = loadBundlesJars(bundleConfig);
+        OSGi.setClassLoader(classLoader);
+
         /*
          * Start OSGi. It will invoke the application programming interfaces
          * (APIs) of Jitsi Videobridge. Each of them will keep the application
@@ -172,6 +176,47 @@ public class ComponentMain
         stopComponent();
 
         OSGi.stop(activator);
+    }
+
+    /**
+     * Creates class loader that able to load classes from jars of selected by
+     * bundleConfig {@link OSGiBundleConfig#BUNDLES_JARS_PATH} parameter.
+     * @param bundleConfig - instance with path to extended bundles jar.
+     * @return OSGi class loader for bundles.
+     */
+    private ClassLoader loadBundlesJars(OSGiBundleConfig bundleConfig) {
+        String bundlesJarsPath = bundleConfig.getBundlesJarsPath();
+        if (bundlesJarsPath == null)
+        {
+            return getPlatformClassLoader();
+        }
+
+        JarClassLoader jcl = new JarClassLoader();
+        jcl.add(bundlesJarsPath + "/");
+        return new OSGiClassLoader(jcl, getPlatformClassLoader());
+    }
+
+    /**
+     * For Java9 returns getPlatformClassLoader, otherwise
+     * getSystemClassLoader.
+     * @return default system class loader or platform class loader.
+     */
+    private ClassLoader getPlatformClassLoader() {
+        ClassLoader cl;
+        //JDK 9
+        try
+        {
+            Method getPlatformClassLoader =
+                    ClassLoader.class.getMethod("getPlatformClassLoader");
+            cl = (ClassLoader) getPlatformClassLoader.invoke(null);
+        }
+        catch (NoSuchMethodException | IllegalAccessException |
+                InvocationTargetException t)
+        {
+            // pre-JDK9
+            cl = ClassLoader.getSystemClassLoader();
+        }
+        return cl;
     }
 
     /**

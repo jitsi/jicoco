@@ -34,6 +34,11 @@ import org.jitsi.util.*;
 public abstract class OSGiBundleConfig
 {
     /**
+     * The default filepath where jars with bundles would be stored.
+     */
+    private static final String BUNDLES_JARS_PATH = "bundles/";
+
+    /**
      * The default filename of the bundles launch sequence file. This class
      * expects to find that file in SC_HOME_DIR_LOCATION/SC_HOME_DIR_NAME.
      */
@@ -133,6 +138,23 @@ public abstract class OSGiBundleConfig
      * OSGi start level.
      */
     protected abstract String[][] getBundlesImpl();
+
+    /**
+     * Returns absolute path to the directory where jar files with bundles
+     * supposed to be placed at to load them.
+     */
+    public String getBundlesJarsPath() {
+        File file = ConfigUtils.getAbsoluteFile(BUNDLES_JARS_PATH, null);
+        if (file == null || !file.exists())
+        {
+            File localPath = new File(BUNDLES_JARS_PATH);
+            if (localPath == null || !localPath.exists()) {
+                return null;
+            }
+            return localPath.getAbsolutePath();
+        }
+        return file.getAbsolutePath();
+    }
 
     /**
      * Returns a {@code Map} which contains default system properties common to
