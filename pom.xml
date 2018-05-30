@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>jicoco</artifactId>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.2-SNAPSHOT</version>
   <packaging>jar</packaging>
   <properties>
     <jitsi-desktop.version>2.13.77e7a10</jitsi-desktop.version>
@@ -21,6 +21,11 @@
   <url>https://github.com/jitsi/jicoco</url>
 
   <dependencies>
+    <dependency>
+      <groupId>com.datadoghq</groupId>
+        <artifactId>java-dogstatsd-client</artifactId>
+        <version>2.5</version>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-proxy</artifactId>
