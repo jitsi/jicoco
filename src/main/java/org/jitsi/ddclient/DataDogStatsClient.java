@@ -55,6 +55,7 @@ public class DataDogStatsClient
     public DataDogStatsClient(String prefix, String domain, int port)
     {
         this.innerClient = new NonBlockingStatsDClient(prefix, domain, port);
+        this.prefix = prefix;
         logger.info(String.format("registered datadog client with " +
                 "prefix %s, domain %s and port %d", prefix, domain, port));
     }
