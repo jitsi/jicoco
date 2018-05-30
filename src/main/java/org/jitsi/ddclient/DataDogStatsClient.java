@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jitsi.stats;
+package org.jitsi.ddclient;
 
 import com.timgroup.statsd.*;
 import org.jitsi.util.*;
 
+import java.util.*;
+
 /**
  * Encapsulates a {@link NonBlockingStatsDClient} to be able to send
- * statistics to local data-hog server
+ * statistics to a DataDog server
  *
  * @author Nik Vaessen
  */
@@ -33,36 +35,28 @@ public class DataDogStatsClient
         = Logger.getLogger(DataDogStatsClient.class);
 
     /**
-     * Single instance of this {@link DataDogStatsClient}
-     */
-    private static DataDogStatsClient singleton = new DataDogStatsClient();
-
-    /**
-     * The client to the data-hog service
+     * The client to the datadog service
      */
     private NonBlockingStatsDClient innerClient;
 
     /**
-     * Create the single instance of this {@link DataDogStatsClient}
-     * by creating the {@link NonBlockingStatsDClient}
+     * The prefix which will always be placed before the aspect
      */
-    private DataDogStatsClient()
-    {
-        this.innerClient = new NonBlockingStatsDClient(
-            "jicofo",
-            "localhost",
-            8125
-        );
-    }
+    private String prefix;
 
     /**
-     * Get the single instance of this {@link DataDogStatsClient}
+     * Create an instance of this {@link DataDogStatsClient}
+     * by creating the {@link NonBlockingStatsDClient}
      *
-     * @return the DataDogStatsClient
+     * @param prefix the prefix used in every call to datadog
+     * @param domain the domain of the DataDog server
+     * @param port the port the DataDog server is running on
      */
-    public static DataDogStatsClient getClient()
+    public DataDogStatsClient(String prefix, String domain, int port)
     {
-        return singleton;
+        this.innerClient = new NonBlockingStatsDClient(prefix, domain, port);
+        logger.info(String.format("registered datadog client with " +
+                "prefix %s, domain %s and port %d", prefix, domain, port));
     }
 
     /**
@@ -71,8 +65,19 @@ public class DataDogStatsClient
      * @param aspect the aspect to increment
      * @param tags optional tags to send along with increasing this counter
      */
-    public final void incrementCounter(String aspect, String... tags)
+    public void incrementCounter(String aspect, String... tags)
     {
         innerClient.incrementCounter(aspect, tags);
+        logger.debug(String.format("Incrementing statsd counter " +
+            "(prefix: %s aspect %s, tags: %s)",
+            prefix, aspect, Arrays.toString(tags)));
+    }
+
+    /**
+     * Stop the client, disabling further calls
+     */
+    public void stop()
+    {
+        this.innerClient.stop();
     }
 }
