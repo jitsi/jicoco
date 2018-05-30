@@ -56,8 +56,12 @@ public class DataDogStatsClient
     {
         this.innerClient = new NonBlockingStatsDClient(prefix, domain, port);
         this.prefix = prefix;
-        logger.info(String.format("registered datadog client with " +
+
+        if (logger.isInfoEnabled())
+        {
+            logger.info(String.format("registered datadog client with " +
                 "prefix %s, domain %s and port %d", prefix, domain, port));
+        }
     }
 
     /**
@@ -69,9 +73,13 @@ public class DataDogStatsClient
     public void incrementCounter(String aspect, String... tags)
     {
         innerClient.incrementCounter(aspect, tags);
-        logger.debug(String.format("Incrementing statsd counter " +
-            "(prefix: %s aspect %s, tags: %s)",
-            prefix, aspect, Arrays.toString(tags)));
+
+        if (logger.isDebugEnabled())
+        {
+            logger.debug(String.format("Incrementing statsd counter " +
+                    "(prefix: %s, aspect: %s, tags: %s)",
+                prefix, aspect, Arrays.toString(tags)));
+        }
     }
 
     /**

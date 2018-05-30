@@ -92,7 +92,7 @@ public class Activator
         String prefix = ConfigUtils.getString(cfg,
             DDCLIENT_PREFIX_PNAME, DEFAULT_PREFIX);
 
-        if(prefix.isEmpty())
+        if (prefix.isEmpty())
         {
             return;
         }
