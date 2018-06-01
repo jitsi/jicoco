@@ -15,13 +15,14 @@
  */
 package org.jitsi.ddclient;
 
+import com.timgroup.statsd.*;
 import net.java.sip.communicator.util.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.util.*;
 import org.osgi.framework.*;
 
 /**
- * Actives a {@link DataDogStatsClient} as an OSGi service
+ * Actives a {@link StatsDClient} as an OSGi service
  *
  * @author Nik Vaessen
  */
@@ -30,20 +31,20 @@ public class Activator
 {
 
     /**
-     * The property for the prefix of for the {@link DataDogStatsClient}
+     * The property for the prefix of for the {@link StatsDClient}
      * instance managed by this {@link Activator}.
      */
     public static final String DDCLIENT_PREFIX_PNAME
         = "org.jitsi.ddclient.prefix";
 
     /**
-     * The property for the host of for the {@link DataDogStatsClient}
+     * The property for the host of for the {@link StatsDClient}
      * instance managed by this {@link Activator}.
      */
     public static final String DDCLIENT_HOST_PNAME = "org.jitsi.ddclient.host";
 
     /**
-     * The property for the port of for the {@link DataDogStatsClient}
+     * The property for the port of for the {@link StatsDClient}
      * instance managed by this {@link Activator}.
      */
     public static final String DDCLIENT_PORT_PNAME = "org.jitsi.ddclient.port";
@@ -65,14 +66,14 @@ public class Activator
     private static final int DEFAULT_PORT = 8125;
 
     /**
-     * The {@link DataDogStatsClient} managed by this {@link BundleActivator}
+     * The {@link StatsDClient} managed by this {@link BundleActivator}
      */
-    private DataDogStatsClient client;
+    private StatsDClient client;
 
     /**
      * Registers the DataDogStatsClient
      */
-    private ServiceRegistration<DataDogStatsClient> serviceRegistration;
+    private ServiceRegistration<StatsDClient> serviceRegistration;
 
     /**
      * The {@code ConfigurationService} which looks up values of configuration
@@ -87,6 +88,11 @@ public class Activator
     public void start(BundleContext context)
         throws Exception
     {
+        if (client != null)
+        {
+            return;
+        }
+
         cfg = ServiceUtils.getService(context, ConfigurationService.class);
 
         String prefix = ConfigUtils.getString(cfg,
@@ -102,10 +108,10 @@ public class Activator
         int port = ConfigUtils.getInt(cfg,
             DDCLIENT_PORT_PNAME, DEFAULT_PORT);
 
-        client = new DataDogStatsClient(prefix, host, port);
+        client = new NonBlockingStatsDClient(prefix, host, port);
 
         serviceRegistration
-            = context.registerService(DataDogStatsClient.class, client, null);
+            = context.registerService(StatsDClient.class, client, null);
     }
 
     /**
