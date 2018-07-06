@@ -15,6 +15,7 @@
   <packaging>jar</packaging>
   <properties>
     <jitsi-desktop.version>2.13.77e7a10</jitsi-desktop.version>
+    <smack.version>4.2.2-b1c107f</smack.version>
   </properties>
 
   <name>jicoco</name>
@@ -60,8 +61,18 @@
     </dependency>
     <dependency>
       <groupId>org.igniterealtime.smack</groupId>
+      <artifactId>smack-core</artifactId>
+      <version>${smack.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.igniterealtime.smack</groupId>
       <artifactId>smack-extensions</artifactId>
-      <version>4.2.1</version>
+      <version>${smack.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.igniterealtime.smack</groupId>
+      <artifactId>smack-tcp</artifactId>
+      <version>${smack.version}</version>
     </dependency>
     <!-- org.jitsi -->
     <dependency>
