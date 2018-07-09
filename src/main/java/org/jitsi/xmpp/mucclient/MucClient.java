@@ -50,6 +50,12 @@ public class MucClient
         =  org.jitsi.util.Logger.getLogger(MucClient.class);
 
     /**
+     * The IQ types we are interested in.
+     */
+    private static final IQ.Type[] IQ_TYPES
+        = new IQ.Type[]{ IQ.Type.get, IQ.Type.set};
+
+    /**
      * Creates a Smack {@link XMPPTCPConnectionConfiguration} based on
      * a {@link MucClientManager.Configuration}.
      * @param config the {@link MucClientManager.Configuration} which describes
@@ -441,7 +447,7 @@ public class MucClient
      */
     void registerIQ(IQ iq)
     {
-        for (IQ.Type type : new IQ.Type[]{ IQ.Type.get, IQ.Type.set })
+        for (IQ.Type type : IQ_TYPES)
         {
             xmppConnection.registerIQRequestHandler(
                 new AbstractIqRequestHandler(iq.getChildElementName(),

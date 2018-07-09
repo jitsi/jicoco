@@ -136,6 +136,8 @@ public class MucClientManager
      */
     private final Object syncRoot = new Object();
 
+    private final Executor executor;
+
     /**
      * Initializes a new {@link MucClientManager} instance.
      *
@@ -143,10 +145,24 @@ public class MucClientManager
      */
     public MucClientManager(String[] features)
     {
+        this(features,
+             ExecutorUtils.newCachedThreadPool(
+                 true,
+                 MucClientManager.class.getSimpleName()));
+    }
+
+    /**
+     * Initializes a new {@link MucClientManager} instance.
+     *
+     * @param features the features to use for disco#info.
+     */
+    public MucClientManager(String[] features, Executor executor)
+    {
         SmackConfiguration.setUnknownIqRequestReplyMode(
             SmackConfiguration.UnknownIqRequestReplyMode
                 .replyFeatureNotImplemented);
 
+        this.executor = executor;
         this.features.addAll(Arrays.asList(features));
     }
 
@@ -171,8 +187,7 @@ public class MucClientManager
      */
     public void addMucClient(Configuration config)
     {
-        // TODO: use an executor?
-        new Thread(() -> this.doAddMucClient(config)).start();
+        executor.execute(() -> this.doAddMucClient(config));
     }
 
     /**
@@ -208,7 +223,7 @@ public class MucClientManager
     {
         synchronized (syncRoot)
         {
-            saveLocally(extension);
+            saveExtension(extension);
 
             mucClients.values().forEach(
                 mucClient -> mucClient.setPresenceExtension(extension));
@@ -220,7 +235,7 @@ public class MucClientManager
      * extension with the same element name and namespace.
      * @param extension the extension to save.
      */
-    private void saveLocally(ExtensionElement extension)
+    private void saveExtension(ExtensionElement extension)
     {
         synchronized (syncRoot)
         {
@@ -244,7 +259,7 @@ public class MucClientManager
      * @param elementName the element name of the extension to remove.
      * @param namespace the namespace of the extension to remove.
      */
-    private void removeLocally(String elementName, String namespace)
+    private void removeExtension(String elementName, String namespace)
     {
         presenceExtensions
             .remove(XmppStringUtils.generateKey(elementName, namespace));
@@ -269,7 +284,7 @@ public class MucClientManager
     {
         synchronized (syncRoot)
         {
-            removeLocally(elementName, namespace);
+            removeExtension(elementName, namespace);
 
             mucClients.values().forEach(
                 mucClient -> mucClient.removePresenceExtension(
