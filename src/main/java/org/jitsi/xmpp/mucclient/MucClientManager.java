@@ -24,7 +24,6 @@ import org.jxmpp.util.*;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.*;
 
 /**
  * Manages a set of {@link MucClient}, each of which represents an XMPP client
@@ -115,7 +114,7 @@ public class MucClientManager
      * The listener which is to be called when any of our {@link MucClient}s
      * receive an IQ from Smack.
      */
-    private Function<IQ, IQ> iqListener;
+    private IQListener iqListener;
 
     /**
      * The list of IQs which {@link #iqListener} is interested in
@@ -137,6 +136,15 @@ public class MucClientManager
     private final Object syncRoot = new Object();
 
     private final Executor executor;
+
+    /**
+     * Initializes a new {@link MucClientManager} instance.
+     *
+     */
+    public MucClientManager()
+    {
+        this(new String[0]);
+    }
 
     /**
      * Initializes a new {@link MucClientManager} instance.
@@ -163,7 +171,10 @@ public class MucClientManager
                 .replyFeatureNotImplemented);
 
         this.executor = executor;
-        this.features.addAll(Arrays.asList(features));
+        if (features != null)
+        {
+            this.features.addAll(Arrays.asList(features));
+        }
     }
 
     /**
@@ -305,7 +316,7 @@ public class MucClientManager
      * type is received (see {@link #registerIQ(IQ)}).
      * @param iqListener the listener to set.
      */
-    public void setIQListener(Function<IQ, IQ> iqListener)
+    public void setIQListener(IQListener iqListener)
     {
         synchronized (syncRoot)
         {
@@ -368,7 +379,7 @@ public class MucClientManager
     /**
      * @return the IQ listener.
      */
-    Function<IQ, IQ> getIqListener()
+    IQListener getIqListener()
     {
         return iqListener;
     }

@@ -31,7 +31,6 @@ import org.jitsi.xmpp.*;
 import org.jxmpp.stringprep.*;
 
 import java.util.*;
-import java.util.function.*;
 
 /**
  * The {@link MucClient} is responsible for handling a single XMPP connection
@@ -125,7 +124,7 @@ public class MucClient
     /**
      * The listener, if any, to call when we receive an IQ from Smack.
      */
-    private Function<IQ, IQ> iqListener;
+    private IQListener iqListener;
 
     /**
      * Stores our last MUC presence packet for future update.
@@ -434,7 +433,7 @@ public class MucClient
      * Sets the listener for IQs.
      * @param iqListener the listener to set.
      */
-    void setIQListener(Function<IQ, IQ> iqListener)
+    void setIQListener(IQListener iqListener)
     {
         this.iqListener = iqListener;
     }
@@ -481,14 +480,14 @@ public class MucClient
     {
         IQ responseIq = null;
 
-        Function<IQ, IQ> iqListener = this.iqListener;
+        IQListener iqListener = this.iqListener;
         if (iqListener == null)
         {
             logger.error("Received an IQ, but the listener is null.");
         }
         else
         {
-            responseIq = iqListener.apply(iq);
+            responseIq = iqListener.handleIq(iq, this);
         }
 
         if (responseIq == null)
