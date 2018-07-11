@@ -16,6 +16,7 @@
  */
 package org.jitsi.xmpp.mucclient;
 
+import org.jitsi.util.*;
 import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
@@ -31,6 +32,7 @@ import org.jitsi.xmpp.*;
 import org.jxmpp.stringprep.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * The {@link MucClient} is responsible for handling a single XMPP connection
@@ -45,7 +47,7 @@ public class MucClient
      * The {@link Logger} used by the {@link MucClient} class and its instances
      * for logging output.
      */
-    private static final org.jitsi.util.Logger logger
+    private static final Logger logger
         =  org.jitsi.util.Logger.getLogger(MucClient.class);
 
     /**
@@ -56,14 +58,14 @@ public class MucClient
 
     /**
      * Creates a Smack {@link XMPPTCPConnectionConfiguration} based on
-     * a {@link MucClientManager.Configuration}.
-     * @param config the {@link MucClientManager.Configuration} which describes
+     * a {@link MucClientConfiguration}.
+     * @param config the {@link MucClientConfiguration} which describes
      * the connection.
      * @return the {@link XMPPTCPConnectionConfiguration}.
      */
     private static XMPPTCPConnectionConfiguration
         createXMPPTCPConnectionConfiguration(
-            MucClientManager.Configuration config)
+            MucClientConfiguration config)
     {
         String domain = config.getDomain();
         if (domain == null)
@@ -109,12 +111,7 @@ public class MucClient
      * The {@link AbstractXMPPConnection} object for the connection to
      * the xmpp server
      */
-    private final AbstractXMPPConnection xmppConnection;
-
-    /**
-     * The {@link MultiUserChat} object for the MUC we'll be joining.
-     */
-    private MultiUserChat muc;
+    private AbstractXMPPConnection xmppConnection;
 
     /**
      * The {@link MucClientManager} which owns this {@link MucClient}.
@@ -127,22 +124,6 @@ public class MucClient
     private IQListener iqListener;
 
     /**
-     * Stores our last MUC presence packet for future update.
-     */
-    private Presence lastPresenceSent;
-
-    /**
-     * Intercepts presence packets sent by smack and saves the last one.
-     */
-    private PresenceListener presenceInterceptor = this::presenceSent;
-
-
-    /**
-     * The JID of the MUC this client is to join.
-     */
-    private EntityBareJid mucJid;
-
-    /**
      * The nickname of this client in the MUC.
      */
     private Resourcepart mucNickname;
@@ -153,16 +134,35 @@ public class MucClient
     private IQRequestHandler.Mode iqHandlerMode = IQRequestHandler.Mode.async;
 
     /**
+     * This {@link MucClient}'s configuration.
+     */
+    private final MucClientConfiguration config;
+
+    /**
+     * Contains the smack {@link MultiUserChat} objects that this
+     * {@link MucClient} maintains (mapped by their MUC JIDs).
+     */
+    private final Map<Jid, MucWrapper> mucs = new ConcurrentHashMap<>();
+
+    /**
      * Creates and XMPP connection for the given {@code config}, connects, and
      * joins the MUC described by the {@code config}.
      *
      * @param config xmpp connection details
-     * @throws Exception from {@link XMPPTCPConnection#connect()} or
-     * {@link XMPPTCPConnection#login()}
-     *
-     * TODO: specific exceptions
      */
-    MucClient(MucClientManager.Configuration config, MucClientManager mucClientManager)
+    MucClient(MucClientConfiguration config, MucClientManager mucClientManager)
+    {
+        this.mucClientManager = mucClientManager;
+        this.config = config;
+    }
+
+    /**
+     * Initializes this instance (by extracting the necessary fields from its
+     * configuration), connects and logs into the XMPP server, and joins all
+     * MUCs that the configuration describes.
+     * @throws Exception
+     */
+    void initializeConnectAndJoin()
         throws Exception
     {
         if (logger.isDebugEnabled())
@@ -170,9 +170,11 @@ public class MucClient
             logger.debug("Initializing a new MucClient for " + config);
         }
 
-        this.mucClientManager = mucClientManager;
+        if (!config.isComplete())
+        {
+            throw new IllegalArgumentException("incomplete configuration");
+        }
 
-        mucJid = JidCreate.entityBareFrom(config.getMuc());
         mucNickname = Resourcepart.from(config.getMucNickname());
         if ("sync".equals(config.getIqHandlerMode()))
         {
@@ -212,7 +214,7 @@ public class MucClient
                 }
                 try
                 {
-                    createOrJoinMuc();
+                    joinMucs();
                 }
                 catch(Exception e)
                 {
@@ -248,7 +250,7 @@ public class MucClient
 
                 try
                 {
-                    createOrJoinMuc();
+                    joinMucs();
                 }
                 catch(Exception e)
                 {
@@ -259,7 +261,7 @@ public class MucClient
             @Override
             public void reconnectingIn(int i)
             {
-                lastPresenceSent = null;
+                mucs.values().forEach(MucWrapper::resetLastPresenceSent);
                 if (logger.isDebugEnabled())
                 {
                     logger.debug(MucClient.this + " reconnecting in " + i);
@@ -280,52 +282,58 @@ public class MucClient
         setIQListener(mucClientManager.getIqListener());
 
         // Note: the connected() and authenticated() callbacks execute
-        // synchronously, so this will also trigger the call to
-        // createOrJoinMuc()
+        // synchronously, so this will also trigger the call to joinMucs()
+        if (logger.isDebugEnabled())
+        {
+            logger.debug(this + "About to connect and login.");
+        }
         xmppConnection.connect().login();
     }
 
     /**
-     * Create and/or join the muc named mucJid with the given nickname
-     * @param mucJid the jid of the muc to join
-     * @param nickname the nickname to use when joining the muc
-     * @throws Exception if creating or joining the MUC fails.
+     * Create and/or join the MUCs described in the configuration.
      */
-    private void createOrJoinMuc()
+    private void joinMucs()
         throws SmackException.NotConnectedException,
                SmackException.NoResponseException,
                InterruptedException,
                XMPPException.XMPPErrorException,
                MultiUserChatException.MucAlreadyJoinedException,
-               MultiUserChatException.NotAMucServiceException
+               MultiUserChatException.NotAMucServiceException,
+               XmppStringprepException
     {
-        // We're about to join or re-join the MUC.
-        lastPresenceSent = null;
-        if (muc != null)
+        if (logger.isDebugEnabled())
         {
-            muc.removePresenceInterceptor(presenceInterceptor);
-            logger.warn("Leaving a MUC we already occupy.");
-            muc.leave();
+            logger.debug(this + "About to join MUCs.");
         }
-        MultiUserChatManager mucManager
-            = MultiUserChatManager.getInstanceFor(xmppConnection);
-        muc = mucManager.getMultiUserChat(mucJid);
-        if (presenceInterceptor != null)
-        {
-            muc.addPresenceInterceptor(presenceInterceptor);
-        }
-        muc.createOrJoin(mucNickname);
 
-        addExtensions();
+        for (String mucJidStr : config.getMucJids())
+        {
+            EntityBareJid mucJid = JidCreate.entityBareFrom(mucJidStr);
+            MucWrapper mucWrapper = getOrCreateMucState(mucJid);
+            mucWrapper.join(mucJid);
+        }
     }
 
     /**
-     * Adds the presence extensions of the {@link MucClientManager} to our
-     * presence in the MUC.
+     * Gets the {@link MucWrapper} instance for a particular JID, creating it
+     * if necessary.
+     * @param mucJid the MUC JID.
+     * @return the {@link MucWrapper} instance.
      */
-    private void addExtensions()
+    private MucWrapper getOrCreateMucState(Jid mucJid)
     {
-        setPresenceExtensions(mucClientManager.getPresenceExtensions());
+        synchronized (mucs)
+        {
+            MucWrapper mucWrapper = mucs.get(mucJid);
+            if (mucWrapper == null)
+            {
+                mucWrapper = new MucWrapper();
+                mucs.put(mucJid, mucWrapper);
+            }
+
+            return mucWrapper;
+        }
     }
 
     /**
@@ -357,15 +365,6 @@ public class MucClient
     }
 
     /**
-     * Notifies this instance that Smack sent presence in the MUC on our behalf.
-     * @param presence the presence which was sent.
-     */
-    private void presenceSent(Presence presence)
-    {
-        lastPresenceSent = presence;
-    }
-
-    /**
      * Adds an extension to our presence in the MUC. If our presence already
      * contains an extension with the same namespace and element name, the old
      * one is removed.
@@ -384,27 +383,7 @@ public class MucClient
      */
     public void setPresenceExtensions(Collection<ExtensionElement> extensions)
     {
-        if (lastPresenceSent == null)
-        {
-            logger.info("Not setting an extension yet, presence not sent.");
-            return;
-        }
-
-        // Remove the old extensions if present
-        extensions.forEach(
-            extension -> lastPresenceSent.removeExtension(
-                extension.getElementName(), extension.getNamespace()));
-
-        extensions.forEach(lastPresenceSent::addExtension);
-
-        try
-        {
-            xmppConnection.sendStanza(lastPresenceSent);
-        }
-        catch (Exception e)
-        {
-            logger.error("Failed to send stanza:", e);
-        }
+        mucs.values().forEach(ms->ms.setPresenceExtensions(extensions));
     }
 
     /**
@@ -415,18 +394,7 @@ public class MucClient
      */
     public void removePresenceExtension(String elementName, String namespace)
     {
-        if (lastPresenceSent != null
-            && lastPresenceSent.removeExtension(elementName, namespace) != null)
-        {
-            try
-            {
-                xmppConnection.sendStanza(lastPresenceSent);
-            }
-            catch (Exception e)
-            {
-                logger.error("Failed to send stanza:", e);
-            }
-        }
+        mucs.values().forEach(ms->ms.removePresenceExtension(elementName, namespace));
     }
 
     /**
@@ -504,5 +472,130 @@ public class MucClient
         }
 
         return responseIq;
+    }
+
+    /**
+     * Wraps a {@link MultiUserChat} with logic for adding extensions to our
+     * own presence.
+     */
+    private class MucWrapper
+    {
+        /**
+         * The {@link MultiUserChat} object for the MUC we'll be joining.
+         */
+        private MultiUserChat muc;
+
+        /**
+         * Stores our last MUC presence packet for future update.
+         */
+        private Presence lastPresenceSent;
+
+        /**
+         * Intercepts presence packets sent by smack and saves the last one.
+         */
+        private PresenceListener presenceInterceptor = this::presenceSent;
+
+        /**
+         * Notifies this instance that Smack sent presence in the MUC on our behalf.
+         * @param presence the presence which was sent.
+         */
+        private void presenceSent(Presence presence)
+        {
+            lastPresenceSent = presence;
+        }
+
+        /**
+         * Joins the MUC.
+         * @param mucJid the JID of the MUC to join.
+         */
+        private void join(EntityBareJid mucJid)
+            throws SmackException.NotConnectedException,
+                   SmackException.NoResponseException,
+                   InterruptedException,
+                   XMPPException.XMPPErrorException,
+                   MultiUserChatException.MucAlreadyJoinedException,
+                   MultiUserChatException.NotAMucServiceException
+
+        {
+            // We're about to join or re-join the MUC.
+            lastPresenceSent = null;
+
+            if (muc != null)
+            {
+                muc.removePresenceInterceptor(presenceInterceptor);
+                logger.warn("Leaving a MUC we already occupy.");
+                muc.leave();
+            }
+            MultiUserChatManager mucManager
+                = MultiUserChatManager.getInstanceFor(xmppConnection);
+            muc = mucManager.getMultiUserChat(mucJid);
+            if (presenceInterceptor != null)
+            {
+                muc.addPresenceInterceptor(presenceInterceptor);
+            }
+            muc.createOrJoin(mucNickname);
+
+            setPresenceExtensions(mucClientManager.getPresenceExtensions());
+        }
+
+        /**
+         * Adds a set of extensions to our presence in this MUC.
+         * @param extensions the extensions to add.
+         */
+        void setPresenceExtensions(Collection<ExtensionElement> extensions)
+        {
+            if (lastPresenceSent == null)
+            {
+                logger.info("Not setting an extension yet, presence not sent.");
+                return;
+            }
+
+            // Remove the old extensions if present
+            extensions.forEach(
+                extension -> lastPresenceSent.removeExtension(
+                    extension.getElementName(), extension.getNamespace()));
+
+            extensions.forEach(lastPresenceSent::addExtension);
+
+            try
+            {
+                xmppConnection.sendStanza(lastPresenceSent);
+            }
+            catch (Exception e)
+            {
+                logger.error("Failed to send stanza:", e);
+            }
+        }
+
+        /**
+         * Removes from our presence in the MUC any extensions with the given
+         * {@code elementName} and {@code namespace}.
+         * @param elementName the element name to match.
+         * @param namespace the namespace to match.
+         */
+        private void removePresenceExtension(String elementName, String namespace)
+        {
+            if (lastPresenceSent != null
+                && lastPresenceSent.removeExtension(elementName, namespace) != null)
+            {
+                try
+                {
+                    xmppConnection.sendStanza(lastPresenceSent);
+                }
+                catch (Exception e)
+                {
+                    logger.error("Failed to send stanza:", e);
+                }
+            }
+        }
+
+        /**
+         * Resets the field which stores the last presence Smack sent on our
+         * behalf.
+         */
+        private void resetLastPresenceSent()
+        {
+            lastPresenceSent = null;
+        }
     }
 }

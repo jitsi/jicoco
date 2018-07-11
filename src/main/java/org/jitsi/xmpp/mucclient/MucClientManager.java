@@ -44,8 +44,9 @@ public class MucClientManager
         =  org.jitsi.util.Logger.getLogger(MucClientManager.class);
 
     /**
-     * Loads a list of {@link Configuration} objects based on properties read
-     * from a {@link ConfigurationService} with a given {@code prefix}.
+     * Loads a list of {@link MucClientConfiguration} objects based on
+     * properties read from a {@link ConfigurationService} with a given
+     * {@code prefix}.
      *
      * The configurations can be described with properties like this with an
      * ID of "":
@@ -59,13 +60,13 @@ public class MucClientManager
      * @param config the {@link ConfigurationService} to read properties from.
      * @param prefix the prefix for property names.
      *
-     * @return a list of {@link Configuration}s described by properties in
+     * @return a list of {@link MucClientConfiguration}s described by properties in
      * {@code config} with a prefix of {@code prefix}.
      */
-    private static Collection<Configuration> loadConfig(
+    private static Collection<MucClientConfiguration> loadConfig(
         ConfigurationService config, String prefix)
     {
-        Map<String, Configuration> configurations = new HashMap<>();
+        Map<String, MucClientConfiguration> configurations = new HashMap<>();
 
         for (String pname : config.getPropertyNamesByPrefix(prefix, false))
         {
@@ -78,10 +79,10 @@ public class MucClientManager
                 prop = stripped.substring(id.length() + 1);
             }
 
-            Configuration c
+            MucClientConfiguration c
                 = configurations.computeIfAbsent(
                 id,
-                Configuration::new);
+                MucClientConfiguration::new);
             c.setProperty(prop, config.getString(pname));
         }
 
@@ -90,7 +91,7 @@ public class MucClientManager
                  if (!c.isComplete())
                  {
                      logger.warn(
-                         "Ignoring incomplete configuration with id=" + c.id);
+                         "Ignoring incomplete configuration with id=" + c.getId());
                      return true;
                  }
                  return false;
@@ -186,17 +187,17 @@ public class MucClientManager
      */
     public void addMucClients(ConfigurationService cfg, String prefix)
     {
-        Collection<Configuration> configurations = loadConfig(cfg, prefix);
+        Collection<MucClientConfiguration> configurations = loadConfig(cfg, prefix);
 
         configurations.forEach(this::addMucClient);
     }
 
     /**
      * Asynchronously adds a new {@link MucClient} with a specific
-     * {@link Configuration}.
+     * {@link MucClientConfiguration}.
      * @param config the configuration of the new {@link MucClient}.
      */
-    public void addMucClient(Configuration config)
+    public void addMucClient(MucClientConfiguration config)
     {
         executor.execute(() -> this.doAddMucClient(config));
     }
@@ -208,14 +209,25 @@ public class MucClientManager
      *
      * @param config the configuration for the new client.
      */
-    private void doAddMucClient(Configuration config)
+    private void doAddMucClient(MucClientConfiguration config)
     {
         try
         {
-            MucClient mucClient = new MucClient(config, MucClientManager.this);
+            MucClient mucClient;
+            synchronized (syncRoot)
+            {
+                mucClient = mucClients.get(config.getId());
+                if (mucClient != null)
+                {
+                    logger.error("Not adding a new MUC client, ID already exists.");
+                    return;
+                }
 
-            mucClients.put(config.id, mucClient);
-            logger.info("Initialized " + mucClient);
+                mucClient = new MucClient(config, MucClientManager.this);
+                mucClients.put(config.getId(), mucClient);
+            }
+
+            mucClient.initializeConnectAndJoin();
         }
         catch (Exception e)
         {
@@ -384,201 +396,4 @@ public class MucClientManager
         return iqListener;
     }
 
-    /**
-     * Represents the configuration of a {@link MucClient}.
-     */
-    public static class Configuration
-    {
-        /**
-         * The name of the property (without a prefix) which specifies the
-         * hostname to connect to.
-         * This is a required property.
-         */
-        public static String HOSTNAME = "HOSTNAME";
-
-        /**
-         * The name of the property (without a prefix) which specifies the
-         * XMPP domain to use.
-         * This is not a required property (if it is missing the hostname is
-         * used as a domain)
-         */
-        public static String DOMAIN = "DOMAIN";
-
-        /**
-         * The name of the property (without a prefix) which specifies the
-         * username to use to authenticate.
-         * This is a required property.
-         */
-        public static String USERNAME = "USERNAME";
-
-        /**
-         * The name of the property (without a prefix) which specifies the
-         * password to use to authenticate.
-         * This is a required property.
-         */
-        public static String PASSWORD = "PASSWORD";
-
-        /**
-         * The name of the property (without a prefix) which specifies the
-         * full JID of the MUC to join, e.g.:
-         * {@code JvbBrewery@conference.example.com}
-         *
-         * This is a required property.
-         */
-        public static String MUC = "MUC";
-
-        /**
-         * The name of the property (without a prefix) which specifies the
-         * nickname (i.e. the XMPP resource part) to use when joining the MUC.
-         *
-         * This is a required property.
-         */
-        public static String MUC_NICKNAME = "MUC_NICKNAME";
-
-        /**
-         * The name of the property (without a prefix) which specifies
-         * whether to disable TLS certificate verifications.
-         *
-         * This is not a required property, the default behavior is to perform
-         * verification.
-         */
-        public static String DISABLE_CERTIFICATE_VERIFICATION
-            = "DISABLE_CERTIFICATE_VERIFICATION";
-
-        /**
-         * The name of the property (without a prefix) which specifies
-         * the mode (sync or async) to use for the Smack IQ request handler.
-         *
-         * This is not a required property.
-         */
-        public static String IQ_HANDLER_MODE = "IQ_HANDLER_MODE";
-
-        /**
-         * Holds the properties of this {@link Configuration}.
-         */
-        HashMap<String, String> props = new HashMap<>();
-
-        /**
-         * The ID of this {@link Configuration}.
-         */
-        private String id;
-
-        /**
-         * Initializes a new {@link Configuration} instance.
-         * @param id the ID.
-         */
-        private Configuration(String id)
-        {
-            this.id = id;
-        }
-
-        /**
-         * @return the hostname (i.e. the address to connect to).
-         */
-        String getHostname()
-        {
-            return props.get(HOSTNAME);
-        }
-
-        /**
-         * @return the XMPP domain.
-         */
-        String getDomain()
-        {
-            return props.get(DOMAIN);
-        }
-
-        /**
-         * @return the username to use to authenticate.
-         */
-        String getUsername()
-        {
-            return props.get(USERNAME);
-        }
-
-        /**
-         * @return the password to use to authenticate.
-         */
-        String getPassword()
-        {
-            return props.get(PASSWORD);
-        }
-
-        /**
-         * @return the JID of the MUC to join, e.g.
-         * "JvbBrewery@conference.example.com"
-         */
-        String getMuc()
-        {
-            return props.get(MUC);
-        }
-
-        /**
-         * @return the nickname to use when joining the MUC.
-         */
-        String getMucNickname()
-        {
-            return props.get(MUC_NICKNAME);
-        }
-
-        /**
-         * @return whether TLS certificate verification should be disabled.
-         */
-        boolean getDisableCertificateVerification()
-        {
-            return "true".equals(props.get(DISABLE_CERTIFICATE_VERIFICATION));
-        }
-
-        /**
-         * @return a string which represents the mode (sync or async) to use
-         * for the smack IQ request handler.
-         */
-        String getIqHandlerMode()
-        {
-            return props.get(IQ_HANDLER_MODE);
-        }
-
-        /**
-         * Checks whether this {@link Configuration} has all of the required
-         * properties.
-         * @return {@code true} if all required properties are set, and
-         * {@code false} otherwise.
-         */
-        private boolean isComplete()
-        {
-            return getHostname() != null && getUsername() != null
-                && getPassword() != null
-                && getMuc() != null
-                && getMucNickname() != null;
-        }
-
-        /**
-         * Sets a property.
-         * @param name the name of the property.
-         * @param value the value to set.
-         */
-        private void setProperty(String name, String value)
-        {
-            props.put(name, value);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString()
-        {
-            return
-                "[ " + Configuration.class.getName() +
-                    " id=" + id+
-                    " domain=" + getDomain() +
-                    " hostname=" + getHostname() +
-                    " username=" + getUsername() +
-                    " muc=" + getMuc() +
-                    " mucNickname=" + getMucNickname() +
-                    " disableCertificateVerification="
-                        + getDisableCertificateVerification() +
-                    "]";
-        }
-    }
 }
