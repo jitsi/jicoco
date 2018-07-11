@@ -16,8 +16,8 @@
  */
 package org.jitsi.xmpp.mucclient;
 
-import org.jitsi.impl.neomedia.pulseaudio.*;
-import org.jivesoftware.smack.iqrequest.*;
+import org.jitsi.service.configuration.*;
+import org.jitsi.util.*;
 
 import java.util.*;
 
@@ -28,6 +28,13 @@ import java.util.*;
  */
 public class MucClientConfiguration
 {
+    /**
+     * The {@link Logger} used by the {@link MucClientConfiguration} class and
+     * its instances for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(MucClientConfiguration.class);
+
     /**
      * The name of the property (without a prefix) which specifies the
      * hostname to connect to.
@@ -92,16 +99,107 @@ public class MucClientConfiguration
      */
     public static String IQ_HANDLER_MODE = "IQ_HANDLER_MODE";
 
-    private static final String TRUE = "true";
+    /**
+     * Loads a list of {@link MucClientConfiguration} objects based on
+     * properties read from a {@link ConfigurationService} with a given
+     * {@code prefix}.
+     * See {@link #loadFromMap(Map, String, boolean)} for the format of the
+     * properties.
+     *
+     * @param config the {@link ConfigurationService} to read properties from.
+     * @param prefix the prefix for property names.
+     * @param removeIncomplete whether to remove any incomplete (see
+     * {@link MucClientConfiguration#isComplete()}) entries from the returned
+     * collection, or to return all of them regardless.
+     *
+     * @return a list of {@link MucClientConfiguration}s described by properties
+     * in {@code config} with a prefix of {@code prefix}.
+     */
+    public static Collection<MucClientConfiguration> loadFromConfigService(
+        ConfigurationService config, String prefix, boolean removeIncomplete)
+    {
+        Map<String, String> properties = new HashMap<>();
+        for (String pname : config.getPropertyNamesByPrefix(prefix, false))
+        {
+            properties.put(pname, config.getString(pname));
+        }
+
+        return loadFromMap(properties, prefix, removeIncomplete);
+    }
+
+    /**
+     * Loads a list of {@link MucClientConfiguration} objects based on
+     * properties in a {@link Map<String, String>} with a given {@code prefix}.
+     *
+     * The properties can be described with map entries like this for an
+     * ID of "":
+     * PREFIX.HOSTNAME=hostname1
+     * PREFIX.DOMAIN=domain
+     *
+     * Or like this for an ID of "id1":
+     * PREFIX.id1.HOSTNAME=hostname2
+     * PREFIX.id1.USERNAME=user
+     *
+     * @param properties the {@link Map} which contains the properties.
+     * @param prefix the common prefix (to be ignored) for the keys in the map.
+     * @param removeIncomplete whether to remove any incomplete (see
+     * {@link MucClientConfiguration#isComplete()}) entries from the returned
+     * collection, or to return all of them regardless.
+     *
+     * @return a list of {@link MucClientConfiguration}s described by the
+     * entries of {@code properties} with a prefix of {@code prefix}.
+     */
+    public static Collection<MucClientConfiguration> loadFromMap(
+        Map<String, String> properties, String prefix, boolean removeIncomplete)
+    {
+        Map<String, MucClientConfiguration> configurations = new HashMap<>();
+
+        for (String pname : properties.keySet())
+        {
+            String stripped = pname.substring(prefix.length());
+            String id = "";
+            String prop = stripped;
+            if (stripped.contains("."))
+            {
+                id = stripped.substring(0, stripped.indexOf("."));
+                prop = stripped.substring(id.length() + 1);
+            }
+
+            MucClientConfiguration c
+                = configurations.computeIfAbsent(
+                id,
+                MucClientConfiguration::new);
+            c.setProperty(prop, properties.get(pname));
+        }
+
+        if (removeIncomplete)
+        {
+            configurations.values().removeIf(
+                c ->
+                {
+                    if (!c.isComplete())
+                    {
+                        logger.warn(
+                            "Ignoring incomplete configuration with id=" + c
+                                .getId());
+                        return true;
+                    }
+                    return false;
+                });
+        }
+
+        return configurations.values();
+    }
+
     /**
      * Holds the properties of this {@link MucClientConfiguration}.
      */
-    HashMap<String, String> props = new HashMap<>();
+    private final HashMap<String, String> props = new HashMap<>();
 
     /**
      * The ID of this {@link MucClientConfiguration}.
      */
-    private String id;
+    private final String id;
 
     /**
      * Initializes a new {@link MucClientConfiguration} instance.
@@ -234,7 +332,7 @@ public class MucClientConfiguration
      */
     public boolean getDisableCertificateVerification()
     {
-        return TRUE.equals(props.get(DISABLE_CERTIFICATE_VERIFICATION));
+        return Boolean.parseBoolean(props.get(DISABLE_CERTIFICATE_VERIFICATION));
     }
 
     /**
@@ -245,7 +343,7 @@ public class MucClientConfiguration
     public void setDisableCertificateVerification(
         boolean disableCertificateVerification)
     {
-        props.put(DISABLE_CERTIFICATE_VERIFICATION, TRUE);
+        props.put(DISABLE_CERTIFICATE_VERIFICATION, Boolean.TRUE.toString());
     }
 
     /**

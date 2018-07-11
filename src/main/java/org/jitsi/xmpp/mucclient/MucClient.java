@@ -475,6 +475,14 @@ public class MucClient
     }
 
     /**
+     * @return  the ID of this {@link MucClient}.
+     */
+    public String getId()
+    {
+        return config.getId();
+    }
+
+    /**
      * Wraps a {@link MultiUserChat} with logic for adding extensions to our
      * own presence.
      */
