@@ -41,64 +41,7 @@ public class MucClientManager
      * instances for logging output.
      */
     private static final Logger logger
-        =  org.jitsi.util.Logger.getLogger(MucClientManager.class);
-
-    /**
-     * Loads a list of {@link MucClientConfiguration} objects based on
-     * properties read from a {@link ConfigurationService} with a given
-     * {@code prefix}.
-     *
-     * The configurations can be described with properties like this with an
-     * ID of "":
-     * PREFIX.HOSTNAME=hostname1
-     * PREFIX.DOMAIN=domain
-     *
-     * Or like this with an ID of "id":
-     * PREFIX.id1.HOSTNAME=hostname2
-     * PREFIX.id1.USERNAME=user
-     *
-     * @param config the {@link ConfigurationService} to read properties from.
-     * @param prefix the prefix for property names.
-     *
-     * @return a list of {@link MucClientConfiguration}s described by properties in
-     * {@code config} with a prefix of {@code prefix}.
-     */
-    private static Collection<MucClientConfiguration> loadConfig(
-        ConfigurationService config, String prefix)
-    {
-        Map<String, MucClientConfiguration> configurations = new HashMap<>();
-
-        for (String pname : config.getPropertyNamesByPrefix(prefix, false))
-        {
-            String stripped = pname.substring(prefix.length());
-            String id = "";
-            String prop = stripped;
-            if (stripped.contains("."))
-            {
-                id = stripped.substring(0, stripped.indexOf("."));
-                prop = stripped.substring(id.length() + 1);
-            }
-
-            MucClientConfiguration c
-                = configurations.computeIfAbsent(
-                id,
-                MucClientConfiguration::new);
-            c.setProperty(prop, config.getString(pname));
-        }
-
-        configurations.values().removeIf(c ->
-             {
-                 if (!c.isComplete())
-                 {
-                     logger.warn(
-                         "Ignoring incomplete configuration with id=" + c.getId());
-                     return true;
-                 }
-                 return false;
-             });
-
-        return configurations.values();
-    }
+        = Logger.getLogger(MucClientManager.class);
 
     /**
      * Maps a hostname to the {@link MucClient} associated with it.
@@ -176,20 +119,6 @@ public class MucClientManager
         {
             this.features.addAll(Arrays.asList(features));
         }
-    }
-
-    /**
-     * Adds described with properties in a {@link ConfigurationService} with
-     * a specific {@code prefix.}
-     * @param cfg the {@link ConfigurationService} which contains properties
-     * describing the clients to add.
-     * @param prefix the prefix of properties describing the clients to add.
-     */
-    public void addMucClients(ConfigurationService cfg, String prefix)
-    {
-        Collection<MucClientConfiguration> configurations = loadConfig(cfg, prefix);
-
-        configurations.forEach(this::addMucClient);
     }
 
     /**
