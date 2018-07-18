@@ -122,46 +122,42 @@ public class MucClientManager
     }
 
     /**
-     * Asynchronously adds a new {@link MucClient} with a specific
-     * {@link MucClientConfiguration}.
+     * Adds a new {@link MucClient} with a specific
+     * {@link MucClientConfiguration}. Initializes and starts the client
+     * asynchronously.
      * @param config the configuration of the new {@link MucClient}.
+     * @return {@code true} if a new client was added, and {@code false} if a
+     * client with the ID described by the configuration already existed.
      */
-    public void addMucClient(MucClientConfiguration config)
+    public boolean addMucClient(MucClientConfiguration config)
     {
-        executor.execute(() -> this.doAddMucClient(config));
-    }
-
-    /**
-     * Creates and starts new {@link MucClient}. This method blocks until
-     * the XMPP connection is established and the MUC is joined. If these things
-     * happen successfully, the new client is added to {@link #mucClients}.
-     *
-     * @param config the configuration for the new client.
-     */
-    private void doAddMucClient(MucClientConfiguration config)
-    {
-        try
+        final MucClient mucClient;
+        synchronized (syncRoot)
         {
-            MucClient mucClient;
-            synchronized (syncRoot)
+            if (mucClients.get(config.getId()) != null)
             {
-                mucClient = mucClients.get(config.getId());
-                if (mucClient != null)
-                {
-                    logger.error("Not adding a new MUC client, ID already exists.");
-                    return;
-                }
-
-                mucClient = new MucClient(config, MucClientManager.this);
-                mucClients.put(config.getId(), mucClient);
+                logger.error("Not adding a new MUC client, ID already exists.");
+                return false;
             }
 
-            mucClient.initializeConnectAndJoin();
+            mucClient = new MucClient(config, MucClientManager.this);
+            mucClients.put(config.getId(), mucClient);
         }
-        catch (Exception e)
-        {
-            logger.error("Failed to create and start a MucClient: ", e);
-        }
+
+        executor.execute(
+            () ->
+            {
+                try
+                {
+                    mucClient.initializeConnectAndJoin();
+                }
+                catch(Exception e)
+                {
+                    logger.error(
+                        "Failed to initialize and start a MucClient: ", e);
+                }
+            });
+        return true;
     }
 
     /**
