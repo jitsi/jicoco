@@ -199,10 +199,7 @@ public class MucClient
             @Override
             public void connected(XMPPConnection xmppConnection)
             {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug(MucClient.this + " connected");
-                }
+                logger.info(MucClient.this + " connected");
             }
 
             @Override
@@ -225,28 +222,19 @@ public class MucClient
             @Override
             public void connectionClosed()
             {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug(MucClient.this + " closed");
-                }
+                logger.info(MucClient.this + " closed");
             }
 
             @Override
             public void connectionClosedOnError(Exception e)
             {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug(MucClient.this + " closed on error:", e);
-                }
+                logger.info(MucClient.this + " closed on error:", e);
             }
 
             @Override
             public void reconnectionSuccessful()
             {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug(MucClient.this + " reconnection successful");
-                }
+                logger.info(MucClient.this + " reconnection successful");
 
                 try
                 {
@@ -271,10 +259,7 @@ public class MucClient
             @Override
             public void reconnectionFailed(Exception e)
             {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug(MucClient.this + " reconnection failed");
-                }
+                logger.info(MucClient.this + " reconnection failed");
             }
         });
 
@@ -285,7 +270,7 @@ public class MucClient
         // synchronously, so this will also trigger the call to joinMucs()
         if (logger.isDebugEnabled())
         {
-            logger.debug(this + "About to connect and login.");
+            logger.debug(this + " about to connect and login.");
         }
         xmppConnection.connect().login();
     }
@@ -304,7 +289,7 @@ public class MucClient
     {
         if (logger.isDebugEnabled())
         {
-            logger.debug(this + "About to join MUCs.");
+            logger.debug(this + " about to join MUCs.");
         }
 
         for (String mucJidStr : config.getMucJids())
@@ -361,7 +346,8 @@ public class MucClient
     @Override
     public String toString()
     {
-        return "[MucClient host=" + xmppConnection.getHost() + "]";
+        return "[MucClient id=" + config.getId()
+            + " hostname=" + config.getHostname() + "]";
     }
 
     /**
@@ -531,7 +517,7 @@ public class MucClient
             if (muc != null)
             {
                 muc.removePresenceInterceptor(presenceInterceptor);
-                logger.warn("Leaving a MUC we already occupy.");
+                logger.info("Leaving a MUC we already occupy.");
                 muc.leave();
             }
             MultiUserChatManager mucManager
@@ -542,6 +528,7 @@ public class MucClient
                 muc.addPresenceInterceptor(presenceInterceptor);
             }
             muc.createOrJoin(mucNickname);
+            logger.info("Joined MUC: " + mucJid);
 
             setPresenceExtensions(mucClientManager.getPresenceExtensions());
         }
@@ -554,7 +541,11 @@ public class MucClient
         {
             if (lastPresenceSent == null)
             {
-                logger.info("Not setting an extension yet, presence not sent.");
+                if (logger.isDebugEnabled())
+                {
+                    logger.info(
+                        "Not setting an extension yet, presence not sent.");
+                }
                 return;
             }
 

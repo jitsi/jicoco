@@ -175,6 +175,7 @@ public class MucClientManager
     {
         synchronized (syncRoot)
         {
+            logger.info("Setting a presence extension: " + extension);
             saveExtension(extension);
 
             mucClients.values().forEach(
