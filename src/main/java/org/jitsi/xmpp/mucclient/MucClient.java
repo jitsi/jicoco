@@ -308,17 +308,7 @@ public class MucClient
      */
     private MucWrapper getOrCreateMucState(Jid mucJid)
     {
-        synchronized (mucs)
-        {
-            MucWrapper mucWrapper = mucs.get(mucJid);
-            if (mucWrapper == null)
-            {
-                mucWrapper = new MucWrapper();
-                mucs.put(mucJid, mucWrapper);
-            }
-
-            return mucWrapper;
-        }
+        return mucs.computeIfAbsent(mucJid, (k) -> new MucWrapper());
     }
 
     /**
@@ -538,7 +528,7 @@ public class MucClient
 
         {
             // We're about to join or re-join the MUC.
-            lastPresenceSent = null;
+            resetLastPresenceSent();
 
             if (muc != null)
             {
