@@ -322,4 +322,24 @@ public class MucClientManager
         return iqListener;
     }
 
+    /**
+     * Stops and removes a {@link MucClient} identified by its ID.
+     * @param id the ID of the client to remove.
+     * @return {@code true} if a {@link MucClient} with this specified ID exists
+     * and was removed, and {@code false} otherwise.
+     */
+    public boolean removeMucClient(String id)
+    {
+       synchronized (syncRoot)
+       {
+           MucClient mucClient = mucClients.remove(id);
+           if (mucClient == null)
+           {
+               logger.info("Can not find MucClient to remove.");
+               return false;
+           }
+           mucClient.stop();
+           return true;
+       }
+    }
 }
