@@ -144,19 +144,19 @@ public class MucClientManager
             mucClients.put(config.getId(), mucClient);
         }
 
-        executor.execute(
-            () ->
+        executor.execute(() ->
+        {
+            try
             {
-                try
-                {
-                    mucClient.initializeConnectAndJoin();
-                }
-                catch(Exception e)
-                {
-                    logger.error(
-                        "Failed to initialize and start a MucClient: ", e);
-                }
-            });
+                mucClient.initializeConnectAndJoin();
+            }
+            catch(Exception e)
+            {
+                logger.error(
+                    "Failed to initialize and start a MucClient: ", e);
+            }
+        });
+
         return true;
     }
 
@@ -330,16 +330,13 @@ public class MucClientManager
      */
     public boolean removeMucClient(String id)
     {
-       synchronized (syncRoot)
+       MucClient mucClient = mucClients.remove(id);
+       if (mucClient == null)
        {
-           MucClient mucClient = mucClients.remove(id);
-           if (mucClient == null)
-           {
-               logger.info("Can not find MucClient to remove.");
-               return false;
-           }
-           mucClient.stop();
-           return true;
+           logger.info("Can not find MucClient to remove.");
+           return false;
        }
+       mucClient.stop();
+       return true;
     }
 }
