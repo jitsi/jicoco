@@ -192,7 +192,9 @@ public class MucClientConfiguration
     }
 
     /**
-     * Holds the properties of this {@link MucClientConfiguration}.
+     * Holds the properties of this {@link MucClientConfiguration}. To make
+     * the property names case insensitive we always store the keys in upper
+     * case.
      */
     private final HashMap<String, String> props = new HashMap<>();
 
@@ -223,7 +225,7 @@ public class MucClientConfiguration
      */
     public String getHostname()
     {
-        return props.get(HOSTNAME);
+        return props.get(HOSTNAME.toUpperCase());
     }
 
     /**
@@ -240,7 +242,7 @@ public class MucClientConfiguration
      */
     public String getDomain()
     {
-        return props.get(DOMAIN);
+        return props.get(DOMAIN.toUpperCase());
     }
 
     /**
@@ -257,7 +259,7 @@ public class MucClientConfiguration
      */
     public String getUsername()
     {
-        return props.get(USERNAME);
+        return props.get(USERNAME.toUpperCase());
     }
 
     /**
@@ -274,7 +276,7 @@ public class MucClientConfiguration
      */
     public String getPassword()
     {
-        return props.get(PASSWORD);
+        return props.get(PASSWORD.toUpperCase());
     }
 
     /**
@@ -292,7 +294,7 @@ public class MucClientConfiguration
      */
     public List<String> getMucJids()
     {
-        String str = props.get(MUC_JIDS);
+        String str = props.get(MUC_JIDS.toUpperCase());
         if (str != null)
         {
             return Arrays.asList(str.split(","));
@@ -315,7 +317,7 @@ public class MucClientConfiguration
      */
     public String getMucNickname()
     {
-        return props.get(MUC_NICKNAME);
+        return props.get(MUC_NICKNAME.toUpperCase());
     }
 
     /**
@@ -352,7 +354,7 @@ public class MucClientConfiguration
      */
     public String getIqHandlerMode()
     {
-        return props.get(IQ_HANDLER_MODE);
+        return props.get(IQ_HANDLER_MODE.toUpperCase());
     }
 
     /**
@@ -385,7 +387,7 @@ public class MucClientConfiguration
      */
     public void setProperty(String name, String value)
     {
-        props.put(name, value);
+        props.put(name.toUpperCase(), value);
     }
 
     /**
