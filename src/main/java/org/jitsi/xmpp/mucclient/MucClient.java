@@ -469,6 +469,15 @@ public class MucClient
     }
 
     /**
+     * Leaves all MUCs and disconnects from the XMPP server.
+     */
+    void stop()
+    {
+        mucs.values().forEach(MucWrapper::leave);
+        xmppConnection.disconnect();
+    }
+
+    /**
      * Wraps a {@link MultiUserChat} with logic for adding extensions to our
      * own presence.
      */
@@ -496,6 +505,23 @@ public class MucClient
         private void presenceSent(Presence presence)
         {
             lastPresenceSent = presence;
+        }
+
+        /**
+         * Leaves the MUC.
+         */
+        private void leave()
+        {
+            try
+            {
+                muc.leave();
+            }
+            catch (Exception e)
+            {
+                logger.warn("Error while trying to leave a MUC: ", e);
+            }
+
+            muc = null;
         }
 
         /**
