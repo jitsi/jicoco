@@ -21,9 +21,11 @@ import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
 import org.jivesoftware.smack.packet.*;
+import org.jivesoftware.smack.packet.id.*;
 import org.jivesoftware.smack.tcp.*;
 import org.jivesoftware.smackx.disco.*;
 import org.jivesoftware.smackx.muc.*;
+import org.jivesoftware.smackx.muc.packet.*;
 import org.jivesoftware.smackx.ping.*;
 import org.jxmpp.jid.*;
 import org.jxmpp.jid.impl.*;
@@ -565,12 +567,22 @@ public class MucClient
                 return;
             }
 
+            // The initial presence sent by smack contains an empty "x"
+            // extension. If this extension is included in a subsequent stanza,
+            // it indicates that the client lost its synchronization and causes
+            // the MUC service to re-send the presence of each occupant in the
+            // room.
+            lastPresenceSent.removeExtension(
+                MUCInitialPresence.ELEMENT, MUCInitialPresence.NAMESPACE);
+
             // Remove the old extensions if present
             extensions.forEach(
                 extension -> lastPresenceSent.removeExtension(
                     extension.getElementName(), extension.getNamespace()));
 
             extensions.forEach(lastPresenceSent::addExtension);
+
+            lastPresenceSent.setStanzaId(StanzaIdUtil.newStanzaId());
 
             try
             {
