@@ -19,6 +19,7 @@ package org.jitsi.xmpp.mucclient;
 import org.jitsi.service.configuration.*;
 import org.jitsi.util.*;
 import org.jivesoftware.smack.*;
+import org.jivesoftware.smack.debugger.*;
 import org.jivesoftware.smack.packet.*;
 import org.jxmpp.util.*;
 
@@ -42,6 +43,13 @@ public class MucClientManager
      */
     private static final Logger logger
         = Logger.getLogger(MucClientManager.class);
+
+    /**
+     * The name of the property used to enable Smack's debug mode (logging to
+     * {@code stdout}).
+     */
+    public static final String ENABLE_SMACK_DEBUG_PNAME
+        = "org.jitsi.xmpp.mucclient.ENABLE_SMACK_DEBUG";
 
     /**
      * Maps a hostname to the {@link MucClient} associated with it.
@@ -87,7 +95,7 @@ public class MucClientManager
      */
     public MucClientManager()
     {
-        this(new String[0]);
+        this(new String[0], null);
     }
 
     /**
@@ -95,12 +103,13 @@ public class MucClientManager
      *
      * @param features the features to use for disco#info.
      */
-    public MucClientManager(String[] features)
+    public MucClientManager(String[] features, ConfigurationService cfg)
     {
         this(features,
              ExecutorUtils.newCachedThreadPool(
                  true,
-                 MucClientManager.class.getSimpleName()));
+                 MucClientManager.class.getSimpleName()),
+             cfg);
     }
 
     /**
@@ -108,8 +117,17 @@ public class MucClientManager
      *
      * @param features the features to use for disco#info.
      */
-    public MucClientManager(String[] features, Executor executor)
+    public MucClientManager(
+        String[] features, Executor executor, ConfigurationService cfg)
     {
+        if (cfg != null && cfg.getBoolean(ENABLE_SMACK_DEBUG_PNAME, false))
+        {
+            SmackConfiguration.setDebuggerFactory(
+                (SmackDebuggerFactory) (c, w, r) ->
+                    new ConsoleDebugger(c, w, r));
+            SmackConfiguration.DEBUG = true;
+        }
+
         SmackConfiguration.setUnknownIqRequestReplyMode(
             SmackConfiguration.UnknownIqRequestReplyMode
                 .replyFeatureNotImplemented);
