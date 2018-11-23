@@ -122,6 +122,7 @@ public class EventAdminImpl
     public void stop(BundleContext ctx)
     {
         ctx.removeServiceListener(this);
+        executor.shutdown();
     }
 
     /**
