@@ -17,6 +17,7 @@ package org.jitsi.jicoco;
 
 import org.jitsi.cmd.*;
 import org.jitsi.retry.*;
+import org.jitsi.xmpp.component.*;
 import org.junit.runner.*;
 import org.junit.runners.*;
 
@@ -26,7 +27,8 @@ import org.junit.runners.*;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     CmdLineArgsTest.class,
-    RetryStrategyTest.class
+    RetryStrategyTest.class,
+    ComponentBaseTest.class
 })
 public class JiCoCoTestSuite
 {

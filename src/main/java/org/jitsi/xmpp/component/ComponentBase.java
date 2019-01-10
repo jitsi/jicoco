@@ -15,7 +15,10 @@
  */
 package org.jitsi.xmpp.component;
 
+import eu.javaspecialists.tjsn.concurrency.stripedexecutor.*;
+
 import net.java.sip.communicator.util.*;
+
 import org.jitsi.service.configuration.*;
 import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.provider.*;
@@ -26,6 +29,7 @@ import org.xmpp.component.*;
 import org.xmpp.packet.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Base class for XMPP components.
@@ -144,7 +148,7 @@ public abstract class ComponentBase
      * will be used to log error messages for easier detection/debugging
      * of the eventual issues.
      */
-    private long processingTimeLimit;
+    protected long processingTimeLimit;
 
     /**
      * Default constructor for <tt>ComponentBase</tt>.
@@ -171,6 +175,30 @@ public abstract class ComponentBase
         this.domain = domain;
         this.subdomain = subDomain;
         this.secret = secret;
+    }
+
+    /**
+     * Injects {@link StripedExecutorService}.
+     * See https://www.javaspecialists.eu/archive/Issue206.html for more info.
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    protected ExecutorService createExecutorService(
+            int maxThreadPoolSize, int maxQueueSize)
+    {
+        return new StripedExecutorService(maxThreadPoolSize, maxQueueSize);
+    }
+
+    /**
+     * Injects {@link StripedPacketProcessor}.
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    protected PacketProcessor createPacketProcessor(Packet copy)
+    {
+        return new StripedPacketProcessor(copy);
     }
 
     /**
@@ -546,6 +574,57 @@ public abstract class ComponentBase
             logger.debug(
                     "It took " + processingTime  + "ms to process packet: "
                         + iq.getID());
+        }
+    }
+
+    /**
+     * Returns a "stripe" for the packet to be processed. The method is
+     * called before the packet is scheduled on the
+     * {@link StripedExecutorService} which is used under the
+     * hood by {@code ComponentBase} for packet processing execution. If no
+     * "stripe" is returned it means that it's fine to process the packet in
+     * parallel by just scheduling the task onto the thread pool.
+     *
+     * @param p the XMPP <tt>Packet</tt> received by the component which is
+     *        about to be scheduled on the executor service for processing.
+     *
+     * @return an <tt>Object</tt> which identifies the execution "stripe" or
+     * <tt>null</tt> if it's fine to execute the packet in parallel possibly
+     * in slightly different order than in which it was received. A "stripe" is
+     * considered equal if {@link System#identityHashCode(Object)} returns
+     * the same value, which means that it's the instance based equality.
+     */
+    protected Object getStripeForPacket(Packet p)
+    {
+        // By default it's all parallel - it's up to the component impl to
+        // decide.
+        return null;
+    }
+
+    /**
+     * A wrapper required by the {@link StripedExecutorService}.
+     */
+    private class StripedPacketProcessor
+        extends PacketProcessor
+        implements StripedRunnable
+    {
+        /**
+         * Creates a new wrapper for a Packet.
+         *
+         * @param packet the Packet to be processed.
+         */
+        private StripedPacketProcessor(Packet packet)
+        {
+            super(packet);
+        }
+
+        /**
+         * @see ComponentBase#getStripeForPacket(Packet)
+         */
+        @Override
+        public Object getStripe()
+        {
+            return ComponentBase.this.getStripeForPacket(packet);
         }
     }
 
