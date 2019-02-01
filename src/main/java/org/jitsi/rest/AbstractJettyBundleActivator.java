@@ -187,7 +187,7 @@ public abstract class AbstractJettyBundleActivator
      *
      * @param bundleContext the {@code BundleContext} in which this
      * {@code BundleActivator} was stopped
-     * @throws Exception 
+     * @throws Exception
      */
     protected void didStop(BundleContext bundleContext)
         throws Exception
@@ -239,7 +239,7 @@ public abstract class AbstractJettyBundleActivator
      *
      * @param bundleContext the {@code BundleContext} in which this
      * {@code BundleActivator} is stopped
-     * @throws Exception 
+     * @throws Exception
      */
     protected void doStop(BundleContext bundleContext)
         throws Exception
@@ -367,7 +367,7 @@ public abstract class AbstractJettyBundleActivator
      * instance is to be added
      * @return a new {@code Connector} instance which is to be added to
      * {@code server}
-     * @throws Exception 
+     * @throws Exception
      */
     protected Connector initializeConnector(
             BundleContext bundleContext,
@@ -406,7 +406,7 @@ public abstract class AbstractJettyBundleActivator
         Connector connector
             = factory.initializeConnector(bundleContext, server);
 
-        // host        
+        // host
         String host = getCfgString(JETTY_HOST_PNAME, null);
 
         if (host != null)
@@ -457,7 +457,7 @@ public abstract class AbstractJettyBundleActivator
      * {@code Server} instance is to be started
      * @return a new {@code Server} instance to be started in
      * {@code bundleContext}
-     * @throws Exception 
+     * @throws Exception
      */
     protected Server initializeServer(BundleContext bundleContext)
         throws Exception
@@ -635,7 +635,7 @@ public abstract class AbstractJettyBundleActivator
      * @return {@code true} if this {@code AbstractJettyBundleActivator} is to
      * continue and stop the Jetty {@code Server} instance associated with this
      * instance; otherwise, {@code false}
-     * @throws Exception 
+     * @throws Exception
      */
     protected boolean willStop(BundleContext bundleContext)
         throws Exception
@@ -660,7 +660,7 @@ public abstract class AbstractJettyBundleActivator
          * instance is to be added
          * @return a new {@code Connector} instance which is to be added to
          * {@code server}
-         * @throws Exception 
+         * @throws Exception
          */
         Connector initializeConnector(
             BundleContext bundleContext,
@@ -767,7 +767,8 @@ public abstract class AbstractJettyBundleActivator
                 sslContextFactory.setIncludeCipherSuites(
                         "TLS_DHE_RSA.*",
                         "TLS_ECDHE.*");
-                sslContextFactory.setExcludeProtocols("SSLv3");
+                sslContextFactory.setExcludeProtocols(
+                    "SSLv3", "TLSv1", "TLSv1.1");
                 sslContextFactory.setRenegotiationAllowed(false);
                 if (sslContextFactoryKeyStorePassword != null)
                 {
