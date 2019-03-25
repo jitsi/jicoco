@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2018 Atlassian Pty Ltd
+ * Copyright @ 2018 - present 8x8, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -470,6 +470,15 @@ public class MucClient
     }
 
     /**
+     * Returns the client config.
+     * @return the client config.
+     */
+    public MucClientConfiguration getConfig()
+    {
+        return this.config;
+    }
+
+    /**
      * Wraps a {@link MultiUserChat} with logic for adding extensions to our
      * own presence.
      */
@@ -541,9 +550,13 @@ public class MucClient
             MultiUserChatManager mucManager
                 = MultiUserChatManager.getInstanceFor(xmppConnection);
             muc = mucManager.getMultiUserChat(mucJid);
-            if (presenceInterceptor != null)
+            muc.addPresenceInterceptor(presenceInterceptor);
+
+            PresenceListener defaultInterceptor
+                = mucClientManager.getPresenceInterceptor();
+            if (defaultInterceptor != null)
             {
-                muc.addPresenceInterceptor(presenceInterceptor);
+                muc.addPresenceInterceptor(defaultInterceptor);
             }
             muc.createOrJoin(mucNickname);
             logger.info("Joined MUC: " + mucJid);
@@ -575,12 +588,8 @@ public class MucClient
             lastPresenceSent.removeExtension(
                 MUCInitialPresence.ELEMENT, MUCInitialPresence.NAMESPACE);
 
-            // Remove the old extensions if present
-            extensions.forEach(
-                extension -> lastPresenceSent.removeExtension(
-                    extension.getElementName(), extension.getNamespace()));
-
-            extensions.forEach(lastPresenceSent::addExtension);
+            // Remove the old extensions if present and override
+            extensions.forEach(lastPresenceSent::overrideExtension);
 
             lastPresenceSent.setStanzaId(StanzaIdUtil.newStanzaId());
 
