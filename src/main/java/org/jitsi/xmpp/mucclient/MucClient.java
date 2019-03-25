@@ -27,6 +27,7 @@ import org.jivesoftware.smackx.disco.*;
 import org.jivesoftware.smackx.muc.*;
 import org.jivesoftware.smackx.muc.packet.*;
 import org.jivesoftware.smackx.ping.*;
+import org.jivesoftware.smackx.xdata.*;
 import org.jxmpp.jid.*;
 import org.jxmpp.jid.impl.*;
 import org.jxmpp.jid.parts.*;
@@ -552,11 +553,25 @@ public class MucClient
             muc = mucManager.getMultiUserChat(mucJid);
             muc.addPresenceInterceptor(presenceInterceptor);
 
-            PresenceListener defaultInterceptor
-                = mucClientManager.getPresenceInterceptor();
-            if (defaultInterceptor != null)
+            MultiUserChat.MucCreateConfigFormHandle mucCreateHandle
+                = muc.createOrJoin(mucNickname);
+            if (mucCreateHandle != null)
             {
-                muc.addPresenceInterceptor(defaultInterceptor);
+                // the room was just created. Let's send a config
+                // making the room non-anonymous, so that others can
+                // recognize our JID
+                Form config = muc.getConfigurationForm();
+                Form answer = config.createAnswerForm();
+                // Room non-anonymous
+                String whoisFieldName = "muc#roomconfig_whois";
+                FormField whois = answer.getField(whoisFieldName);
+                if (whois == null)
+                {
+                    whois = new FormField(whoisFieldName);
+                    answer.addField(whois);
+                }
+                whois.addValue("anyone");
+                muc.sendConfigurationForm(answer);
             }
             muc.createOrJoin(mucNickname);
             logger.info("Joined MUC: " + mucJid);
