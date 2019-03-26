@@ -82,12 +82,6 @@ public class MucClientManager
     private final Executor executor;
 
     /**
-     * A presence interceptor that will be added to mucs. Gives control
-     * over the outgoing presence stanzas.
-     */
-    private PresenceListener presenceInterceptor;
-
-    /**
      * Initializes a new {@link MucClientManager} instance.
      *
      */
@@ -344,23 +338,5 @@ public class MucClientManager
        }
        mucClient.stop();
        return true;
-    }
-
-    /**
-     * Returns the current presence interceptor.
-     * @return
-     */
-    public PresenceListener getPresenceInterceptor()
-    {
-        return presenceInterceptor;
-    }
-
-    /**
-     * Sets a default presence interceptor.
-     * @param presenceInterceptor a presence interceptor.
-     */
-    public void setPresenceInterceptor(PresenceListener presenceInterceptor)
-    {
-        this.presenceInterceptor = presenceInterceptor;
     }
 }
