@@ -489,7 +489,7 @@ public class MucClient
         /**
          * Intercepts presence packets sent by smack and saves the last one.
          */
-        private PresenceListener presenceInterceptor = this::presenceSent;
+        private final PresenceListener presenceInterceptor = this::presenceSent;
 
         /**
          * Notifies this instance that Smack sent presence in the MUC on our behalf.
