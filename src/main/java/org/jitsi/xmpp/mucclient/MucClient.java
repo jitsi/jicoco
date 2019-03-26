@@ -573,7 +573,6 @@ public class MucClient
                 whois.addValue("anyone");
                 muc.sendConfigurationForm(answer);
             }
-            muc.createOrJoin(mucNickname);
             logger.info("Joined MUC: " + mucJid);
 
             setPresenceExtensions(mucClientManager.getPresenceExtensions());
