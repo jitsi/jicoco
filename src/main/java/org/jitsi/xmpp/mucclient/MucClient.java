@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2018 Atlassian Pty Ltd
+ * Copyright @ 2018 - present 8x8, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.jivesoftware.smackx.disco.*;
 import org.jivesoftware.smackx.muc.*;
 import org.jivesoftware.smackx.muc.packet.*;
 import org.jivesoftware.smackx.ping.*;
+import org.jivesoftware.smackx.xdata.*;
 import org.jxmpp.jid.*;
 import org.jxmpp.jid.impl.*;
 import org.jxmpp.jid.parts.*;
@@ -488,7 +489,7 @@ public class MucClient
         /**
          * Intercepts presence packets sent by smack and saves the last one.
          */
-        private PresenceListener presenceInterceptor = this::presenceSent;
+        private final PresenceListener presenceInterceptor = this::presenceSent;
 
         /**
          * Notifies this instance that Smack sent presence in the MUC on our behalf.
@@ -541,11 +542,28 @@ public class MucClient
             MultiUserChatManager mucManager
                 = MultiUserChatManager.getInstanceFor(xmppConnection);
             muc = mucManager.getMultiUserChat(mucJid);
-            if (presenceInterceptor != null)
+            muc.addPresenceInterceptor(presenceInterceptor);
+
+            MultiUserChat.MucCreateConfigFormHandle mucCreateHandle
+                = muc.createOrJoin(mucNickname);
+            if (mucCreateHandle != null)
             {
-                muc.addPresenceInterceptor(presenceInterceptor);
+                // the room was just created. Let's send a config
+                // making the room non-anonymous, so that others can
+                // recognize our JID
+                Form config = muc.getConfigurationForm();
+                Form answer = config.createAnswerForm();
+                // Room non-anonymous
+                String whoisFieldName = "muc#roomconfig_whois";
+                FormField whois = answer.getField(whoisFieldName);
+                if (whois == null)
+                {
+                    whois = new FormField(whoisFieldName);
+                    answer.addField(whois);
+                }
+                whois.addValue("anyone");
+                muc.sendConfigurationForm(answer);
             }
-            muc.createOrJoin(mucNickname);
             logger.info("Joined MUC: " + mucJid);
 
             setPresenceExtensions(mucClientManager.getPresenceExtensions());
@@ -575,12 +593,8 @@ public class MucClient
             lastPresenceSent.removeExtension(
                 MUCInitialPresence.ELEMENT, MUCInitialPresence.NAMESPACE);
 
-            // Remove the old extensions if present
-            extensions.forEach(
-                extension -> lastPresenceSent.removeExtension(
-                    extension.getElementName(), extension.getNamespace()));
-
-            extensions.forEach(lastPresenceSent::addExtension);
+            // Remove the old extensions if present and override
+            extensions.forEach(lastPresenceSent::overrideExtension);
 
             lastPresenceSent.setStanzaId(StanzaIdUtil.newStanzaId());
 
