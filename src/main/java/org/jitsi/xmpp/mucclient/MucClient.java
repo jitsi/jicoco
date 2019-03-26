@@ -471,15 +471,6 @@ public class MucClient
     }
 
     /**
-     * Returns the client config.
-     * @return the client config.
-     */
-    public MucClientConfiguration getConfig()
-    {
-        return this.config;
-    }
-
-    /**
      * Wraps a {@link MultiUserChat} with logic for adding extensions to our
      * own presence.
      */
