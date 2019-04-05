@@ -15,7 +15,8 @@
  */
 package org.jitsi.eventadmin;
 
-import org.jitsi.util.*;
+import org.jitsi.utils.*;
+import org.jitsi.utils.logging.*;
 
 import org.osgi.framework.*;
 

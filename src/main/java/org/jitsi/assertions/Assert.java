@@ -15,7 +15,7 @@
  */
 package org.jitsi.assertions;
 
-import org.jitsi.util.*;
+import org.jitsi.utils.*;
 
 /**
  * Utility class for making assertions on variables.

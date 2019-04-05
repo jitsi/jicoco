@@ -16,7 +16,7 @@
  */
 package org.jitsi.xmpp.mucclient;
 
-import org.jitsi.util.*;
+import org.jitsi.utils.logging.*;
 import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
@@ -50,8 +50,7 @@ public class MucClient
      * The {@link Logger} used by the {@link MucClient} class and its instances
      * for logging output.
      */
-    private static final Logger logger
-        =  org.jitsi.util.Logger.getLogger(MucClient.class);
+    private static final Logger logger = Logger.getLogger(MucClient.class);
 
     /**
      * The IQ types we are interested in.

@@ -20,7 +20,7 @@ import net.java.sip.communicator.util.*;
 import org.jitsi.service.resources.*;
 import org.jitsi.service.version.*;
 import org.jitsi.service.version.util.*;
-import org.jitsi.util.*;
+import org.jitsi.utils.*;
 
 /**
  * Implements {@link Version} interface by providing the pieces missing from

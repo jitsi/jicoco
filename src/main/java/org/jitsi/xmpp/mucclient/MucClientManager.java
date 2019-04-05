@@ -17,7 +17,8 @@
 package org.jitsi.xmpp.mucclient;
 
 import org.jitsi.service.configuration.*;
-import org.jitsi.util.*;
+import org.jitsi.utils.concurrent.*;
+import org.jitsi.utils.logging.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.packet.*;
 import org.jxmpp.util.*;

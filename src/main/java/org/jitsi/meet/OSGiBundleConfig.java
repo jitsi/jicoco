@@ -20,6 +20,7 @@ import java.util.*;
 import org.jitsi.impl.neomedia.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.util.*;
+import org.jitsi.utils.*;
 
 /**
  * The class describes the list of OSGi bundle activators and their order of
