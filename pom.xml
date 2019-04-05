@@ -95,6 +95,11 @@
       <artifactId>jitsi-util</artifactId>
       <version>${jitsi-desktop.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>jitsi-utils</artifactId>
+      <version>1.0-20190401.122850-7</version>
+    </dependency>
     <!-- test -->
     <dependency>
       <groupId>junit</groupId>
