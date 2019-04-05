@@ -17,7 +17,7 @@
 package org.jitsi.xmpp.mucclient;
 
 import org.jitsi.service.configuration.*;
-import org.jitsi.util.*;
+import org.jitsi.utils.logging.*;
 
 import java.util.*;
 
