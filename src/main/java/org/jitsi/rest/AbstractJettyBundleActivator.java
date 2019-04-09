@@ -361,50 +361,91 @@ public abstract class AbstractJettyBundleActivator
      * {@code Server} which is to be started in a specific
      * {@code BundleContext}.
      *
-     * @param bundleContext the {@code BundleContext} in which {@code server} is
-     * to be started
      * @param server the {@code Server} to which the new {@code Connector}
      * instance is to be added
      * @return a new {@code Connector} instance which is to be added to
      * {@code server}
      * @throws Exception
      */
-    protected Connector initializeConnector(
-            BundleContext bundleContext,
-            Server server)
+    private Connector initializeConnector(Server server)
         throws Exception
     {
-        // Detect whether we are running on Jetty 9. If not, fall back to Jetty
-        // 8.
-        String className;
+        HttpConfiguration httpCfg = new HttpConfiguration();
+        int tlsPort = getCfgInt(JETTY_TLS_PORT_PNAME, getDefaultTlsPort());
 
-        try
+        httpCfg.setSecurePort(tlsPort);
+        httpCfg.setSecureScheme("https");
+
+        String sslContextFactoryKeyStorePath
+            = getCfgString(JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH, null);
+        Connector connector;
+
+        // If HTTPS is not enabled, serve over HTTP.
+        if (sslContextFactoryKeyStorePath == null)
         {
-            // The detection of Jetty 9 could be as simple/complex as necessary.
-            Class.forName("org.eclipse.jetty.server.ConnectionFactory");
-            className = "9";
+            // HTTP
+            connector
+                = new MuxServerConnector(
+                server,
+                new HttpConnectionFactory(httpCfg));
         }
-        catch (ClassNotFoundException cnfex)
+        else
         {
-            // It appears that we are not running on Jetty 9. Fall back to Jetty
-            // 8 then.
-            className = "8";
+            // HTTPS
+            File sslContextFactoryKeyStoreFile
+                = ConfigUtils.getAbsoluteFile(
+                sslContextFactoryKeyStorePath,
+                cfg);
+            SslContextFactory sslContextFactory = new SslContextFactory();
+            String sslContextFactoryKeyStorePassword
+                = getCfgString(
+                JETTY_SSLCONTEXTFACTORY_KEYSTOREPASSWORD,
+                null);
+            boolean sslContextFactoryNeedClientAuth
+                = getCfgBoolean(
+                JETTY_SSLCONTEXTFACTORY_NEEDCLIENTAUTH,
+                false);
+
+            sslContextFactory.setExcludeCipherSuites(
+                "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
+                "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+                "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+                ".*NULL.*",
+                ".*RC4.*",
+                ".*MD5.*",
+                ".*DES.*",
+                ".*DSS.*");
+            sslContextFactory.setIncludeCipherSuites(
+                "TLS_DHE_RSA.*",
+                "TLS_ECDHE.*");
+            sslContextFactory.setExcludeProtocols(
+                "SSLv3", "TLSv1", "TLSv1.1");
+            sslContextFactory.setRenegotiationAllowed(false);
+            if (sslContextFactoryKeyStorePassword != null)
+            {
+                sslContextFactory.setKeyStorePassword(
+                    sslContextFactoryKeyStorePassword);
+            }
+            sslContextFactory.setKeyStorePath(
+                sslContextFactoryKeyStoreFile.getPath());
+            sslContextFactory.setNeedClientAuth(
+                sslContextFactoryNeedClientAuth);
+
+            HttpConfiguration httpsCfg = new HttpConfiguration(httpCfg);
+
+            httpsCfg.addCustomizer(new SecureRequestCustomizer());
+
+            connector
+                = new MuxServerConnector(
+                server,
+                new SslConnectionFactory(
+                    sslContextFactory,
+                    "http/1.1"),
+                new HttpConnectionFactory(httpsCfg));
         }
 
-        Class<?> outerClass = AbstractJettyBundleActivator.class;
-        Class<?> innerClass
-            = Class.forName(
-                    outerClass.getName() + "$Jetty" + className
-                        + "ConnectorFactory");
-        Constructor<?> constructor
-            = innerClass.getDeclaredConstructor(outerClass);
-
-        constructor.setAccessible(true);
-
-        ConnectorFactory factory
-            = (ConnectorFactory) constructor.newInstance(this);
-        Connector connector
-            = factory.initializeConnector(bundleContext, server);
+        // port
+        setPort(connector, getPort());
 
         // host
         String host = getCfgString(JETTY_HOST_PNAME, null);
@@ -463,7 +504,7 @@ public abstract class AbstractJettyBundleActivator
         throws Exception
     {
         Server server = new Server();
-        Connector connector = initializeConnector(bundleContext, server);
+        Connector connector = initializeConnector(server);
 
         server.addConnector(connector);
 
@@ -641,162 +682,5 @@ public abstract class AbstractJettyBundleActivator
         throws Exception
     {
         return true;
-    }
-
-    /**
-     * Defines the application programming interface (API) of factories of
-     * {@link Connector}s.
-     */
-    private interface ConnectorFactory
-    {
-        /**
-         * Initializes a new {@code Connector} instance to be added to a
-         * specific {@code Server} which is to be started in a specific
-         * {@code BundleContext}.
-         *
-         * @param bundleContext the {@code BundleContext} in which
-         * {@code server} is to be started
-         * @param server the {@code Server} to which the new {@code Connector}
-         * instance is to be added
-         * @return a new {@code Connector} instance which is to be added to
-         * {@code server}
-         * @throws Exception
-         */
-        Connector initializeConnector(
-            BundleContext bundleContext,
-            Server server)
-            throws Exception;
-    }
-
-    /**
-     * Implements {@link ConnectorFactory} for Jetty 8.
-     */
-    private class Jetty8ConnectorFactory
-        implements ConnectorFactory
-    {
-        /**
-         * {@inheritDoc}
-         *
-         * The implementation utilizes Jetty 8 application programming interface
-         * (API) and is not (necessarily) compatible with Jetty 9.
-         */
-        @Override
-        public Connector initializeConnector(
-                BundleContext bundleContext,
-                Server server)
-            throws Exception
-        {
-            // The source code is compiled in the environment of Jetty 9. Unless
-            // the Jetty 8 application programming interface (API) is available
-            // in Jetty 9 as well, it is to be invoked through reflection.
-            String className
-                = "org.eclipse.jetty.server.nio.SelectChannelConnector";
-            Class<?> clazz = Class.forName(className);
-            Connector connector = (Connector) clazz.newInstance();
-
-            // port
-            setPort(connector, getCfgInt(JETTY_PORT_PNAME, getDefaultPort()));
-
-            return connector;
-        }
-    }
-
-    /**
-     * Implements {@link ConnectorFactory} for Jetty 9.
-     */
-    private class Jetty9ConnectorFactory
-        implements ConnectorFactory
-    {
-        /**
-         * {@inheritDoc}
-         *
-         * The implementation utilizes Jetty 9 application programming interface
-         * (API) and is not (necessarily) compatible with Jetty 8.
-         */
-        @Override
-        public Connector initializeConnector(
-                BundleContext bundleContext,
-                Server server)
-            throws Exception
-        {
-            HttpConfiguration httpCfg = new HttpConfiguration();
-            int tlsPort = getCfgInt(JETTY_TLS_PORT_PNAME, getDefaultTlsPort());
-
-            httpCfg.setSecurePort(tlsPort);
-            httpCfg.setSecureScheme("https");
-
-            String sslContextFactoryKeyStorePath
-                = getCfgString(JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH, null);
-            Connector connector;
-
-            // If HTTPS is not enabled, serve over HTTP.
-            if (sslContextFactoryKeyStorePath == null)
-            {
-                // HTTP
-                connector
-                    = new MuxServerConnector(
-                            server,
-                            new HttpConnectionFactory(httpCfg));
-            }
-            else
-            {
-                // HTTPS
-                File sslContextFactoryKeyStoreFile
-                    = ConfigUtils.getAbsoluteFile(
-                    sslContextFactoryKeyStorePath,
-                    cfg);
-                SslContextFactory sslContextFactory = new SslContextFactory();
-                String sslContextFactoryKeyStorePassword
-                    = getCfgString(
-                            JETTY_SSLCONTEXTFACTORY_KEYSTOREPASSWORD,
-                            null);
-                boolean sslContextFactoryNeedClientAuth
-                    = getCfgBoolean(
-                            JETTY_SSLCONTEXTFACTORY_NEEDCLIENTAUTH,
-                            false);
-
-                sslContextFactory.setExcludeCipherSuites(
-                        "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                        "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                        "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
-                        ".*NULL.*",
-                        ".*RC4.*",
-                        ".*MD5.*",
-                        ".*DES.*",
-                        ".*DSS.*");
-                sslContextFactory.setIncludeCipherSuites(
-                        "TLS_DHE_RSA.*",
-                        "TLS_ECDHE.*");
-                sslContextFactory.setExcludeProtocols(
-                    "SSLv3", "TLSv1", "TLSv1.1");
-                sslContextFactory.setRenegotiationAllowed(false);
-                if (sslContextFactoryKeyStorePassword != null)
-                {
-                    sslContextFactory.setKeyStorePassword(
-                            sslContextFactoryKeyStorePassword);
-                }
-                sslContextFactory.setKeyStorePath(
-                        sslContextFactoryKeyStoreFile.getPath());
-                sslContextFactory.setNeedClientAuth(
-                        sslContextFactoryNeedClientAuth);
-
-                HttpConfiguration httpsCfg = new HttpConfiguration(httpCfg);
-
-                httpsCfg.addCustomizer(new SecureRequestCustomizer());
-
-                connector
-                    = new MuxServerConnector(
-                            server,
-                            new SslConnectionFactory(
-                                    sslContextFactory,
-                                    "http/1.1"),
-                            new HttpConnectionFactory(httpsCfg));
-            }
-
-            // port
-            setPort(connector, getPort());
-
-            return connector;
-        }
     }
 }

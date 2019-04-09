@@ -9,7 +9,7 @@
   <version>1.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <properties>
-    <jetty.version>9.2.10.v20150310</jetty.version>
+    <jetty.version>9.4.15.v20190215</jetty.version>
     <jitsi-desktop.version>2.13.2bc6ccf</jitsi-desktop.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <smack.version>4.2.4-47d17fc</smack.version>
