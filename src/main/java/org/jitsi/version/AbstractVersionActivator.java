@@ -15,10 +15,8 @@
  */
 package org.jitsi.version;
 
-import org.jitsi.osgi.*;
-import org.jitsi.service.configuration.*;
-import org.jitsi.service.version.Version;
-import org.jitsi.service.version.*;
+import org.jitsi.utils.version.*;
+import org.jitsi.utils.version.Version;
 
 import org.jitsi.utils.logging.*;
 import org.osgi.framework.*;
@@ -56,11 +54,6 @@ public abstract class AbstractVersionActivator
         = Pattern.compile("(\\d+)\\.(\\d+)\\.([\\d\\.]+)");
 
     /**
-     * The OSGi <tt>BundleContext</tt>.
-     */
-    private static BundleContext bundleContext;
-
-    /**
      * <tt>VersionImpl</tt> instance which stores the current version of the
      * application.
      */
@@ -72,7 +65,7 @@ public abstract class AbstractVersionActivator
      * @return {@link CurrentVersion} instance which provides the details about
      * current version of the application.
      */
-    abstract protected CurrentVersion getCurrentVersion();
+    abstract protected Version getCurrentVersion();
 
     /**
      * Called when this bundle is started so the Framework can perform the
@@ -89,14 +82,12 @@ public abstract class AbstractVersionActivator
         if (logger.isDebugEnabled())
             logger.debug("Started.");
 
-        AbstractVersionActivator.bundleContext = context;
-
-        CurrentVersion currentVersion = getCurrentVersion();
+        Version currentVersion = getCurrentVersion();
 
         this.currentVersion = new VersionImpl(
-                currentVersion.getDefaultAppName(),
-                currentVersion.getMajorVersion(),
-                currentVersion.getMinorVersion(),
+                currentVersion.getApplicationName(),
+                currentVersion.getVersionMajor(),
+                currentVersion.getVersionMinor(),
                 currentVersion.getNightlyBuildID(),
                 currentVersion.getPreReleaseID());
 
@@ -110,49 +101,8 @@ public abstract class AbstractVersionActivator
         String applicationName = this.currentVersion.getApplicationName();
         String versionString = this.currentVersion.toString();
 
-        logger.debug(
-                this.currentVersion.getApplicationName()
-                    + " Version Service ... [REGISTERED]");
-
-        if (logger.isInfoEnabled())
-        {
-            logger.info(
-                    applicationName + " Version: " + applicationName + " "
-                        + versionString);
-        }
-
-        //register properties for those that would like to use them
-        ConfigurationService cfg = getConfigurationService();
-
-        cfg.setProperty(Version.PNAME_APPLICATION_NAME, applicationName, true);
-        cfg.setProperty(Version.PNAME_APPLICATION_VERSION, versionString, true);
-    }
-
-    /**
-     * Gets a <tt>ConfigurationService</tt> implementation currently registered
-     * in the <tt>BundleContext</tt> in which this bundle has been started or
-     * <tt>null</tt> if no such implementation was found.
-     *
-     * @return a <tt>ConfigurationService</tt> implementation currently
-     * registered in the <tt>BundleContext</tt> in which this bundle has been
-     * started or <tt>null</tt> if no such implementation was found
-     */
-    private static ConfigurationService getConfigurationService()
-    {
-        return
-            ServiceUtils2.getService(bundleContext, ConfigurationService.class);
-    }
-
-    /**
-     * Gets the <tt>BundleContext</tt> instance within which this bundle has
-     * been started.
-     *
-     * @return the <tt>BundleContext</tt> instance within which this bundle has
-     * been started
-     */
-    public static BundleContext getBundleContext()
-    {
-        return bundleContext;
+        logger.info("VersionService registered: "
+                + applicationName + " " + versionString);
     }
 
     /**

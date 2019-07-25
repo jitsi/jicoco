@@ -15,8 +15,7 @@
  */
 package org.jitsi.version;
 
-import org.jitsi.service.version.*;
-import org.jitsi.service.version.util.*;
+import org.jitsi.utils.version.*;
 import org.jitsi.utils.*;
 
 /**
@@ -115,17 +114,7 @@ class VersionImpl
     {
         if (applicationName == null)
         {
-            if (applicationName == null)
-            {
-                // Allow the application name to be overridden by the user.
-                applicationName
-                    = System.getProperty(Version.PNAME_APPLICATION_NAME);
-                if (applicationName == null
-                    || applicationName.length() == 0)
-                {
-                    applicationName = defaultApplicationName;
-                }
-            }
+            applicationName = defaultApplicationName;
         }
         return applicationName;
     }
