@@ -15,9 +15,6 @@
  */
 package org.jitsi.version;
 
-import net.java.sip.communicator.util.*;
-
-import org.jitsi.service.resources.*;
 import org.jitsi.service.version.*;
 import org.jitsi.service.version.util.*;
 import org.jitsi.utils.*;
@@ -118,40 +115,15 @@ class VersionImpl
     {
         if (applicationName == null)
         {
-            try
+            if (applicationName == null)
             {
-                // XXX There is no need to have the ResourceManagementService
-                // instance as a static field of the VersionImpl class because
-                // it will be used once only anyway.
-                ResourceManagementService resources
-                    = ServiceUtils.getService(
-                            AbstractVersionActivator.getBundleContext(),
-                            ResourceManagementService.class);
-
-                if (resources != null)
+                // Allow the application name to be overridden by the user.
+                applicationName
+                    = System.getProperty(Version.PNAME_APPLICATION_NAME);
+                if (applicationName == null
+                    || applicationName.length() == 0)
                 {
-                    applicationName
-                        = resources.getSettingsString(
-                                "service.gui.APPLICATION_NAME");
-                }
-            }
-            catch (Exception e)
-            {
-                // If resource bundle is not found or the key is missing, return
-                // the default name.
-            }
-            finally
-            {
-                if (applicationName == null)
-                {
-                    // Allow the application name to be overridden by the user.
-                    applicationName
-                        = System.getProperty(Version.PNAME_APPLICATION_NAME);
-                    if (applicationName == null
-                        || applicationName.length() == 0)
-                    {
-                        applicationName = defaultApplicationName;
-                    }
+                    applicationName = defaultApplicationName;
                 }
             }
         }

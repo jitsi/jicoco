@@ -15,8 +15,6 @@
  */
 package org.jitsi.osgi;
 
-import net.java.sip.communicator.util.*;
-
 import org.osgi.framework.*;
 
 /**
@@ -76,7 +74,7 @@ public class OSGIServiceRef<ServiceClass>
     {
         if (instance == null)
         {
-            instance = ServiceUtils.getService(ctx, clazz);
+            instance = ServiceUtils2.getService(ctx, clazz);
         }
         return instance;
     }

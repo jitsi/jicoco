@@ -45,10 +45,14 @@ public class ServiceUtils2
             BundleContext bundleContext,
             java.lang.Class<T> serviceClass)
     {
+        ServiceReference<T> serviceReference
+                = bundleContext == null
+                ? null : bundleContext.getServiceReference(serviceClass);
+
         return
-            net.java.sip.communicator.util.ServiceUtils.getService(
-                    bundleContext,
-                    serviceClass);
+                (serviceReference == null)
+                        ? null
+                        : bundleContext.getService(serviceReference);
     }
 
     public static <T> Collection<T> getServices(

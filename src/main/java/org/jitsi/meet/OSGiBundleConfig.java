@@ -17,7 +17,6 @@ package org.jitsi.meet;
 
 import java.io.*;
 import java.util.*;
-import org.jitsi.impl.neomedia.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.util.*;
 import org.jitsi.utils.*;
@@ -185,8 +184,13 @@ public abstract class OSGiBundleConfig
                 ConfigurationService.PNAME_CONFIGURATION_FILE_IS_READ_ONLY,
                 true_);
 
-        defaults.put(MediaServiceImpl.DISABLE_AUDIO_SUPPORT_PNAME, true_);
-        defaults.put(MediaServiceImpl.DISABLE_VIDEO_SUPPORT_PNAME, true_);
+        // Jicoco users default to not using libjitsi's audio and video system
+        defaults.put(
+                "net.java.sip.communicator.service.media.DISABLE_AUDIO_SUPPORT",
+                true_);
+        defaults.put(
+                "net.java.sip.communicator.service.media.DISABLE_VIDEO_SUPPORT",
+                true_);
 
         return defaults;
     }

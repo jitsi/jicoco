@@ -16,7 +16,7 @@
 package org.jitsi.ddclient;
 
 import com.timgroup.statsd.*;
-import net.java.sip.communicator.util.*;
+import org.jitsi.osgi.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.util.*;
 import org.osgi.framework.*;
@@ -93,7 +93,7 @@ public class Activator
             return;
         }
 
-        cfg = ServiceUtils.getService(context, ConfigurationService.class);
+        cfg = ServiceUtils2.getService(context, ConfigurationService.class);
 
         String prefix = ConfigUtils.getString(cfg,
             DDCLIENT_PREFIX_PNAME, DEFAULT_PREFIX);
