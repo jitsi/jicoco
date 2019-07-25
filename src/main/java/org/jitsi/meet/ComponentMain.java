@@ -15,7 +15,6 @@
  */
 package org.jitsi.meet;
 
-import net.java.sip.communicator.service.shutdown.*;
 import net.java.sip.communicator.util.*;
 
 import org.jitsi.impl.configuration.*;
@@ -272,36 +271,31 @@ public class ComponentMain
      */
     private Callable<Boolean> getConnectCallable()
     {
-        return new Callable<Boolean>()
+        return () ->
         {
-            @Override
-            public Boolean call()
-                throws Exception
+            try
             {
-                try
+                synchronized (connectSynRoot)
                 {
-                    synchronized (connectSynRoot)
+                    if (componentManager == null || component == null)
                     {
-                        if (componentManager == null || component == null)
-                        {
-                            // Task cancelled ?
-                            return false;
-                        }
-
-                        componentManager.addComponent(
-                            component.getSubdomain(), component);
-
+                        // Task cancelled ?
                         return false;
                     }
+
+                    componentManager.addComponent(
+                        component.getSubdomain(), component);
+
+                    return false;
                 }
-                catch (ComponentException e)
-                {
-                    logger.error(
-                        e.getMessage() +
-                            ", host:" + component.getHostname() +
-                            ", port:" + component.getPort(), e);
-                    return true;
-                }
+            }
+            catch (ComponentException e)
+            {
+                logger.error(
+                    e.getMessage() +
+                        ", host:" + component.getHostname() +
+                        ", port:" + component.getPort(), e);
+                return true;
             }
         };
     }
