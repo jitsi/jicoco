@@ -15,12 +15,12 @@
  */
 package org.jitsi.version;
 
-import net.java.sip.communicator.util.*;
-
+import org.jitsi.osgi.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.service.version.Version;
 import org.jitsi.service.version.*;
 
+import org.jitsi.utils.logging.*;
 import org.osgi.framework.*;
 
 import java.util.regex.*;
@@ -140,7 +140,7 @@ public abstract class AbstractVersionActivator
     private static ConfigurationService getConfigurationService()
     {
         return
-            ServiceUtils.getService(bundleContext, ConfigurationService.class);
+            ServiceUtils2.getService(bundleContext, ConfigurationService.class);
     }
 
     /**

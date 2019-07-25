@@ -15,9 +15,9 @@
  */
 package org.jitsi.rest;
 
-import net.java.sip.communicator.util.*;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;
+import org.jitsi.osgi.*;
 import org.jitsi.service.version.*;
 import org.jivesoftware.smack.packet.*;
 import org.json.simple.*;
@@ -229,7 +229,7 @@ public abstract class AbstractJSONHandler
         if (bundleContext != null)
         {
             VersionService versionService
-                = ServiceUtils.getService(bundleContext, VersionService.class);
+                = ServiceUtils2.getService(bundleContext, VersionService.class);
 
             if (versionService != null)
             {
@@ -306,10 +306,7 @@ public abstract class AbstractJSONHandler
     public <T> T getService(Class<T> serviceClass)
     {
         BundleContext bundleContext = getBundleContext();
-        T service
-            = (bundleContext == null)
-                ? null
-                : ServiceUtils.getService(bundleContext, serviceClass);
+        T service = ServiceUtils2.getService(bundleContext, serviceClass);
 
         return service;
     }

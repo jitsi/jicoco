@@ -15,11 +15,11 @@
  */
 package org.jitsi.meet;
 
-import net.java.sip.communicator.util.*;
-
 import org.jitsi.impl.configuration.*;
+import org.jitsi.osgi.*;
 import org.jitsi.retry.*;
 import org.jitsi.service.configuration.*;
+import org.jitsi.utils.logging.*;
 import org.jitsi.xmpp.component.*;
 
 import org.jivesoftware.whack.*;
@@ -124,7 +124,7 @@ public class ComponentMain
                     registerShutdownService(bundleContext);
 
                     // Log config properties(hide password values)
-                    ServiceUtils.getService(
+                    ServiceUtils2.getService(
                         bundleContext,
                         ConfigurationService.class)
                         .logConfigurationProperties("(pass)|(secret)");

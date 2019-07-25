@@ -15,8 +15,8 @@
  */
 package org.jitsi.retry;
 
-import net.java.sip.communicator.util.*;
-
+import org.jitsi.osgi.*;
+import org.jitsi.utils.logging.*;
 import org.osgi.framework.*;
 
 import java.util.concurrent.*;
@@ -92,7 +92,7 @@ public class RetryStrategy
         throws IllegalArgumentException
     {
         this.executor
-            = ServiceUtils.getService(
+            = ServiceUtils2.getService(
                     osgiContext,
                     ScheduledExecutorService.class);
 

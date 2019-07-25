@@ -15,13 +15,13 @@
  */
 package org.jitsi.rest;
 
-import net.java.sip.communicator.util.Logger;
-import net.java.sip.communicator.util.*;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.util.ssl.*;
+import org.jitsi.osgi.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.util.*;
+import org.jitsi.utils.logging.*;
 import org.osgi.framework.*;
 
 import java.io.*;
@@ -594,7 +594,7 @@ public abstract class AbstractJettyBundleActivator
         throws Exception
     {
         cfg
-            = ServiceUtils.getService(
+            = ServiceUtils2.getService(
                     bundleContext,
                     ConfigurationService.class);
 

@@ -15,8 +15,8 @@
  */
 package org.jitsi.xmpp.component;
 
-import net.java.sip.communicator.util.*;
 import org.jitsi.service.configuration.*;
+import org.jitsi.utils.logging.*;
 import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.provider.*;
 import org.jivesoftware.smackx.ping.packet.*;
