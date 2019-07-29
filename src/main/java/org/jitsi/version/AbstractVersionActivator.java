@@ -54,15 +54,9 @@ public abstract class AbstractVersionActivator
         = Pattern.compile("(\\d+)\\.(\\d+)\\.([\\d\\.]+)");
 
     /**
-     * <tt>VersionImpl</tt> instance which stores the current version of the
-     * application.
-     */
-    private VersionImpl currentVersion;
-
-    /**
-     * Implementing class must return a valid {@link CurrentVersion} object.
+     * Implementing class must return a valid {@link Version} object.
      *
-     * @return {@link CurrentVersion} instance which provides the details about
+     * @return {@link Version} instance which provides the details about
      * current version of the application.
      */
     abstract protected Version getCurrentVersion();
@@ -80,29 +74,22 @@ public abstract class AbstractVersionActivator
     public void start(BundleContext context) throws Exception
     {
         if (logger.isDebugEnabled())
+        {
             logger.debug("Started.");
+        }
 
         Version currentVersion = getCurrentVersion();
 
-        this.currentVersion = new VersionImpl(
-                currentVersion.getApplicationName(),
-                currentVersion.getVersionMajor(),
-                currentVersion.getVersionMinor(),
-                currentVersion.getNightlyBuildID(),
-                currentVersion.getPreReleaseID());
-
-        VersionServiceImpl versionServiceImpl = new VersionServiceImpl();
+        VersionServiceImpl versionServiceImpl
+                = new VersionServiceImpl(currentVersion);
 
         context.registerService(
                 VersionService.class.getName(),
                 versionServiceImpl,
                 null);
 
-        String applicationName = this.currentVersion.getApplicationName();
-        String versionString = this.currentVersion.toString();
-
         logger.info("VersionService registered: "
-                + applicationName + " " + versionString);
+                + currentVersion.getApplicationName() + " " + currentVersion);
     }
 
     /**
@@ -122,31 +109,40 @@ public abstract class AbstractVersionActivator
     /**
      * Implementation of the {@link VersionService}.
      */
-    class VersionServiceImpl
+    static class VersionServiceImpl
         implements VersionService
     {
+        private final Version version;
+
+        private VersionServiceImpl(Version version)
+        {
+            this.version = version;
+        }
+
         /**
          * Returns a Version instance corresponding to the <tt>version</tt>
          * string.
          *
-         * @param version a version String that we have obtained by calling a
+         * @param versionString a version String that we have obtained by calling a
          * <tt>Version.toString()</tt> method.
          *
          * @return the <tt>Version</tt> object corresponding to the
          * <tt>version</tt> string. Or null if we cannot parse the string.
          */
-        public Version parseVersionString(String version)
+        @Override
+        public Version parseVersionString(String versionString)
         {
-            Matcher matcher = PARSE_VERSION_STRING_PATTERN.matcher(version);
+            Matcher matcher
+                    = PARSE_VERSION_STRING_PATTERN.matcher(versionString);
 
             if(matcher.matches() && matcher.groupCount() == 3)
             {
                 return new VersionImpl(
-                    currentVersion.getApplicationName(),
+                    version.getApplicationName(),
                     Integer.parseInt(matcher.group(1)),
                     Integer.parseInt(matcher.group(2)),
                     matcher.group(3),
-                    currentVersion.getPreReleaseID());
+                    version.getPreReleaseID());
             }
 
             return null;
@@ -159,9 +155,10 @@ public abstract class AbstractVersionActivator
          * @return a <tt>Version</tt> object containing version details of the
          * application version that we're currently running.
          */
+        @Override
         public Version getCurrentVersion()
         {
-            return currentVersion;
+            return version;
         }
     }
 }
