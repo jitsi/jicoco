@@ -18,7 +18,7 @@ package org.jitsi.rest;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;
 import org.jitsi.osgi.*;
-import org.jitsi.service.version.*;
+import org.jitsi.utils.version.*;
 import org.jivesoftware.smack.packet.*;
 import org.json.simple.*;
 import org.osgi.framework.*;
@@ -233,7 +233,7 @@ public abstract class AbstractJSONHandler
 
             if (versionService != null)
             {
-                org.jitsi.service.version.Version version
+                org.jitsi.utils.version.Version version
                     = versionService.getCurrentVersion();
                 JSONObject versionJSONObject = new JSONObject();
 
