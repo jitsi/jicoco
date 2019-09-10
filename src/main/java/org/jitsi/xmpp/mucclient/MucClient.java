@@ -426,6 +426,14 @@ public class MucClient
     {
         IQ responseIq = null;
 
+        EntityBareJid fromJid = iq.getFrom().asEntityBareJidIfPossible();
+        if (fromJid == null
+            || !this.config.getMucJids().contains(fromJid.toString()))
+        {
+            logger.warn("Received an IQ with unauthorized from:" + fromJid);
+            return IQUtils.createError(iq, XMPPError.Condition.forbidden);
+        }
+
         IQListener iqListener = this.iqListener;
         if (iqListener == null)
         {
