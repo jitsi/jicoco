@@ -10,7 +10,6 @@
   <packaging>jar</packaging>
   <properties>
     <jetty.version>9.4.15.v20190215</jetty.version>
-    <jitsi-desktop.version>2.13.cb5485e</jitsi-desktop.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <smack.version>4.2.4-47d17fc</smack.version>
   </properties>
@@ -87,8 +86,8 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>jitsi-util</artifactId>
-      <version>${jitsi-desktop.version}</version>
+      <artifactId>libjitsi</artifactId>
+      <version>1.0-3-gd07c465</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
