@@ -432,7 +432,7 @@ public class MucClient
             || !this.config.getMucJids().stream().anyMatch(
                     mucJid -> mucJid.toLowerCase().equals(fromJidStr)))
         {
-            logger.warn("Received an IQ with unauthorized from:" + fromJid);
+            logger.warn("Received an IQ from a non-MUC member: " + fromJid);
             return IQUtils.createError(iq, XMPPError.Condition.forbidden);
         }
 
