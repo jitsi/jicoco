@@ -426,6 +426,16 @@ public class MucClient
     {
         IQ responseIq = null;
 
+        EntityBareJid fromJid = iq.getFrom().asEntityBareJidIfPossible();
+        String fromJidStr = fromJid.toString().toLowerCase();
+        if (fromJid == null
+            || !this.config.getMucJids().stream().anyMatch(
+                    mucJid -> mucJid.toLowerCase().equals(fromJidStr)))
+        {
+            logger.warn("Received an IQ from a non-MUC member: " + fromJid);
+            return IQUtils.createError(iq, XMPPError.Condition.forbidden);
+        }
+
         IQListener iqListener = this.iqListener;
         if (iqListener == null)
         {
