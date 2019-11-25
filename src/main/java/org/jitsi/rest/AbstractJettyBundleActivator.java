@@ -20,7 +20,7 @@ import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.util.ssl.*;
 import org.jitsi.osgi.*;
 import org.jitsi.service.configuration.*;
-import org.jitsi.util.*;
+import org.jitsi.utils.*;
 import org.jitsi.utils.logging.*;
 import org.osgi.framework.*;
 
