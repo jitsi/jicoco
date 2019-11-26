@@ -15,10 +15,10 @@
  */
 package org.jitsi.meet;
 
-import org.jitsi.impl.configuration.*;
 import org.jitsi.osgi.*;
 import org.jitsi.retry.*;
 import org.jitsi.service.configuration.*;
+import org.jitsi.utils.*;
 import org.jitsi.utils.logging.*;
 import org.jitsi.xmpp.component.*;
 
@@ -99,9 +99,8 @@ public class ComponentMain
     {
         // Make sure that passwords are not printed by ConfigurationService
         // on startup by setting password regExpr and cmd line args list
-        ConfigurationServiceImpl.PASSWORD_SYS_PROPS = "pass";
-        ConfigurationServiceImpl
-            .PASSWORD_CMD_LINE_ARGS = "secret,user_password";
+        ConfigUtils.PASSWORD_SYS_PROPS = "pass";
+        ConfigUtils.PASSWORD_CMD_LINE_ARGS = "secret,user_password";
 
         OSGi.setBundleConfig(bundleConfig);
 
