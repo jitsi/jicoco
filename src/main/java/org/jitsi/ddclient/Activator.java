@@ -18,7 +18,7 @@ package org.jitsi.ddclient;
 import com.timgroup.statsd.*;
 import org.jitsi.osgi.*;
 import org.jitsi.service.configuration.*;
-import org.jitsi.util.*;
+import org.jitsi.utils.*;
 import org.osgi.framework.*;
 
 /**
