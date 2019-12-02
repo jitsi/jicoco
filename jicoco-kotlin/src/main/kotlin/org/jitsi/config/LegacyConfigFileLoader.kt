@@ -1,0 +1,44 @@
+package org.jitsi.config
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import org.jitsi.utils.logging2.LoggerImpl
+import java.nio.file.InvalidPathException
+import java.nio.file.Paths
+
+/**
+ * Used to load a config file that exists outside of the typesafe config
+ * library's convention for log file locations.  For example, we use this to
+ * load a legacy sip-communicator.properties config file into a [Config]
+ * instance.
+ */
+class LegacyConfigFileLoader {
+    companion object {
+        private val logger = LoggerImpl(LegacyConfigFileLoader::class.java.name)
+
+        fun load(first: String?, vararg rest: String?): Config {
+            logger.info("Attempting to load legacy config file at path " +
+            listOf(first, *rest).joinToString())
+            return try {
+                // Sanitize any null arguments, since Paths.get requires they
+                // be non-null.  If any get changed/filtered here, throw an
+                // InvalidPathException
+                val firstPathArg = first ?: throw InvalidPathException(first, "null path")
+                val otherPathArgs = rest.filterNotNull().toTypedArray()
+                if (otherPathArgs.size != rest.size) {
+                    throw InvalidPathException("", "null path")
+                }
+                val path = Paths.get(firstPathArg, *otherPathArgs)
+                val config = ConfigFactory.parseFile(path.toFile())
+                logger.info("Found a legacy config file: \n" + config.root().render())
+                config
+            } catch (e: InvalidPathException) {
+                logger.info("No legacy config file found")
+                ConfigFactory.parseString("")
+            } catch (e: NullPointerException) {
+                logger.info("No legacy config file found")
+                ConfigFactory.parseString("")
+            }
+        }
+    }
+}
