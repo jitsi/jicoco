@@ -93,7 +93,7 @@ class TypesafeConfigSourceTest : ShouldSpec() {
     }
 
     private fun ShouldScope.withConfig(block: () -> String) {
-        val config = TypesafeConfigSource("testConfig", ConfigFactory.parseString(block()))
+        val config = TypesafeConfigSource("testConfig") { ConfigFactory.parseString(block()) }
         this.context.putMetaData("config", config)
     }
 

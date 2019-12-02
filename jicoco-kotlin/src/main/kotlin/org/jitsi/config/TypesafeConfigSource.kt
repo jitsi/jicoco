@@ -1,6 +1,7 @@
 package org.jitsi.config
 
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
 import com.typesafe.config.ConfigValue
 import org.jitsi.utils.config.ConfigSource
@@ -11,14 +12,14 @@ import java.time.temporal.TemporalAmount
 import kotlin.reflect.KClass
 
 /**
- * A [ConfigSource] which reads from a [com.typesafe.Config]
- * object.  Subclasses can be created to support parsing types
- * not handled here.
+ * A [ConfigSource] which reads from a typesafe [Config] object.
  */
 open class TypesafeConfigSource(
     override val name: String,
-    private val config: Config
+    private val configLoader: () -> Config
 ) : ConfigSource {
+    private var config = configLoader()
+
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> getterFor(valueType: KClass<T>): (String) -> T {
         return when(valueType) {
@@ -52,4 +53,33 @@ open class TypesafeConfigSource(
         }
     }
     //TODO: translate typesafeconfig exceptions(?)
+
+    //TODO: need to add this to ConfigSource interface
+    fun reload() {
+        config = configLoader()
+    }
+}
+
+/**
+ * The 'new' config file is read via the default [ConfigFactory.load]
+ * loader.
+ */
+class NewConfig : TypesafeConfigSource("new config", ConfigFactory::load)
+
+/**
+ * The 'legacy' config file is read by explicitly parsing the old file via
+ * [LegacyConfigFileLoader.load]
+ */
+class LegacyConfig : TypesafeConfigSource("legacy config", ::loadLegacyConfig) {
+    companion object {
+        fun loadLegacyConfig(): Config {
+            val oldConfigHomeDirLocation = System.getProperty("net.java.sip.communicator.SC_HOME_DIR_LOCATION")
+            val oldConfigHomeDirName = System.getProperty("net.java.sip.communicator.SC_HOME_DIR_NAME")
+            return LegacyConfigFileLoader.load(
+                oldConfigHomeDirLocation,
+                oldConfigHomeDirName,
+                "sip-communicator.properties"
+            )
+        }
+    }
 }
