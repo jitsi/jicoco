@@ -53,11 +53,19 @@ open class SimpleConfig<T : Any>(
         get() = multiProp.value
 }
 
-// A helper to create an instance of SimpleConfig
+/**
+ * A helper to create an instance of [SimpleConfig]: since the function is
+ * inlined and uses a reified type, this helper can automatically take
+ * care of passing the value type to [SimpleConfig].
+ */
 inline fun <reified T : Any> simple(readOnce: Boolean, legacyName: String, newName: String): ConfigProperty<T> =
     SimpleConfig(T::class, legacyName, newName, readOnce)
 
-
+/**
+ * A helper to denote a property pulled from the legacy config file when
+ * using a [MultiConfigPropertyBuilder].  It takes care of setting the config
+ * source
+ */
 fun <T : Any> MultiConfigPropertyBuilder<T>.legacyProperty(block: ConfigPropertyBuilder<T>.() -> Unit) {
     property {
         fromConfig(JitsiConfig.legacyConfig)
@@ -65,6 +73,11 @@ fun <T : Any> MultiConfigPropertyBuilder<T>.legacyProperty(block: ConfigProperty
     }
 }
 
+/**
+ * A helper to denote a property pulled from the new config file when
+ * using a [MultiConfigPropertyBuilder].  It takes care of setting the config
+ * source
+ */
 fun <T : Any> MultiConfigPropertyBuilder<T>.newProperty(block: ConfigPropertyBuilder<T>.() -> Unit) {
     property {
         fromConfig(JitsiConfig.newConfig)
