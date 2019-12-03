@@ -32,6 +32,10 @@ class LegacyConfigFileLoader {
     companion object {
         private val logger = LoggerImpl(LegacyConfigFileLoader::class.java.name)
 
+        /**
+         * [first] and [rest] are [String]s which will be combined to form
+         * the [java.nio.file.Path] which we'll use to load the file.
+         */
         fun load(first: String?, vararg rest: String?): Config {
             logger.info("Attempting to load legacy config file at path " +
             listOf(first, *rest).joinToString())
