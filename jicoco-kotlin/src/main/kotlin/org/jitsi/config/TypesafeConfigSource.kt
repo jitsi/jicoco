@@ -34,7 +34,8 @@ open class TypesafeConfigSource(
     override val name: String,
     private val configLoader: () -> Config
 ) : ConfigSource {
-    private var config = configLoader()
+    internal var config = configLoader()
+        private set
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> getterFor(valueType: KClass<T>): (String) -> T {

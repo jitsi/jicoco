@@ -16,19 +16,32 @@
 
 package org.jitsi.config
 
+import org.jitsi.utils.logging2.LoggerImpl
+
 /**
  * Creates and holds the [ConfigSource] instances for the legacy and new
  * config files.
  */
 class JitsiConfig {
     companion object {
+        private val logger = LoggerImpl(JitsiConfig::class.qualifiedName)
         //TODO: type these to ConfigSource once reload gets moved to interface
         val newConfig = NewConfig()
         val legacyConfig = LegacyConfig()
 
+        init {
+            dumpConfigs()
+        }
+
         fun reload() {
             newConfig.reload()
             legacyConfig.reload()
+            dumpConfigs()
+        }
+
+        private fun dumpConfigs() {
+            logger.debug {"Loaded legacy config:\n${legacyConfig.config.mask().root().render()}" }
+            logger.debug {"Loaded new config:\n${newConfig.config.mask().root().render()}" }
         }
     }
 }
