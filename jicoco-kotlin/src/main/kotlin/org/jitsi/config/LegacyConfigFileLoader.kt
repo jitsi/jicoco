@@ -49,9 +49,15 @@ class LegacyConfigFileLoader {
                     throw InvalidPathException("", "null path")
                 }
                 val path = Paths.get(firstPathArg, *otherPathArgs)
-                val config = ConfigFactory.parseFile(path.toFile())
-                logger.info("Found a legacy config file: \n" + config.root().render())
-                config
+                val file = path.toFile()
+                if (!file.exists()) {
+                    logger.info("No legacy config file found")
+                    ConfigFactory.parseString("")
+                } else {
+                    val config = ConfigFactory.parseFile(file)
+                    logger.info("Found a legacy config file: \n ${config.root().render()}")
+                    config
+                }
             } catch (e: InvalidPathException) {
                 logger.info("No legacy config file found")
                 ConfigFactory.parseString("")
