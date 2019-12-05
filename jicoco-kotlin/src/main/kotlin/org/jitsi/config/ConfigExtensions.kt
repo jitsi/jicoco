@@ -10,8 +10,13 @@ private fun shouldMask(pattern: Pattern?, key: String): Boolean {
     return pattern.matcher(key).find()
 }
 
-private const val MASK = "******"
+const val MASK = "******"
 
+/**
+ * Returns a new [Config] with any values matching
+ * [ConfigUtils.PASSWORD_SYS_PROPS] changed to [MASK].   NOTE
+ * that this will change the type of the value to a [String]
+ */
 fun Config.mask(): Config {
     // Or should this be held in the config itself?
     val pattern =
