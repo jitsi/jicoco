@@ -15,10 +15,10 @@ import java.beans.PropertyChangeListener
  * this shim: only those methods which were found to be used by code
  * relying on this shim.
  *
- * The constructor is internal because we create an instance in [JitsiConfig]
+ * The constructor is private because we create an instance in [JitsiConfig]
  * and that's the only one which should be used.
  */
-class LegacyConfigurationServiceShim internal constructor() : ConfigurationService {
+class LegacyConfigurationServiceShim private constructor() : ConfigurationService {
     internal val legacyShimConfig = LegacyShimConfig()
 
     private fun <T> getOrDefault(default: T, block: () -> T): T {
@@ -199,9 +199,19 @@ class LegacyConfigurationServiceShim internal constructor() : ConfigurationServi
     internal class LegacyShimConfig : TypesafeConfigSource("legacy shim config", ::loader) {
         companion object {
             fun loader(): Config {
-                val sysProps = ConfigFactory.load().withOnlyOrigin("system properties")
-                return LegacyConfig.loadLegacyConfig().withFallback(sysProps)
+                return LegacyConfig.loadLegacyConfig().withFallback(ConfigFactory.systemProperties())
             }
         }
+    }
+
+    companion object {
+        // There seems to be a bug with a constructor marked as internal not
+        // being properly hidden when accessed in Java, so to work around
+        // this we mark the constructor as private and this invoke operator
+        // on the companion object (called the same way as a constructor
+        // would be) as internal.
+        // https://youtrack.jetbrains.com/issue/KT-35308
+        internal operator fun invoke(): LegacyConfigurationServiceShim =
+            LegacyConfigurationServiceShim()
     }
 }
