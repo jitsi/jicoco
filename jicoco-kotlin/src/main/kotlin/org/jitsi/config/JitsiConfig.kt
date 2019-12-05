@@ -16,6 +16,7 @@
 
 package org.jitsi.config
 
+import com.typesafe.config.ConfigFactory
 import org.jitsi.utils.logging2.LoggerImpl
 
 /**
@@ -36,6 +37,7 @@ class JitsiConfig {
         }
 
         fun reload() {
+            ConfigFactory.invalidateCaches()
             newConfig.reload()
             legacyConfig.reload()
             legacyConfigShim.reloadConfiguration()
