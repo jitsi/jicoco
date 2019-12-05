@@ -30,3 +30,26 @@ fun Config.mask(): Config {
         }
     }
 }
+
+/**
+ * For the legacy config service shim we need to check both
+ * the properties in the legacy config file and the system properties, but
+ * there is no way to parse only the system properties so we have to load
+ * them all, and then filter out properties that came from places other
+ * than the system properties.
+ *
+ * Unfortunately, the only way to do this is to filter based on the description
+ * in the origin.
+ *
+ * @return a new [Config] with only values coming from the origin described
+ * by [originDescription].
+ */
+fun Config.withOnlyOrigin(originDescription: String): Config {
+    return entrySet().fold(ConfigFactory.parseString("")) { config, (key, value) ->
+        when {
+            value.origin().description().equals(originDescription) ->
+                config.withValue(key, value)
+            else -> config
+        }
+    }
+}

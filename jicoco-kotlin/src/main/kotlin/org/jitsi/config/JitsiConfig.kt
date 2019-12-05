@@ -28,6 +28,8 @@ class JitsiConfig {
         //TODO: type these to ConfigSource once reload gets moved to interface
         val newConfig = NewConfig()
         val legacyConfig = LegacyConfig()
+        @JvmStatic
+        val legacyConfigShim = LegacyConfigurationServiceShim()
 
         init {
             dumpConfigs()
@@ -36,11 +38,13 @@ class JitsiConfig {
         fun reload() {
             newConfig.reload()
             legacyConfig.reload()
+            legacyConfigShim.reloadConfiguration()
             dumpConfigs()
         }
 
         private fun dumpConfigs() {
             logger.debug {"Loaded legacy config:\n${legacyConfig.config.mask().root().render()}" }
+            logger.debug {"Loaded legacy shim config:\n${legacyConfigShim.legacyShimConfig.config.mask().root().render()}" }
             logger.debug {"Loaded new config:\n${newConfig.config.mask().root().render()}" }
         }
     }

@@ -1,6 +1,8 @@
 package org.jitsi.config
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
 import org.jitsi.service.configuration.ConfigVetoableChangeListener
 import org.jitsi.service.configuration.ConfigurationService
@@ -12,8 +14,12 @@ import java.beans.PropertyChangeListener
  * implementation.  Note that not all functionality is implemented by
  * this shim: only those methods which were found to be used by code
  * relying on this shim.
+ *
+ * The constructor is internal because we create an instance in [JitsiConfig]
+ * and that's the only one which should be used.
  */
-class LegacyConfigurationServiceShim : ConfigurationService {
+class LegacyConfigurationServiceShim internal constructor() : ConfigurationService {
+    internal val legacyShimConfig = LegacyShimConfig()
 
     private fun <T> getOrDefault(default: T, block: () -> T): T {
         return try {
@@ -39,28 +45,28 @@ class LegacyConfigurationServiceShim : ConfigurationService {
     override fun getBoolean(path: String?, defaultValue: Boolean): Boolean {
         path ?: return defaultValue
         return getOrDefault(defaultValue) {
-            JitsiConfig.legacyConfig.getterFor(Boolean::class)(path)
+            legacyShimConfig.getterFor(Boolean::class)(path)
         }
     }
 
     override fun getDouble(path: String?, defaultValue: Double): Double {
         path ?: return defaultValue
         return getOrDefault(defaultValue) {
-            JitsiConfig.legacyConfig.getterFor(Double::class)(path)
+            legacyShimConfig.getterFor(Double::class)(path)
         }
     }
 
     override fun getInt(path: String?, defaultValue: Int): Int {
         path ?: return defaultValue
         return getOrDefault(defaultValue) {
-            JitsiConfig.legacyConfig.getterFor(Int::class)(path)
+            legacyShimConfig.getterFor(Int::class)(path)
         }
     }
 
     override fun getLong(path: String?, defaultValue: Long): Long {
         path ?: return defaultValue
         return getOrDefault(defaultValue) {
-            JitsiConfig.legacyConfig.getterFor(Long::class)(path)
+            legacyShimConfig.getterFor(Long::class)(path)
         }
     }
 
@@ -70,14 +76,14 @@ class LegacyConfigurationServiceShim : ConfigurationService {
     override fun getString(path: String?, defaultValue: String?): String? {
         path ?: return defaultValue
         return getOrDefault(defaultValue) {
-            JitsiConfig.legacyConfig.getterFor(String::class)(path)
+            legacyShimConfig.getterFor(String::class)(path)
         }
     }
 
     override fun getProperty(path: String?): Any? {
         path ?: return null
         return getOrDefault(null) {
-            JitsiConfig.legacyConfig.getterFor(ConfigObject::class)(path)
+            legacyShimConfig.getterFor(ConfigObject::class)(path)
         }
     }
 
@@ -120,7 +126,7 @@ class LegacyConfigurationServiceShim : ConfigurationService {
     override fun getPropertyNamesByPrefix(prefix: String?, exactPrefixMatch: Boolean): MutableList<String> {
         prefix ?: return mutableListOf()
         return getOrDefault(mutableListOf()) {
-            val obj = JitsiConfig.legacyConfig.getterFor(ConfigObject::class)(prefix)
+            val obj = legacyShimConfig.getterFor(ConfigObject::class)(prefix)
             obj.toConfig().entrySet()
                     .map { it.key }
                     .filter { propName ->
@@ -145,8 +151,7 @@ class LegacyConfigurationServiceShim : ConfigurationService {
     }
 
     override fun reloadConfiguration() {
-        // Should we support calling reload here? Anything using this?
-        throw Exception("Unsupported")
+        legacyShimConfig.reload()
     }
 
     override fun removeProperty(propertyName: String?) {
@@ -183,5 +188,20 @@ class LegacyConfigurationServiceShim : ConfigurationService {
 
     override fun getScHomeDirName(): String {
         throw Exception("Unsupported")
+    }
+
+    /**
+     * We need a different config source for the legacy shim as we need the
+     * combination of both the old config file and the system properties.
+     * We can't use [legacyShimConfig] directly, because we don't expose
+     * 'withFallback' there, and I'm not sure it makes sense to do so.
+     */
+    internal class LegacyShimConfig : TypesafeConfigSource("legacy shim config", ::loader) {
+        companion object {
+            fun loader(): Config {
+                val sysProps = ConfigFactory.load().withOnlyOrigin("system properties")
+                return LegacyConfig.loadLegacyConfig().withFallback(sysProps)
+            }
+        }
     }
 }

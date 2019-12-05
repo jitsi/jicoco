@@ -1,6 +1,23 @@
+/*
+ * Copyright @ 2018 - present 8x8, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.jitsi.config
 
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
 import io.kotlintest.IsolationMode
 import io.kotlintest.specs.ShouldSpec
 import io.kotlintest.shouldBe
@@ -48,6 +65,29 @@ class ConfigExtensionsKtTest : ShouldSpec() {
                     maskedConfig.getInt("a.b.nested-pass-prop") shouldBe 42
                     maskedConfig.getString("a.b.nested-normal-prop") shouldBe "hello"
                 }
+            }
+        }
+        "with only origin" {
+            val config = run {
+                ConfigFactory.parseString("").
+                    withValue("a.prop1", ConfigValueFactory.fromAnyRef(1, "origin-1")).
+                    withValue("a.prop2", ConfigValueFactory.fromAnyRef(1, "origin-2")).
+                    withValue("a.b.prop3", ConfigValueFactory.fromAnyRef(1, "origin-1")).
+                    withValue("a.b.prop4", ConfigValueFactory.fromAnyRef(1, "origin-2"))
+            }
+
+            val origin1Config = config.withOnlyOrigin("origin-1")
+            should("only keep properties from the requested origin") {
+                origin1Config.entrySet().size shouldBe 2
+                origin1Config.getInt("a.prop1") shouldBe 1
+                origin1Config.getInt("a.b.prop3") shouldBe 1
+            }
+            should("not affect the original config instance") {
+                config.entrySet().size  shouldBe 4
+                config.getInt("a.prop1") shouldBe 1
+                config.getInt("a.prop2") shouldBe 1
+                config.getInt("a.b.prop3") shouldBe 1
+                config.getInt("a.b.prop4") shouldBe 1
             }
         }
     }
