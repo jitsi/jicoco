@@ -21,21 +21,33 @@ class ConfigExtensionsKtTest : ShouldSpec() {
                     }
                 }
             """.trimIndent())
-            ConfigUtils.PASSWORD_SYS_PROPS = "pass"
-            val maskedConfig = config.mask()
-            should("mask out the right values") {
-                maskedConfig.getString("a.pass-prop") shouldBe MASK
-                maskedConfig.getString("a.b.nested-pass-prop") shouldBe MASK
+            "with a set field regex" {
+                ConfigUtils.PASSWORD_SYS_PROPS = "pass"
+                val maskedConfig = config.mask()
+                should("mask out the right values") {
+                    maskedConfig.getString("a.pass-prop") shouldBe MASK
+                    maskedConfig.getString("a.b.nested-pass-prop") shouldBe MASK
+                }
+                should("not mask out other values") {
+                    maskedConfig.getInt("a.normal-prop") shouldBe 10
+                    maskedConfig.getString("a.b.nested-normal-prop") shouldBe "hello"
+                }
+                should("not affect the original config") {
+                    config.getString("a.pass-prop") shouldBe "s3cr3t"
+                    config.getInt("a.normal-prop") shouldBe 10
+                    config.getInt("a.b.nested-pass-prop") shouldBe 42
+                    config.getString("a.b.nested-normal-prop") shouldBe "hello"
+                }
             }
-            should("not mask out other values") {
-                maskedConfig.getInt("a.normal-prop") shouldBe 10
-                maskedConfig.getString("a.b.nested-normal-prop") shouldBe "hello"
-            }
-            should("not affect the original config") {
-                config.getString("a.pass-prop") shouldBe "s3cr3t"
-                config.getInt("a.normal-prop") shouldBe 10
-                config.getInt("a.b.nested-pass-prop") shouldBe 42
-                config.getString("a.b.nested-normal-prop") shouldBe "hello"
+            "when the field regex is null" {
+                ConfigUtils.PASSWORD_SYS_PROPS = null
+                val maskedConfig = config.mask()
+                "should not change anything" {
+                    maskedConfig.getString("a.pass-prop") shouldBe "s3cr3t"
+                    maskedConfig.getInt("a.normal-prop") shouldBe 10
+                    maskedConfig.getInt("a.b.nested-pass-prop") shouldBe 42
+                    maskedConfig.getString("a.b.nested-normal-prop") shouldBe "hello"
+                }
             }
         }
     }
