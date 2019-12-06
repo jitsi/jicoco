@@ -66,6 +66,9 @@ class SimpleConfigTest : ShouldSpec() {
         expectedKey: String,
         expectedSourceOfValue: MockConfigSource) {
 
+//        ConfigInitializer.newConfigLoader = { newConfig }
+
+
         val readOnceProp = TestReadOnceProperty(legacyConfig, newConfig)
         val readEveryTimeProp = TestReadEveryTimeProperty(legacyConfig, newConfig)
         val originalExpectedValue = expectedSourceOfValue.getterFor(Int::class).invoke(expectedKey)

@@ -71,10 +71,11 @@ open class TypesafeConfigSource(
     }
     //TODO: translate typesafeconfig exceptions(?)
 
-    //TODO: need to add this to ConfigSource interface
-    fun reload() {
+    override fun reload() {
         config = configLoader()
     }
+
+    override fun toStringMasked(): String = config.mask().root().render()
 }
 
 /**
