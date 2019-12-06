@@ -16,6 +16,7 @@
 
 package org.jitsi.config
 
+import com.typesafe.config.ConfigFactory
 import org.jitsi.utils.logging2.LoggerImpl
 
 /**
@@ -28,19 +29,24 @@ class JitsiConfig {
         //TODO: type these to ConfigSource once reload gets moved to interface
         val newConfig = NewConfig()
         val legacyConfig = LegacyConfig()
+        @JvmStatic
+        val legacyConfigShim = LegacyConfigurationServiceShim()
 
         init {
             dumpConfigs()
         }
 
         fun reload() {
+            ConfigFactory.invalidateCaches()
             newConfig.reload()
             legacyConfig.reload()
+            legacyConfigShim.reloadConfiguration()
             dumpConfigs()
         }
 
         private fun dumpConfigs() {
             logger.debug {"Loaded legacy config:\n${legacyConfig.config.mask().root().render()}" }
+            logger.debug {"Loaded legacy shim config:\n${legacyConfigShim.legacyShimConfig.config.mask().root().render()}" }
             logger.debug {"Loaded new config:\n${newConfig.config.mask().root().render()}" }
         }
     }
