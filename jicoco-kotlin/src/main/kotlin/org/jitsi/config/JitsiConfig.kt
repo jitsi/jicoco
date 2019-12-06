@@ -27,10 +27,10 @@ import org.jitsi.utils.logging2.LoggerImpl
 class JitsiConfig {
     companion object {
         private val logger = LoggerImpl(JitsiConfig::class.qualifiedName)
-        val newConfig: ConfigSource = NewConfig()
-        val legacyConfig: ConfigSource = LegacyConfig()
+        val newConfig: ConfigSource = JitsiConfigFactory.newConfigSupplier()
+        val legacyConfig: ConfigSource = JitsiConfigFactory.legacyConfigSupplier()
         @JvmStatic
-        val legacyConfigShim = LegacyConfigurationServiceShim()
+        val legacyConfigShim = JitsiConfigFactory.legacyConfigurationServiceShimSupplier()
 
         init {
             dumpConfigs()
@@ -46,7 +46,7 @@ class JitsiConfig {
 
         private fun dumpConfigs() {
             logger.debug {"Loaded legacy config:\n${legacyConfig.toStringMasked()}"}
-            logger.debug {"Loaded legacy shim config:\n${legacyConfigShim.legacyShimConfig.toStringMasked()}" }
+            logger.debug {"Loaded legacy shim config:\n${legacyConfigShim.toStringMasked()}" }
             logger.debug {"Loaded new config:\n${newConfig.toStringMasked()}" }
         }
     }

@@ -6,8 +6,17 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
 import org.jitsi.service.configuration.ConfigVetoableChangeListener
 import org.jitsi.service.configuration.ConfigurationService
+import org.jitsi.utils.config.ConfigSource
 import java.beans.PropertyChangeListener
 
+
+/**
+ * An interface which extends [ConfigurationService], but adds other methods
+ * we need to be able to call to make it more like a [ConfigSource]
+ */
+interface ExpandedConfigurationService : ConfigurationService {
+    fun toStringMasked(): String
+}
 /**
  * This class serves as a shim implementation of [ConfigurationService]
  * which reads the legacy config file but via the new config
@@ -18,7 +27,7 @@ import java.beans.PropertyChangeListener
  * The constructor is private because we create an instance in [JitsiConfig]
  * and that's the only one which should be used.
  */
-class LegacyConfigurationServiceShim private constructor() : ConfigurationService {
+class LegacyConfigurationServiceShim private constructor() : ExpandedConfigurationService {
     internal val legacyShimConfig = LegacyShimConfig()
 
     private fun <T> getOrDefault(default: T, block: () -> T): T {
@@ -189,6 +198,8 @@ class LegacyConfigurationServiceShim private constructor() : ConfigurationServic
     override fun getScHomeDirName(): String {
         throw Exception("Unsupported")
     }
+
+    override fun toStringMasked(): String = legacyShimConfig.toStringMasked()
 
     /**
      * We need a different config source for the legacy shim as we need the
