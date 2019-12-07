@@ -33,6 +33,7 @@ class JitsiConfig {
         val legacyConfigShim = JitsiConfigFactory.legacyConfigurationServiceShimSupplier()
 
         init {
+            println("In JitsiConfig init")
             dumpConfigs()
         }
 

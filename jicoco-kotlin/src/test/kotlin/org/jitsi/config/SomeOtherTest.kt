@@ -1,28 +1,11 @@
-/*
- * Copyright @ 2018 - present 8x8, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.jitsi.config
 
-import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.withClue
 import io.kotlintest.shouldBe
 import org.jitsi.videobridge.testutils.EMPTY_CONFIG
 import org.jitsi.videobridge.testutils.MapConfigSource
 
-class SimpleConfigTest : ConfigTest() {
+class SomeOtherTest : ConfigTest() {
     private val legacyConfigNoValue =
         MapConfigSource("legacy config", mapOf("some.other.prop.name" to 42))
     private val legacyConfigWithValue =
@@ -70,7 +53,7 @@ class SimpleConfigTest : ConfigTest() {
 
         val readOnceProp = TestReadOnceProperty()
         val readEveryTimeProp = TestReadEveryTimeProperty()
-        val originalExpectedValue = expectedSourceOfValue.getterFor(Int::class).invoke(expectedKey)
+        val originalExpectedValue = expectedSourceOfValue.getterFor(String::class).invoke(expectedKey)
 
         for (prop in listOf(readOnceProp, readEveryTimeProp)) {
             withClue("${prop.javaClass.simpleName} should read the correct value") {
@@ -79,27 +62,27 @@ class SimpleConfigTest : ConfigTest() {
         }
         // 4242 is assumed to be some value different than whatever the value was before
         println("Modifying config instance ${expectedSourceOfValue.hashCode()}")
-        expectedSourceOfValue[expectedKey] = 4242
+        expectedSourceOfValue[expectedKey] = "goodbye"
         withClue("ReadOnceProp should always see the original value") {
             readOnceProp.value shouldBe originalExpectedValue
         }
         withClue("ReadEveryTimeProp should always see the new value") {
-            readEveryTimeProp.value shouldBe 4242
+            readEveryTimeProp.value shouldBe "goodbye"
         }
     }
 
     companion object {
         private const val legacyName = "some.legacy.prop.name"
-        private const val legacyValue = 5
+        private const val legacyValue = "hello"
         private const val newName = "some.new.prop.name"
-        private const val newValue = 10
+        private const val newValue = "world"
     }
 
     private class TestReadOnceProperty(
         legacyNamez: String = legacyName,
         newNamez: String = newName
-    ) : SimpleConfig<Int>(
-        valueType = Int::class,
+    ) : SimpleConfig<String>(
+        valueType = String::class,
         legacyName = legacyNamez,
         newName = newNamez,
         readOnce = true
@@ -108,8 +91,8 @@ class SimpleConfigTest : ConfigTest() {
     private class TestReadEveryTimeProperty(
         legacyNamez: String = legacyName,
         newNamez: String = newName
-    ) : SimpleConfig<Int>(
-        valueType = Int::class,
+    ) : SimpleConfig<String>(
+        valueType = String::class,
         legacyName = legacyNamez,
         newName = newNamez,
         readOnce = false
