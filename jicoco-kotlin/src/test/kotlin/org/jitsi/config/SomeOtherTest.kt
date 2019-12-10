@@ -81,7 +81,7 @@ class SomeOtherTest : ConfigTest() {
     private class TestReadOnceProperty(
         legacyNamez: String = legacyName,
         newNamez: String = newName
-    ) : SimpleConfig<String>(
+    ) : LegacyFallbackConfigProperty<String>(
         valueType = String::class,
         legacyName = legacyNamez,
         newName = newNamez,
@@ -91,7 +91,7 @@ class SomeOtherTest : ConfigTest() {
     private class TestReadEveryTimeProperty(
         legacyNamez: String = legacyName,
         newNamez: String = newName
-    ) : SimpleConfig<String>(
+    ) : LegacyFallbackConfigProperty<String>(
         valueType = String::class,
         legacyName = legacyNamez,
         newName = newNamez,

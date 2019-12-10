@@ -13,22 +13,15 @@ abstract class ConfigTest : ShouldSpec() {
     }
 
     protected fun withNewConfig(configSource: ConfigSource) {
-        println("setting inner config on new config instance ${newConfigWrapper.hashCode()}")
         newConfigWrapper.innerConfig = configSource
     }
 
     protected companion object {
         private val legacyConfigWrapper = ConfigSourceWrapper().also {
-            JitsiConfigFactory.legacyConfigSupplier = {
-                println("in the test legacy config supplier!")
-                it
-            }
+            JitsiConfigFactory.legacyConfigSupplier = { it }
         }
         private val newConfigWrapper = ConfigSourceWrapper().also {
-            JitsiConfigFactory.newConfigSupplier = {
-                println("in the test new config supplier! returning instance ${it.hashCode()}")
-                it
-            }
+            JitsiConfigFactory.newConfigSupplier = { it }
         }
     }
 }

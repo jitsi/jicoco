@@ -16,13 +16,12 @@
 
 package org.jitsi.config
 
-import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.withClue
 import io.kotlintest.shouldBe
 import org.jitsi.videobridge.testutils.EMPTY_CONFIG
 import org.jitsi.videobridge.testutils.MapConfigSource
 
-class SimpleConfigTest : ConfigTest() {
+class LegacyFallbackConfigPropertyTest : ConfigTest() {
     private val legacyConfigNoValue =
         MapConfigSource("legacy config", mapOf("some.other.prop.name" to 42))
     private val legacyConfigWithValue =
@@ -95,23 +94,17 @@ class SimpleConfigTest : ConfigTest() {
         private const val newValue = 10
     }
 
-    private class TestReadOnceProperty(
-        legacyNamez: String = legacyName,
-        newNamez: String = newName
-    ) : SimpleConfig<Int>(
+    private class TestReadOnceProperty : LegacyFallbackConfigProperty<Int>(
         valueType = Int::class,
-        legacyName = legacyNamez,
-        newName = newNamez,
+        legacyName = legacyName,
+        newName = newName,
         readOnce = true
     )
 
-    private class TestReadEveryTimeProperty(
-        legacyNamez: String = legacyName,
-        newNamez: String = newName
-    ) : SimpleConfig<Int>(
+    private class TestReadEveryTimeProperty : LegacyFallbackConfigProperty<Int>(
         valueType = Int::class,
-        legacyName = legacyNamez,
-        newName = newNamez,
+        legacyName = legacyName,
+        newName = newName,
         readOnce = false
     )
 }
