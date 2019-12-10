@@ -16,7 +16,8 @@
 
 package org.jitsi.config
 
-import org.jitsi.utils.config.ConfigSource
+import org.jitsi.utils.config.ConfigPropertyAttributes
+import org.jitsi.utils.config.ConfigPropertyAttributesBuilder
 import org.jitsi.utils.config.FallbackProperty
 import org.jitsi.utils.config.helpers.attributes
 import kotlin.reflect.KClass
@@ -32,16 +33,43 @@ open class LegacyFallbackConfigProperty<T : Any>(
     newName: String,
     readOnce: Boolean
 ) : FallbackProperty<T>(
-    attributes(valueType) {
+    legacyConfigAttributes(valueType) {
         name(legacyName)
         if (readOnce) readOnce() else readEveryTime()
-        fromConfig(JitsiConfig.legacyConfig)
     },
-    attributes(valueType) {
+    newConfigAttributes(valueType) {
         name(newName)
         if (readOnce) readOnce() else readEveryTime()
-        fromConfig(JitsiConfig.newConfig)
     }
 )
 
+inline fun <reified T : Any> legacyConfigAttributes(
+    noinline block: ConfigPropertyAttributesBuilder<T>.() -> Unit
+): ConfigPropertyAttributes<T> = legacyConfigAttributes(T::class, block)
+
+fun <T : Any> legacyConfigAttributes(
+    valueType: KClass<T>,
+    block: ConfigPropertyAttributesBuilder<T>.() -> Unit
+): ConfigPropertyAttributes<T> {
+    return with (ConfigPropertyAttributesBuilder(valueType)) {
+        block()
+        fromConfig(JitsiConfig.legacyConfig)
+        build()
+    }
+}
+
+inline fun <reified T : Any> newConfigAttributes(
+    noinline block: ConfigPropertyAttributesBuilder<T>.() -> Unit
+): ConfigPropertyAttributes<T> = newConfigAttributes(T::class, block)
+
+fun <T : Any> newConfigAttributes(
+    valueType: KClass<T>,
+    block: ConfigPropertyAttributesBuilder<T>.() -> Unit
+): ConfigPropertyAttributes<T> {
+    return with (ConfigPropertyAttributesBuilder(valueType)) {
+        block()
+        fromConfig(JitsiConfig.newConfig)
+        build()
+    }
+}
 
