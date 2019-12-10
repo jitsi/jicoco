@@ -1,18 +1,22 @@
 package org.jitsi.config
 
 import io.kotlintest.IsolationMode
-import io.kotlintest.specs.ShouldSpec
 import org.jitsi.utils.config.ConfigSource
 import org.jitsi.videobridge.testutils.ConfigSourceWrapper
 
-abstract class ConfigTest : ShouldSpec() {
+/**
+ * We can't put this class in jicoco-test-kotlin, because it has to access
+ * [JitsiConfigFactory] (located in jicoco-kotlin), so it would create a
+ * circular dependency.
+ */
+abstract class JitsiConfigTest : ConfigTest() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    protected fun withLegacyConfig(configSource: ConfigSource) {
+    override fun withLegacyConfig(configSource: ConfigSource) {
         legacyConfigWrapper.innerConfig = configSource
     }
 
-    protected fun withNewConfig(configSource: ConfigSource) {
+    override fun withNewConfig(configSource: ConfigSource) {
         newConfigWrapper.innerConfig = configSource
     }
 

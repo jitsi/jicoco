@@ -18,6 +18,7 @@
     <modules>
         <module>jicoco</module>
         <module>jicoco-kotlin</module>
+        <module>jicoco-test-kotlin</module>
     </modules>
 
     <properties>

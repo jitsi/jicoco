@@ -16,74 +16,28 @@
 
 package org.jitsi.config
 
-import io.kotlintest.matchers.withClue
-import io.kotlintest.shouldBe
-import org.jitsi.videobridge.testutils.EMPTY_CONFIG
-import org.jitsi.videobridge.testutils.MapConfigSource
-
-class LegacyFallbackConfigPropertyTest : ConfigTest() {
-    private val legacyConfigNoValue =
-        MapConfigSource("legacy config", mapOf("some.other.prop.name" to 42))
-    private val legacyConfigWithValue =
-        MapConfigSource("legacy config", mapOf(legacyName to legacyValue))
-    private val newConfig =
-        MapConfigSource("new config", mapOf(newName to newValue))
-
+class LegacyFallbackConfigPropertyTest : JitsiConfigTest() {
     init {
-        "when old config is present" {
-            "but doesn't provide a value" {
-                withLegacyConfig(legacyConfigNoValue)
-                "and the new config does" {
-                    withNewConfig(newConfig)
-                    should("get the value from new config") {
-                        testProps(newName, newConfig)
-                    }
-                }
-            }
-            "and provides a value" {
-                withLegacyConfig(legacyConfigWithValue)
-                "and so does the new one" {
-                    withNewConfig(newConfig)
-                    should("get the value from old config") {
-                        testProps(legacyName, legacyConfigWithValue)
-                    }
-                }
-            }
+        "Read once property" {
+            runBasicTests(
+                legacyConfigName = legacyName,
+                legacyValueGenerator = IntMockConfigValueGenerator,
+                newConfigName = newName,
+                newConfigValueGenerator = IntMockConfigValueGenerator,
+                propCreator = { TestReadOnceProperty() }
+            )
         }
-        "when there's no old config" {
-            withLegacyConfig(EMPTY_CONFIG)
-            "and new config provides a value" {
-                withNewConfig(newConfig)
-                testProps(newName, newConfig)
-            }
-        }
-    }
+        "Read every time property" {
+            runBasicTests(
+                legacyConfigName = legacyName,
+                legacyValueGenerator = IntMockConfigValueGenerator,
+                legacyReadOnce = false,
+                newConfigName = newName,
+                newConfigValueGenerator = IntMockConfigValueGenerator,
+                newReadOnce = false,
+                propCreator = { TestReadEveryTimeProperty() }
+            )
 
-    private fun testProps(
-        expectedKey: String,
-        expectedSourceOfValue: MapConfigSource
-    ) {
-        println("Legacy config:\n${JitsiConfig.legacyConfig.toStringMasked()}")
-        println("new config wrapper instance: ${JitsiConfig.newConfig.hashCode()}")
-        println("New config:\n${JitsiConfig.newConfig.toStringMasked()}")
-
-        val readOnceProp = TestReadOnceProperty()
-        val readEveryTimeProp = TestReadEveryTimeProperty()
-        val originalExpectedValue = expectedSourceOfValue.getterFor(Int::class).invoke(expectedKey)
-
-        for (prop in listOf(readOnceProp, readEveryTimeProp)) {
-            withClue("${prop.javaClass.simpleName} should read the correct value") {
-                prop.value shouldBe originalExpectedValue
-            }
-        }
-        // 4242 is assumed to be some value different than whatever the value was before
-        println("Modifying config instance ${expectedSourceOfValue.hashCode()}")
-        expectedSourceOfValue[expectedKey] = 4242
-        withClue("ReadOnceProp should always see the original value") {
-            readOnceProp.value shouldBe originalExpectedValue
-        }
-        withClue("ReadEveryTimeProp should always see the new value") {
-            readEveryTimeProp.value shouldBe 4242
         }
     }
 

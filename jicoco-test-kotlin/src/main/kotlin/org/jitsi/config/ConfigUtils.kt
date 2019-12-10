@@ -18,60 +18,16 @@ package org.jitsi.videobridge.testutils
 
 import org.jitsi.utils.config.ConfigSource
 import org.jitsi.utils.config.exception.ConfigPropertyNotFoundException
+import org.jitsi.utils.config.exception.ConfigValueParsingException
 import org.jitsi.utils.config.exception.ConfigurationValueTypeUnsupportedException
 import java.time.Duration
 import kotlin.reflect.KClass
 
 val EMPTY_CONFIG: ConfigSource = MockConfigSource("empty config", mapOf())
 
-class MapConfigSource private constructor(
-    override val name: String,
-    private val props: MutableMap<String, Any>,
-    // Just to distinguish this constructor from the public one
-    dummy: Int
-) : ConfigSource, MutableMap<String, Any> by props {
-
-    /**
-     * The caller should pass a non-mutable map of properties, because all
-     * modifications to the props should be done via access the MockConfigSource
-     * instance, not the given map directly.
-     */
-    constructor(name: String, props: Map<String, Any>) : this(name, props.toMutableMap(), 42)
-    var numGetsCalled = 0
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> getterFor(valueType: KClass<T>): (String) -> T {
-        return when(valueType) {
-            Int::class -> getterHelper(::getInt)
-            Long::class -> getterHelper(::getLong)
-            Duration::class -> getterHelper(::getDuration)
-            String::class -> getterHelper(::getString)
-            else -> throw ConfigurationValueTypeUnsupportedException.new(valueType)
-        }
-    }
-
-    override fun reload() { /* No op */ }
-    override fun toStringMasked(): String = props.toString()
-
-    private fun getInt(path: String): Int? = props[path] as? Int
-    private fun getLong(path: String): Long? = props[path] as? Long
-    private fun getDuration(path: String): Duration? = props[path] as? Duration
-    private fun getString(path: String): String? = props[path] as? String
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <U, T : Any> getterHelper(getter: (String) -> U): (String) -> T {
-        return { path ->
-            numGetsCalled++
-            getter(path) as? T ?:
-            throw ConfigPropertyNotFoundException("Could not find value for property at '$path'")
-        }
-    }
-}
-
-
 /**
  * A [ConfigSource] which delegates to an inner [ConfigSource] that can
- * be swapped out.
+ * be swapped out at runtime.
  */
 class ConfigSourceWrapper(
     var innerConfig: ConfigSource? = null
@@ -105,9 +61,10 @@ class MockConfigSource private constructor(
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> getterFor(valueType: KClass<T>): (String) -> T {
         return when(valueType) {
-            Int::class -> getterHelper(::getInt)
-            Long::class -> getterHelper(::getLong)
-            Duration::class -> getterHelper(::getDuration)
+            Int::class -> getterHelper(valueType)
+            Long::class -> getterHelper(valueType)
+            Duration::class -> getterHelper(valueType)
+            Boolean::class -> getterHelper(valueType)
             else -> throw ConfigurationValueTypeUnsupportedException.new(valueType)
         }
     }
@@ -115,16 +72,15 @@ class MockConfigSource private constructor(
     override fun reload() { /* No op */ }
     override fun toStringMasked(): String = props.toString()
 
-    private fun getInt(path: String): Int? = props[path] as? Int
-    private fun getLong(path: String): Long? = props[path] as? Long
-    private fun getDuration(path: String): Duration? = props[path] as? Duration
-
     @Suppress("UNCHECKED_CAST")
-    private fun <U, T : Any> getterHelper(getter: (String) -> U): (String) -> T {
+    private fun <T : Any> getterHelper(desiredValueType: KClass<T>): (String) -> T {
         return { path ->
             numGetsCalled++
-            getter(path) as? T ?:
-            throw ConfigPropertyNotFoundException("Could not find value for property at '$path'")
+            val value = props.get(path) ?:
+                throw ConfigPropertyNotFoundException("Could not find value for property at '$path'")
+
+            value as? T ?: throw ConfigValueParsingException("Could not parse type " +
+                "${value::class} as ${desiredValueType::class}")
         }
     }
 }
