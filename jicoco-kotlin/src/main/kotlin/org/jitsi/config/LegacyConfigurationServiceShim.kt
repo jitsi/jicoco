@@ -1,3 +1,18 @@
+/*
+ * Copyright @ 2018 - present 8x8, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.jitsi.config
 
 import com.typesafe.config.Config
@@ -6,8 +21,17 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
 import org.jitsi.service.configuration.ConfigVetoableChangeListener
 import org.jitsi.service.configuration.ConfigurationService
+import org.jitsi.utils.config.ConfigSource
 import java.beans.PropertyChangeListener
 
+
+/**
+ * An interface which extends [ConfigurationService], but adds other methods
+ * we need to be able to call to make it more like a [ConfigSource]
+ */
+interface ExpandedConfigurationService : ConfigurationService {
+    fun toStringMasked(): String
+}
 /**
  * This class serves as a shim implementation of [ConfigurationService]
  * which reads the legacy config file but via the new config
@@ -18,7 +42,7 @@ import java.beans.PropertyChangeListener
  * The constructor is private because we create an instance in [JitsiConfig]
  * and that's the only one which should be used.
  */
-class LegacyConfigurationServiceShim private constructor() : ConfigurationService {
+class LegacyConfigurationServiceShim private constructor() : ExpandedConfigurationService {
     internal val legacyShimConfig = LegacyShimConfig()
 
     private fun <T> getOrDefault(default: T, block: () -> T): T {
@@ -189,6 +213,8 @@ class LegacyConfigurationServiceShim private constructor() : ConfigurationServic
     override fun getScHomeDirName(): String {
         throw Exception("Unsupported")
     }
+
+    override fun toStringMasked(): String = legacyShimConfig.toStringMasked()
 
     /**
      * We need a different config source for the legacy shim as we need the

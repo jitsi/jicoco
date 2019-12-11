@@ -26,7 +26,7 @@
         <version>1.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>jicoco-kotlin</artifactId>
+    <artifactId>jicoco-test-kotlin</artifactId>
     <version>1.1-SNAPSHOT</version>
 
     <properties>
@@ -35,30 +35,19 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-utils-kotlin</artifactId>
             <version>${jitsi-utils.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>config</artifactId>
-            <version>1.3.4</version>
-        </dependency>
-        <dependency>
             <groupId>io.kotlintest</groupId>
             <artifactId>kotlintest-runner-junit5</artifactId>
             <version>3.3.2</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jitsi</groupId>
-            <artifactId>jicoco-test-kotlin</artifactId>
-            <version>1.1-SNAPSHOT</version>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <version>${kotlin.version}</version>
         </dependency>
     </dependencies>
 
@@ -83,21 +72,11 @@
                         <goals>
                             <goal>test-compile</goal>
                         </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-                            </sourceDirs>
-                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
                     <jvmTarget>1.8</jvmTarget>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -118,19 +97,18 @@
     </build>
 
     <repositories>
-    <repository>
-        <id>jitsi-maven-repository-releases</id>
-        <layout>default</layout>
-        <name>Jitsi Maven Repository (Releases)</name>
-        <releases>
-            <enabled>true</enabled>
-        </releases>
-        <snapshots>
-            <enabled>false</enabled>
-        </snapshots>
-        <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
-    </repository>
+        <repository>
+            <id>jitsi-maven-repository-releases</id>
+            <layout>default</layout>
+            <name>Jitsi Maven Repository (Releases)</name>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
+        </repository>
     </repositories>
-
 
 </project>

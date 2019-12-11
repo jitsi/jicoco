@@ -17,6 +17,7 @@
 package org.jitsi.config
 
 import com.typesafe.config.ConfigFactory
+import org.jitsi.utils.config.ConfigSource
 import org.jitsi.utils.logging2.LoggerImpl
 
 /**
@@ -26,11 +27,10 @@ import org.jitsi.utils.logging2.LoggerImpl
 class JitsiConfig {
     companion object {
         private val logger = LoggerImpl(JitsiConfig::class.qualifiedName)
-        //TODO: type these to ConfigSource once reload gets moved to interface
-        val newConfig = NewConfig()
-        val legacyConfig = LegacyConfig()
+        val newConfig: ConfigSource = JitsiConfigFactory.newConfigSupplier()
+        val legacyConfig: ConfigSource = JitsiConfigFactory.legacyConfigSupplier()
         @JvmStatic
-        val legacyConfigShim = LegacyConfigurationServiceShim()
+        val legacyConfigShim = JitsiConfigFactory.legacyConfigurationServiceShimSupplier()
 
         init {
             dumpConfigs()
@@ -45,9 +45,9 @@ class JitsiConfig {
         }
 
         private fun dumpConfigs() {
-            logger.debug {"Loaded legacy config:\n${legacyConfig.config.mask().root().render()}" }
-            logger.debug {"Loaded legacy shim config:\n${legacyConfigShim.legacyShimConfig.config.mask().root().render()}" }
-            logger.debug {"Loaded new config:\n${newConfig.config.mask().root().render()}" }
+            logger.debug {"Loaded legacy config:\n${legacyConfig.toStringMasked()}"}
+            logger.debug {"Loaded legacy shim config:\n${legacyConfigShim.toStringMasked()}" }
+            logger.debug {"Loaded new config:\n${newConfig.toStringMasked()}" }
         }
     }
 }
