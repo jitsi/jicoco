@@ -23,7 +23,10 @@ import java.time.Duration
 import java.util.Random
 
 abstract class ConfigTest : ShouldSpec() {
-    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+    // We rely on injecting fake config sources and then swapping out the
+    // 'inner' config for them, so we need to use a single instance for the
+    // test so we swap using the same installed fake config sources.
+    final override fun isolationMode(): IsolationMode? = IsolationMode.SingleInstance
 
     abstract fun withLegacyConfig(configSource: ConfigSource)
 

@@ -37,7 +37,6 @@ class LegacyFallbackConfigPropertyTest : JitsiConfigTest() {
                 newReadOnce = false,
                 propCreator = { TestReadEveryTimeProperty() }
             )
-
         }
     }
 

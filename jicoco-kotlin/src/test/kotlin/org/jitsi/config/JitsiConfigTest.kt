@@ -27,7 +27,6 @@ import org.jitsi.videobridge.testutils.ConfigSourceWrapper
  * circular dependency.
  */
 abstract class JitsiConfigTest : ConfigTest() {
-    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
     private val legacyConfigWrapper = ConfigSourceWrapper()
     private val newConfigWrapper = ConfigSourceWrapper()
 
@@ -39,8 +38,8 @@ abstract class JitsiConfigTest : ConfigTest() {
         newConfigWrapper.innerConfig = configSource
     }
 
-    override fun beforeSpecClass(spec: Spec, tests: List<TopLevelTest>) {
-        super.beforeSpecClass(spec, tests)
+    override fun beforeSpec(spec: Spec) {
+        super.beforeSpec(spec)
         JitsiConfigFactory.legacyConfigSupplier = { legacyConfigWrapper }
         JitsiConfigFactory.newConfigSupplier = { newConfigWrapper }
     }
