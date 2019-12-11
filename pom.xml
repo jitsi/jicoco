@@ -23,6 +23,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jitsi-utils.version>1.0-26-g20ce8cc</jitsi-utils.version>
     </properties>
 
     <build>

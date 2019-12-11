@@ -122,7 +122,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
-      <version>1.0-24-g8f17c70</version>
+      <version>${jitsi-utils.version}</version>
     </dependency>
     <!-- test -->
     <dependency>
