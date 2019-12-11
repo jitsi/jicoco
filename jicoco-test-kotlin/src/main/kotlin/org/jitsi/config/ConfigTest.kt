@@ -33,6 +33,17 @@ interface MockConfigValueGenerator<ConfigType : Any, PropType : Any> {
     fun gen(): MockConfigValue<ConfigType, PropType>
 }
 
+abstract class TransformingMockConfigValueGenerator<ConfigType : Any, PropType : Any>(
+    val configTypeGenerator: () -> ConfigType,
+    val configValueTransformer: (ConfigType) -> PropType
+) : MockConfigValueGenerator<ConfigType, PropType> {
+    override fun gen(): MockConfigValue<ConfigType, PropType> {
+        return configTypeGenerator().let {
+            MockConfigValue(it, configValueTransformer(it))
+        }
+    }
+}
+
 object IntMockConfigValueGenerator : MockConfigValueGenerator<Int, Int> {
     override fun gen(): MockConfigValue<Int, Int> {
         return Random().nextInt().let { MockConfigValue(it, it) }
@@ -58,8 +69,7 @@ class BooleanMockConfigValueGenerator : MockConfigValueGenerator<Boolean, Boolea
     }
 }
 
-object DurationToLongMockConfigValueGenerator : MockConfigValueGenerator<Duration, Long> {
-    override fun gen(): MockConfigValue<Duration, Long> {
-        return Random().nextLong().let { MockConfigValue(Duration.ofMillis(it), it) }
-    }
-}
+object DurationToLongMockConfigValueGenerator : TransformingMockConfigValueGenerator<Duration, Long>(
+    { Duration.ofMillis(Random().nextLong()) },
+    { it.toMillis() }
+)
