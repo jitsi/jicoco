@@ -30,17 +30,17 @@ val EMPTY_CONFIG: ConfigSource = MockConfigSource("empty config", mapOf())
  * be swapped out at runtime.
  */
 class ConfigSourceWrapper(
-    var innerConfig: ConfigSource? = null
+    var innerConfig: ConfigSource = EMPTY_CONFIG
 ) : ConfigSource {
     override val name: String
-        get() = innerConfig!!.name
+        get() = innerConfig.name
 
     override fun <T : Any> getterFor(valueType: KClass<T>): (String) -> T =
-        innerConfig!!.getterFor(valueType)
+        innerConfig.getterFor(valueType)
 
-    override fun reload() = innerConfig!!.reload()
+    override fun reload() = innerConfig.reload()
 
-    override fun toStringMasked(): String = innerConfig!!.toStringMasked()
+    override fun toStringMasked(): String = innerConfig.toStringMasked()
 }
 
 class MockConfigSource private constructor(
@@ -60,27 +60,28 @@ class MockConfigSource private constructor(
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> getterFor(valueType: KClass<T>): (String) -> T {
-        return when(valueType) {
-            Int::class -> getterHelper(valueType)
-            Long::class -> getterHelper(valueType)
-            Duration::class -> getterHelper(valueType)
-            Boolean::class -> getterHelper(valueType)
-            else -> throw ConfigurationValueTypeUnsupportedException.new(valueType)
+        return { path ->
+            numGetsCalled++
+            val value = props.get(path) ?:
+            throw ConfigPropertyNotFoundException("Could not find value for property at '$path'")
+
+            value as? T ?: throw ConfigValueParsingException("Could not parse type " +
+                    "${value::class} as ${valueType::class}")
         }
     }
 
     override fun reload() { /* No op */ }
     override fun toStringMasked(): String = props.toString()
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <T : Any> getterHelper(desiredValueType: KClass<T>): (String) -> T {
-        return { path ->
-            numGetsCalled++
-            val value = props.get(path) ?:
-                throw ConfigPropertyNotFoundException("Could not find value for property at '$path'")
-
-            value as? T ?: throw ConfigValueParsingException("Could not parse type " +
-                "${value::class} as ${desiredValueType::class}")
-        }
-    }
+//    @Suppress("UNCHECKED_CAST")
+//    private fun <T : Any> getterHelper(desiredValueType: KClass<T>): (String) -> T {
+//        return { path ->
+//            numGetsCalled++
+//            val value = props.get(path) ?:
+//                throw ConfigPropertyNotFoundException("Could not find value for property at '$path'")
+//
+//            value as? T ?: throw ConfigValueParsingException("Could not parse type " +
+//                "${value::class} as ${desiredValueType::class}")
+//        }
+//    }
 }
