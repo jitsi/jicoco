@@ -15,11 +15,8 @@
  */
 package org.jitsi.config
 
-import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
-import io.kotlintest.extensions.TopLevelTest
 import org.jitsi.utils.config.ConfigSource
-import org.jitsi.videobridge.testutils.ConfigSourceWrapper
 
 /**
  * We can't put this class in jicoco-test-kotlin, because it has to access

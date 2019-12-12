@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package org.jitsi.videobridge.testutils
+package org.jitsi.config
 
 import org.jitsi.utils.config.ConfigSource
 import org.jitsi.utils.config.exception.ConfigPropertyNotFoundException
 import org.jitsi.utils.config.exception.ConfigValueParsingException
-import org.jitsi.utils.config.exception.ConfigurationValueTypeUnsupportedException
-import java.time.Duration
 import kotlin.reflect.KClass
 
 val EMPTY_CONFIG: ConfigSource = MockConfigSource("empty config", mapOf())
