@@ -15,11 +15,8 @@
  */
 package org.jitsi.config
 
-import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
-import io.kotlintest.extensions.TopLevelTest
 import org.jitsi.utils.config.ConfigSource
-import org.jitsi.videobridge.testutils.ConfigSourceWrapper
 
 /**
  * We can't put this class in jicoco-test-kotlin, because it has to access
@@ -27,8 +24,6 @@ import org.jitsi.videobridge.testutils.ConfigSourceWrapper
  * circular dependency.
  */
 abstract class JitsiConfigTest : ConfigTest() {
-    private val legacyConfigWrapper = ConfigSourceWrapper()
-    private val newConfigWrapper = ConfigSourceWrapper()
 
     override fun withLegacyConfig(configSource: ConfigSource) {
         legacyConfigWrapper.innerConfig = configSource
@@ -42,5 +37,10 @@ abstract class JitsiConfigTest : ConfigTest() {
         super.beforeSpec(spec)
         JitsiConfigFactory.legacyConfigSupplier = { legacyConfigWrapper }
         JitsiConfigFactory.newConfigSupplier = { newConfigWrapper }
+    }
+
+    companion object {
+        private val legacyConfigWrapper = ConfigSourceWrapper()
+        private val newConfigWrapper = ConfigSourceWrapper()
     }
 }

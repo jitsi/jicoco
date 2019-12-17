@@ -19,8 +19,6 @@ package org.jitsi.config
 import io.kotlintest.matchers.withClue
 import io.kotlintest.shouldBe
 import org.jitsi.utils.config.ConfigProperty
-import org.jitsi.videobridge.testutils.EMPTY_CONFIG
-import org.jitsi.videobridge.testutils.MockConfigSource
 
 fun <LegacyConfigType : Any, NewConfigType : Any, PropType : Any> ConfigTest.runBasicTests(
     legacyConfigName: String,
