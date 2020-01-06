@@ -42,7 +42,7 @@
         <dependency>
             <groupId>io.kotlintest</groupId>
             <artifactId>kotlintest-runner-junit5</artifactId>
-            <version>3.3.2</version>
+            <version>3.4.2</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
