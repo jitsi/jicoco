@@ -16,7 +16,8 @@
  */
 package org.jitsi.xmpp.mucclient;
 
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.collections.*;
+import org.jitsi.utils.logging2.*;
 import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
@@ -50,7 +51,8 @@ public class MucClient
      * The {@link Logger} used by the {@link MucClient} class and its instances
      * for logging output.
      */
-    private static final Logger logger = Logger.getLogger(MucClient.class);
+    private static final Logger classLogger
+            = new LoggerImpl(MucClient.class.getName());
 
     /**
      * The IQ types we are interested in.
@@ -82,7 +84,7 @@ public class MucClient
         }
         catch (XmppStringprepException xse)
         {
-            logger.error("Failed to parse domain: " + domain);
+            classLogger.error("Failed to parse domain: " + domain);
             return null;
         }
 
@@ -96,7 +98,7 @@ public class MucClient
 
         if (config.getDisableCertificateVerification())
         {
-            logger.warn("Disabling certificate verification!");
+            classLogger.warn("Disabling certificate verification!");
             builder.setCustomX509TrustManager(new TrustAllX509TrustManager());
             builder.setHostnameVerifier(new TrustAllHostnameVerifier());
         }
@@ -147,6 +149,13 @@ public class MucClient
     private final Map<Jid, MucWrapper> mucs = new ConcurrentHashMap<>();
 
     /**
+     * The {@link Logger} used by the {@link MucClient} class and its instances
+     * for logging output.
+     */
+    private final Logger logger;
+
+
+    /**
      * Creates and XMPP connection for the given {@code config}, connects, and
      * joins the MUC described by the {@code config}.
      *
@@ -155,6 +164,11 @@ public class MucClient
     MucClient(MucClientConfiguration config, MucClientManager mucClientManager)
     {
         this.mucClientManager = mucClientManager;
+        logger = classLogger.createChildLogger(
+                MucClient.class.getName(),
+                JMap.of(
+                    "id", config.getId(),
+                    "hostname", config.getHostname()));
         this.config = config;
     }
 
@@ -201,7 +215,7 @@ public class MucClient
             @Override
             public void connected(XMPPConnection xmppConnection)
             {
-                logger.info(MucClient.this + " connected");
+                logger.info("Connected.");
             }
 
             @Override
@@ -209,7 +223,7 @@ public class MucClient
             {
                 if (logger.isDebugEnabled())
                 {
-                    logger.debug(MucClient.this + " authenticated, b=" + b);
+                    logger.debug("Authenticated, b=" + b);
                 }
                 try
                 {
@@ -224,19 +238,19 @@ public class MucClient
             @Override
             public void connectionClosed()
             {
-                logger.info(MucClient.this + " closed");
+                logger.info("Closed.");
             }
 
             @Override
             public void connectionClosedOnError(Exception e)
             {
-                logger.info(MucClient.this + " closed on error:", e);
+                logger.warn("Closed on error:", e);
             }
 
             @Override
             public void reconnectionSuccessful()
             {
-                logger.info(MucClient.this + " reconnection successful");
+                logger.info("Reconnection successful.");
 
                 try
                 {
@@ -254,14 +268,14 @@ public class MucClient
                 mucs.values().forEach(MucWrapper::resetLastPresenceSent);
                 if (logger.isDebugEnabled())
                 {
-                    logger.debug(MucClient.this + " reconnecting in " + i);
+                    logger.debug("Reconnecting in " + i);
                 }
             }
 
             @Override
             public void reconnectionFailed(Exception e)
             {
-                logger.info(MucClient.this + " reconnection failed");
+                logger.warn("Reconnection failed: ", e);
             }
         });
 
@@ -272,7 +286,7 @@ public class MucClient
         // synchronously, so this will also trigger the call to joinMucs()
         if (logger.isDebugEnabled())
         {
-            logger.debug(this + " about to connect and login.");
+            logger.debug("About to connect and login.");
         }
         xmppConnection.connect().login();
     }
@@ -291,7 +305,7 @@ public class MucClient
     {
         if (logger.isDebugEnabled())
         {
-            logger.debug(this + " about to join MUCs.");
+            logger.debug("About to join MUCs: " + config.getMucJids());
         }
 
         for (String mucJidStr : config.getMucJids())
