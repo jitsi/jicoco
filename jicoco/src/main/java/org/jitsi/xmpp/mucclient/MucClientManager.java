@@ -18,7 +18,8 @@ package org.jitsi.xmpp.mucclient;
 
 import org.jitsi.service.configuration.*;
 import org.jitsi.utils.concurrent.*;
-import org.jitsi.utils.logging.*;
+import org.jitsi.utils.logging2.*;
+import org.jitsi.utils.logging2.Logger;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.packet.*;
 import org.jxmpp.util.*;
@@ -42,7 +43,7 @@ public class MucClientManager
      * instances for logging output.
      */
     private static final Logger logger
-        = Logger.getLogger(MucClientManager.class);
+        = new LoggerImpl(MucClientManager.class.getName());
 
     /**
      * Maps a hostname to the {@link MucClient} associated with it.
@@ -172,7 +173,7 @@ public class MucClientManager
     {
         synchronized (syncRoot)
         {
-            logger.info("Setting a presence extension: " + extension);
+            logger.debug("Setting a presence extension: " + extension);
             saveExtension(extension);
 
             mucClients.values().forEach(
