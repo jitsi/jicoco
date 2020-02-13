@@ -192,7 +192,7 @@ public class MucClient
         }
 
         mucNickname = Resourcepart.from(config.getMucNickname());
-        if ("sync".equals(config.getIqHandlerMode()))
+        if ("sync".equalsIgnoreCase(config.getIqHandlerMode()))
         {
             iqHandlerMode = IQRequestHandler.Mode.sync;
         }

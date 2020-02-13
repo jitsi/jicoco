@@ -354,7 +354,7 @@ public class MucClientConfiguration
      */
     public String getIqHandlerMode()
     {
-        return props.get(IQ_HANDLER_MODE.toUpperCase());
+        return props.get(IQ_HANDLER_MODE);
     }
 
     /**
