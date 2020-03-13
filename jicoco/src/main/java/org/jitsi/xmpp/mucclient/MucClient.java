@@ -317,6 +317,39 @@ public class MucClient
     }
 
     /**
+     * Whether the XMPP connection is currently connected.
+     */
+    boolean isConnected()
+    {
+        return xmppConnection != null && xmppConnection.isConnected();
+    }
+
+    /**
+     * The number of MUCs configured for this {@link MucClient}.
+     */
+    int getMucsCount()
+    {
+        return config.getMucJids().size();
+    }
+
+    /**
+     * The number of MUCs that have been joined.
+     * @return
+     */
+    int getMucsJoinedCount()
+    {
+        if (!isConnected())
+        {
+            return 0;
+        }
+
+        return (int) mucs.values().stream()
+            .filter(mucWrapper -> mucWrapper.muc.isJoined())
+            .count();
+
+    }
+
+    /**
      * Gets the {@link MucWrapper} instance for a particular JID, creating it
      * if necessary.
      * @param mucJid the MUC JID.

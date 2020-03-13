@@ -341,4 +341,45 @@ public class MucClientManager
        mucClient.stop();
        return true;
     }
+
+    /**
+     * Return the number of configured {@link MucClient}s.
+     */
+    public long getClientCount()
+    {
+        return mucClients.size();
+    }
+
+    /**
+     * Return the number of {@link MucClient}s that are succesfully connected
+     * to XMPP.
+     */
+    public long getClientConnectedCount()
+    {
+        return mucClients.values().stream()
+                .filter(MucClient::isConnected)
+                .count();
+    }
+
+    /**
+     * Return the number of configured MUCs.
+     */
+    public long getMucCount()
+    {
+        return mucClients.values().stream()
+                .map(MucClient::getMucsCount)
+                .mapToInt(Integer::intValue)
+                .sum();
+    }
+
+    /**
+     * Return the number of MUCs that have been succesfully joined.
+     */
+    public long getMucJoinedCount()
+    {
+        return mucClients.values().stream()
+                .map(MucClient::getMucsJoinedCount)
+                .mapToInt(Integer::intValue)
+                .sum();
+    }
 }
