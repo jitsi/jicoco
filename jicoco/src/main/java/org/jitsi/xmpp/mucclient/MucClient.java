@@ -325,22 +325,28 @@ public class MucClient
     }
 
     /**
-     * Returns {@code true} if all MUCs that have been configured are currently
-     * joined.
+     * The number of MUCs configured for this {@link MucClient}.
      */
-    boolean areAllMucsJoined()
+    int getMucsCount()
+    {
+        return config.getMucJids().size();
+    }
+
+    /**
+     * The number of MUCs that have been joined.
+     * @return
+     */
+    int getMucsJoinedCount()
     {
         if (!isConnected())
         {
-            return false;
+            return 0;
         }
 
-        long joinedMucCount
-                = mucs.values().stream()
-                    .filter(mucWrapper -> mucWrapper.muc.isJoined())
-                    .count();
+        return (int) mucs.values().stream()
+            .filter(mucWrapper -> mucWrapper.muc.isJoined())
+            .count();
 
-        return joinedMucCount == config.getMucJids().size();
     }
 
     /**

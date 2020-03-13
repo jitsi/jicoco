@@ -343,7 +343,7 @@ public class MucClientManager
     }
 
     /**
-     * Return the number of {@link MucClient}s
+     * Return the number of configured {@link MucClient}s.
      */
     public long getClientCount()
     {
@@ -354,7 +354,7 @@ public class MucClientManager
      * Return the number of {@link MucClient}s that are succesfully connected
      * to XMPP.
      */
-    public long getConnectedClientCount()
+    public long getClientConnectedCount()
     {
         return mucClients.values().stream()
                 .filter(MucClient::isConnected)
@@ -362,13 +362,24 @@ public class MucClientManager
     }
 
     /**
-     * Return the number of {@link MucClient}s that are succesfully connected
-     * to XMPP and joined all of their configured MUCs.
+     * Return the number of configured MUCs.
      */
-    public long getJoinedClientCount()
+    public long getMucCount()
     {
         return mucClients.values().stream()
-                .filter(MucClient::areAllMucsJoined)
-                .count();
+                .map(MucClient::getMucsCount)
+                .mapToInt(Integer::intValue)
+                .sum();
+    }
+
+    /**
+     * Return the number of MUCs that have been succesfully joined.
+     */
+    public long getMucJoinedCount()
+    {
+        return mucClients.values().stream()
+                .map(MucClient::getMucsJoinedCount)
+                .mapToInt(Integer::intValue)
+                .sum();
     }
 }
