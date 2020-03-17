@@ -44,6 +44,13 @@ public class MucClientConfiguration
 
     /**
      * The name of the property (without a prefix) which specifies the
+     * xmpp server's port to connect to.
+     * This is an optional property and defaults to 5222.
+     */
+    public static String PORT = "PORT";
+
+    /**
+     * The name of the property (without a prefix) which specifies the
      * XMPP domain to use.
      * This is not a required property (if it is missing the hostname is
      * used as a domain)
@@ -238,6 +245,23 @@ public class MucClientConfiguration
     }
 
     /**
+     * @return the XMPP server's port number.
+     */
+    public String getPort()
+    {
+        return props.get(PORT.toUpperCase());
+    }
+
+    /**
+     * Sets the XMPP server's port.
+     * @param port the XMPP server's port
+     */
+    public void setPort(String port)
+    {
+        props.put(PORT, port);
+    }
+
+    /**
      * @return the XMPP domain.
      */
     public String getDomain()
@@ -401,6 +425,7 @@ public class MucClientConfiguration
                 " id=" + id+
                 " domain=" + getDomain() +
                 " hostname=" + getHostname() +
+                " port=" + getPort() +
                 " username=" + getUsername() +
                 " mucs=" + getMucJids() +
                 " mucNickname=" + getMucNickname() +
