@@ -96,6 +96,12 @@ public class MucClient
                     config.getUsername(),
                     config.getPassword());
 
+        String portStr = config.getPort();
+
+        if (portStr != null && !portStr.isEmpty()) {
+            builder.setPort(Integer.parseInt(portStr));
+        }
+
         if (config.getDisableCertificateVerification())
         {
             classLogger.warn("Disabling certificate verification!");
