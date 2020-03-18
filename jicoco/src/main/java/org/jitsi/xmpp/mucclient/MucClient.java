@@ -496,7 +496,22 @@ public class MucClient
         }
         else
         {
-            responseIq = iqListener.handleIq(iq, this);
+            try
+            {
+                responseIq = iqListener.handleIq(iq, this);
+            }
+            catch (Exception e)
+            {
+                logger.warn(
+                    "Exception processing IQ, returning internal" +
+                        " server error. Request: " + iq.toString(), e);
+
+                responseIq
+                    = IQUtils.createError(
+                    iq,
+                    XMPPError.Condition.internal_server_error,
+                    e.getMessage());
+            }
         }
 
         if (responseIq == null)
