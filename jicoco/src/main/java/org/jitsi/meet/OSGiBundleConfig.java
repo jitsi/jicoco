@@ -183,14 +183,6 @@ public abstract class OSGiBundleConfig
                 ConfigurationService.PNAME_CONFIGURATION_FILE_IS_READ_ONLY,
                 true_);
 
-        // Jicoco users default to not using libjitsi's audio and video system
-        defaults.put(
-                "net.java.sip.communicator.service.media.DISABLE_AUDIO_SUPPORT",
-                true_);
-        defaults.put(
-                "net.java.sip.communicator.service.media.DISABLE_VIDEO_SUPPORT",
-                true_);
-
         return defaults;
     }
 
