@@ -47,6 +47,12 @@ import java.util.concurrent.*;
  */
 public class MucClient
 {
+    static
+    {
+        XMPPTCPConnection.setUseStreamManagementDefault(false);
+        XMPPTCPConnection.setUseStreamManagementResumptionDefault(false);
+    }
+
     /**
      * The {@link Logger} used by the {@link MucClient} class and its instances
      * for logging output.
