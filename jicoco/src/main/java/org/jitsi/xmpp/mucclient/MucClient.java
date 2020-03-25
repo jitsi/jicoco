@@ -600,7 +600,10 @@ public class MucClient
         {
             try
             {
-                xmppConnection.connect();
+                if (!xmppConnection.isConnected())
+                {
+                    xmppConnection.connect();
+                }
             }
             catch(Exception t)
             {
@@ -609,16 +612,7 @@ public class MucClient
                 return true;
             }
 
-            if (xmppConnection.isConnected())
-            {
-                xmppConnection.login();
-            }
-            else
-            {
-                // log that we are still connected, but there was no error
-                // on connect attempt, we can give up now
-                logger.info(MucClient.this + " still not connected.");
-            }
+            xmppConnection.login();
 
             return false;
         };
