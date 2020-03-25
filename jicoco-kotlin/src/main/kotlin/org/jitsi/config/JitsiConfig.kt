@@ -37,6 +37,7 @@ class JitsiConfig {
         }
 
         fun reload() {
+            logger.info("Reloading.")
             ConfigFactory.invalidateCaches()
             newConfig.reload()
             legacyConfig.reload()
