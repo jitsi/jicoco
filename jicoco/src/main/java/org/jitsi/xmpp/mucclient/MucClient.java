@@ -131,11 +131,6 @@ public class MucClient
     private AbstractXMPPConnection xmppConnection;
 
     /**
-     * Lock used to retries to connect and login with stop job.
-     */
-    private final Object connectSynRoot = new Object();
-
-    /**
      * The retry we do on initial connect. After xmpp is connected the Smack
      * reconnect kick-ins.
      */
@@ -566,26 +561,29 @@ public class MucClient
      */
     void stop()
     {
-        synchronized(connectSynRoot)
+        if (this.connectRetry != null)
         {
-            if (this.connectRetry != null)
-            {
-                this.connectRetry.cancel();
-            }
+            this.connectRetry.cancel();
+        }
 
-            // If we are still not connected leave and disconnect my through
-            // errors
-            try
-            {
-                mucs.values().forEach(MucWrapper::leave);
-            }
-            catch(Exception e) {}
+        // If we are still not connected leave and disconnect my through
+        // errors
+        try
+        {
+            mucs.values().forEach(MucWrapper::leave);
+        }
+        catch(Exception e)
+        {
+            logger.error("Error leaving mucs", e);
+        }
 
-            try
-            {
-                xmppConnection.disconnect();
-            }
-            catch(Exception e) {}
+        try
+        {
+            xmppConnection.disconnect();
+        }
+        catch(Exception e)
+        {
+            logger.error("Error disconnecting xmpp connection", e);
         }
     }
 
@@ -600,32 +598,29 @@ public class MucClient
     {
         return () ->
         {
-            synchronized (connectSynRoot)
+            try
             {
-                try
-                {
-                    xmppConnection.connect();
-                }
-                catch(Exception t)
-                {
-                    logger.warn(MucClient.this + " error connecting", t);
-
-                    return true;
-                }
-
-                if (xmppConnection.isConnected())
-                {
-                    xmppConnection.login();
-                }
-                else
-                {
-                    // log that we are still connected, but there was no error
-                    // on connect attempt, we can give up now
-                    logger.info(MucClient.this + " still not connected.");
-                }
-
-                return false;
+                xmppConnection.connect();
             }
+            catch(Exception t)
+            {
+                logger.warn(MucClient.this + " error connecting", t);
+
+                return true;
+            }
+
+            if (xmppConnection.isConnected())
+            {
+                xmppConnection.login();
+            }
+            else
+            {
+                // log that we are still connected, but there was no error
+                // on connect attempt, we can give up now
+                logger.info(MucClient.this + " still not connected.");
+            }
+
+            return false;
         };
     }
 
