@@ -17,6 +17,7 @@
 package org.jitsi.xmpp.mucclient;
 
 import org.jitsi.utils.collections.*;
+import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
 import org.jitsi.retry.*;
 import org.jitsi.xmpp.util.*;
@@ -137,6 +138,11 @@ public class MucClient
     private RetryStrategy connectRetry;
 
     /**
+     * The executor to execute connect, retry connection and login.
+     */
+    private ScheduledExecutorService executor;
+
+    /**
      * The {@link MucClientManager} which owns this {@link MucClient}.
      */
     private final MucClientManager mucClientManager;
@@ -192,13 +198,35 @@ public class MucClient
     }
 
     /**
+     * Initializes the executor and starts initializing, connecting and logging
+     * in of this muc client.
+     */
+    void start()
+    {
+        this.executor = ExecutorUtils.newScheduledThreadPool(
+            1, true, MucClientManager.class.getSimpleName());
+
+        this.executor.execute(() ->
+        {
+            try
+            {
+                this.initializeConnectAndJoin();
+            }
+            catch(Exception e)
+            {
+                logger.error(
+                    "Failed to initialize and start a MucClient: ", e);
+            }
+        });
+    }
+
+    /**
      * Initializes this instance (by extracting the necessary fields from its
      * configuration), connects and logs into the XMPP server, and joins all
      * MUCs that the configuration describes.
-     * @param executor The executor calling/managing this method.
      * @throws Exception
      */
-    void initializeConnectAndJoin(ScheduledExecutorService executor)
+    private void initializeConnectAndJoin()
         throws Exception
     {
         if (logger.isDebugEnabled())
@@ -309,7 +337,7 @@ public class MucClient
             logger.debug("About to connect and login.");
         }
 
-        this.connectRetry = new RetryStrategy(executor);
+        this.connectRetry = new RetryStrategy(this.executor);
 
         this.connectRetry.runRetryingTask(new SimpleRetryTask(
             0, 5000, true, getConnectAndLoginCallable()));
@@ -566,6 +594,11 @@ public class MucClient
             this.connectRetry.cancel();
         }
 
+        if (this.executor != null)
+        {
+            this.executor.shutdown();
+        }
+
         // If we are still not connected leave and disconnect my through
         // errors
         try
@@ -612,7 +645,10 @@ public class MucClient
                 return true;
             }
 
+            logger.info("Logging in.");
             xmppConnection.login();
+
+            executor.shutdown();
 
             return false;
         };
