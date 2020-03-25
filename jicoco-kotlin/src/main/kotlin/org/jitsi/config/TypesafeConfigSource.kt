@@ -22,6 +22,7 @@ import com.typesafe.config.ConfigObject
 import com.typesafe.config.ConfigValue
 import org.jitsi.utils.config.ConfigSource
 import org.jitsi.utils.config.exception.ConfigurationValueTypeUnsupportedException
+import org.jitsi.utils.logging2.LoggerImpl
 import java.time.Duration
 import java.time.Period
 import java.time.temporal.TemporalAmount
@@ -82,7 +83,15 @@ open class TypesafeConfigSource(
  * The 'new' config file is read via the default [ConfigFactory.load]
  * loader.
  */
-class NewConfig : TypesafeConfigSource("new config", ConfigFactory::load)
+class NewConfig : TypesafeConfigSource("new config", {
+    ConfigFactory.load().also {
+        logger.info("Loaded NewConfig with origin: " + it.origin().description())
+    }
+}) {
+    companion object {
+        private val logger = LoggerImpl(NewConfig::class.java.name)
+    }
+}
 
 /**
  * The 'legacy' config file is read by explicitly parsing the old file via
