@@ -81,7 +81,7 @@ public class MucClientManager
      */
     private final Object syncRoot = new Object();
 
-    private final Executor executor;
+    private final ScheduledExecutorService executor;
 
     /**
      * Initializes a new {@link MucClientManager} instance.
@@ -99,24 +99,12 @@ public class MucClientManager
      */
     public MucClientManager(String[] features)
     {
-        this(features,
-             ExecutorUtils.newCachedThreadPool(
-                 true,
-                 MucClientManager.class.getSimpleName()));
-    }
-
-    /**
-     * Initializes a new {@link MucClientManager} instance.
-     *
-     * @param features the features to use for disco#info.
-     */
-    public MucClientManager(String[] features, Executor executor)
-    {
         SmackConfiguration.setUnknownIqRequestReplyMode(
             SmackConfiguration.UnknownIqRequestReplyMode
                 .replyFeatureNotImplemented);
 
-        this.executor = executor;
+        this.executor = ExecutorUtils.newScheduledThreadPool(
+            3, true, MucClientManager.class.getSimpleName());
         if (features != null)
         {
             this.features.addAll(Arrays.asList(features));
@@ -150,7 +138,7 @@ public class MucClientManager
         {
             try
             {
-                mucClient.initializeConnectAndJoin();
+                mucClient.initializeConnectAndJoin(executor);
             }
             catch(Exception e)
             {

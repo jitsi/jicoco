@@ -18,6 +18,7 @@ package org.jitsi.xmpp.mucclient;
 
 import org.jitsi.utils.collections.*;
 import org.jitsi.utils.logging2.*;
+import org.jitsi.retry.*;
 import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
@@ -130,6 +131,11 @@ public class MucClient
     private AbstractXMPPConnection xmppConnection;
 
     /**
+     * Lock used to retries to connect and login with stop job.
+     */
+    private final Object connectSynRoot = new Object();
+
+    /**
      * The {@link MucClientManager} which owns this {@link MucClient}.
      */
     private final MucClientManager mucClientManager;
@@ -188,9 +194,10 @@ public class MucClient
      * Initializes this instance (by extracting the necessary fields from its
      * configuration), connects and logs into the XMPP server, and joins all
      * MUCs that the configuration describes.
+     * @param executor The executor calling/managing this method.
      * @throws Exception
      */
-    void initializeConnectAndJoin()
+    void initializeConnectAndJoin(ScheduledExecutorService executor)
         throws Exception
     {
         if (logger.isDebugEnabled())
@@ -300,7 +307,11 @@ public class MucClient
         {
             logger.debug("About to connect and login.");
         }
-        xmppConnection.connect().login();
+
+        RetryStrategy connectRetry = new RetryStrategy(executor);
+
+        connectRetry.runRetryingTask(new SimpleRetryTask(
+            0, 5000, true, getConnectAndLoginCallable()));
     }
 
     /**
@@ -549,8 +560,51 @@ public class MucClient
      */
     void stop()
     {
-        mucs.values().forEach(MucWrapper::leave);
-        xmppConnection.disconnect();
+        synchronized(connectSynRoot)
+        {
+            mucs.values().forEach(MucWrapper::leave);
+            xmppConnection.disconnect();
+        }
+    }
+
+    /**
+     * The callable returned by this method describes the task of connecting
+     * and login to XMPP service.
+     *
+     * @return <tt>Callable<Boolean></tt> which returns <tt>true</tt> as long
+     *         as we're failing to connect.
+     */
+    private Callable<Boolean> getConnectAndLoginCallable()
+    {
+        return () ->
+        {
+            synchronized (connectSynRoot)
+            {
+                try
+                {
+                    xmppConnection.connect();
+                }
+                catch(Exception t)
+                {
+                    logger.warn(MucClient.this + " error connecting", t);
+
+                    return true;
+                }
+
+                if (xmppConnection.isConnected())
+                {
+                    xmppConnection.login();
+                }
+                else
+                {
+                    // log that we are still connected, but there was no error
+                    // on connect attempt, we can give up now
+                    logger.info(MucClient.this + " still not connected.");
+                }
+
+                return false;
+            }
+        };
     }
 
     /**
