@@ -136,6 +136,12 @@ public class MucClient
     private final Object connectSynRoot = new Object();
 
     /**
+     * The retry we do on initial connect. After xmpp is connected the Smack
+     * reconnect kick-ins.
+     */
+    private RetryStrategy connectRetry;
+
+    /**
      * The {@link MucClientManager} which owns this {@link MucClient}.
      */
     private final MucClientManager mucClientManager;
@@ -308,9 +314,9 @@ public class MucClient
             logger.debug("About to connect and login.");
         }
 
-        RetryStrategy connectRetry = new RetryStrategy(executor);
+        this.connectRetry = new RetryStrategy(executor);
 
-        connectRetry.runRetryingTask(new SimpleRetryTask(
+        this.connectRetry.runRetryingTask(new SimpleRetryTask(
             0, 5000, true, getConnectAndLoginCallable()));
     }
 
@@ -562,8 +568,24 @@ public class MucClient
     {
         synchronized(connectSynRoot)
         {
-            mucs.values().forEach(MucWrapper::leave);
-            xmppConnection.disconnect();
+            if (this.connectRetry != null)
+            {
+                this.connectRetry.cancel();
+            }
+
+            // If we are still not connected leave and disconnect my through
+            // errors
+            try
+            {
+                mucs.values().forEach(MucWrapper::leave);
+            }
+            catch(Exception e) {}
+
+            try
+            {
+                xmppConnection.disconnect();
+            }
+            catch(Exception e) {}
         }
     }
 
