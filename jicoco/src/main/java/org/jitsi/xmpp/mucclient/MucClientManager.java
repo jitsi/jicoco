@@ -17,7 +17,6 @@
 package org.jitsi.xmpp.mucclient;
 
 import org.jitsi.service.configuration.*;
-import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
 import org.jitsi.utils.logging2.Logger;
 import org.jivesoftware.smack.*;
@@ -81,8 +80,6 @@ public class MucClientManager
      */
     private final Object syncRoot = new Object();
 
-    private final Executor executor;
-
     /**
      * Initializes a new {@link MucClientManager} instance.
      *
@@ -99,24 +96,10 @@ public class MucClientManager
      */
     public MucClientManager(String[] features)
     {
-        this(features,
-             ExecutorUtils.newCachedThreadPool(
-                 true,
-                 MucClientManager.class.getSimpleName()));
-    }
-
-    /**
-     * Initializes a new {@link MucClientManager} instance.
-     *
-     * @param features the features to use for disco#info.
-     */
-    public MucClientManager(String[] features, Executor executor)
-    {
         SmackConfiguration.setUnknownIqRequestReplyMode(
             SmackConfiguration.UnknownIqRequestReplyMode
                 .replyFeatureNotImplemented);
 
-        this.executor = executor;
         if (features != null)
         {
             this.features.addAll(Arrays.asList(features));
@@ -146,18 +129,7 @@ public class MucClientManager
             mucClients.put(config.getId(), mucClient);
         }
 
-        executor.execute(() ->
-        {
-            try
-            {
-                mucClient.initializeConnectAndJoin();
-            }
-            catch(Exception e)
-            {
-                logger.error(
-                    "Failed to initialize and start a MucClient: ", e);
-            }
-        });
+        mucClient.start();
 
         return true;
     }

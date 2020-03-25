@@ -17,7 +17,9 @@
 package org.jitsi.xmpp.mucclient;
 
 import org.jitsi.utils.collections.*;
+import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
+import org.jitsi.retry.*;
 import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
@@ -130,6 +132,17 @@ public class MucClient
     private AbstractXMPPConnection xmppConnection;
 
     /**
+     * The retry we do on initial connect. After xmpp is connected the Smack
+     * reconnect kick-ins.
+     */
+    private RetryStrategy connectRetry;
+
+    /**
+     * The executor to execute connect, retry connection and login.
+     */
+    private ScheduledExecutorService executor;
+
+    /**
      * The {@link MucClientManager} which owns this {@link MucClient}.
      */
     private final MucClientManager mucClientManager;
@@ -185,12 +198,35 @@ public class MucClient
     }
 
     /**
+     * Initializes the executor and starts initializing, connecting and logging
+     * in of this muc client.
+     */
+    void start()
+    {
+        this.executor = ExecutorUtils.newScheduledThreadPool(
+            1, true, MucClientManager.class.getSimpleName());
+
+        this.executor.execute(() ->
+        {
+            try
+            {
+                this.initializeConnectAndJoin();
+            }
+            catch(Exception e)
+            {
+                logger.error(
+                    "Failed to initialize and start a MucClient: ", e);
+            }
+        });
+    }
+
+    /**
      * Initializes this instance (by extracting the necessary fields from its
      * configuration), connects and logs into the XMPP server, and joins all
      * MUCs that the configuration describes.
      * @throws Exception
      */
-    void initializeConnectAndJoin()
+    private void initializeConnectAndJoin()
         throws Exception
     {
         if (logger.isDebugEnabled())
@@ -300,7 +336,11 @@ public class MucClient
         {
             logger.debug("About to connect and login.");
         }
-        xmppConnection.connect().login();
+
+        this.connectRetry = new RetryStrategy(this.executor);
+
+        this.connectRetry.runRetryingTask(new SimpleRetryTask(
+            0, 5000, true, getConnectAndLoginCallable()));
     }
 
     /**
@@ -549,8 +589,69 @@ public class MucClient
      */
     void stop()
     {
-        mucs.values().forEach(MucWrapper::leave);
-        xmppConnection.disconnect();
+        if (this.connectRetry != null)
+        {
+            this.connectRetry.cancel();
+        }
+
+        if (this.executor != null)
+        {
+            this.executor.shutdown();
+        }
+
+        // If we are still not connected leave and disconnect my through
+        // errors
+        try
+        {
+            mucs.values().forEach(MucWrapper::leave);
+        }
+        catch(Exception e)
+        {
+            logger.error("Error leaving mucs", e);
+        }
+
+        try
+        {
+            xmppConnection.disconnect();
+        }
+        catch(Exception e)
+        {
+            logger.error("Error disconnecting xmpp connection", e);
+        }
+    }
+
+    /**
+     * The callable returned by this method describes the task of connecting
+     * and login to XMPP service.
+     *
+     * @return <tt>Callable<Boolean></tt> which returns <tt>true</tt> as long
+     *         as we're failing to connect.
+     */
+    private Callable<Boolean> getConnectAndLoginCallable()
+    {
+        return () ->
+        {
+            try
+            {
+                if (!xmppConnection.isConnected())
+                {
+                    xmppConnection.connect();
+                }
+            }
+            catch(Exception t)
+            {
+                logger.warn(MucClient.this + " error connecting", t);
+
+                return true;
+            }
+
+            logger.info("Logging in.");
+            xmppConnection.login();
+
+            executor.shutdown();
+
+            return false;
+        };
     }
 
     /**
