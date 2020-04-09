@@ -72,6 +72,12 @@ object LongMockConfigValueGenerator : MockConfigValueGenerator<Long, Long> {
     }
 }
 
+object DurationMockConfigValueGenerator : MockConfigValueGenerator<Duration, Duration> {
+    override fun gen(): MockConfigValue<Duration, Duration> {
+        return Random().nextLong().let { MockConfigValue(Duration.ofMillis(it), Duration.ofMillis(it)) }
+    }
+}
+
 /**
  * We don't use a singleton here because collisions would be too common
  */
@@ -88,4 +94,9 @@ class BooleanMockConfigValueGenerator : MockConfigValueGenerator<Boolean, Boolea
 object DurationToLongMockConfigValueGenerator : TransformingMockConfigValueGenerator<Duration, Long>(
     { Duration.ofMillis(Random().nextLong()) },
     { it.toMillis() }
+)
+
+object LongToDurationMockConfigValueGenerator : TransformingMockConfigValueGenerator<Long, Duration>(
+    { Random().nextLong() },
+    { Duration.ofMillis(it) }
 )
