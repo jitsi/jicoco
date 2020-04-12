@@ -25,7 +25,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
-abstract class AbstractHealthCheckService(
+abstract class AbstractHealthCheckService @JvmOverloads constructor(
     val interval: Duration = Duration.ofSeconds(10),
     /**
      * If no health checks have been performed in the last {@code timeout}
@@ -49,17 +49,10 @@ abstract class AbstractHealthCheckService(
     /**
      * Failures in this period (since the start of the service) are not sticky.
      */
-    private val stickyFailuresGracePeriod: Duration = stickyFailuresGracePeriodDefault
+    private val stickyFailuresGracePeriod: Duration = stickyFailuresGracePeriodDefault,
+    private val clock: Clock = Clock.systemUTC()
 ): BundleActivator, HealthCheckService, PeriodicRunnable(interval.toMillis())
 {
-    @JvmOverloads
-    constructor(interval: Duration, timeout: Duration, maxCheckDuration: Duration, stickyFailures: Boolean) : this(
-        interval = interval,
-        timeout = timeout,
-        maxCheckDuration = maxCheckDuration,
-        stickyFailures = stickyFailures,
-        stickyFailuresGracePeriod = stickyFailuresGracePeriodDefault)
-
     private val logger: Logger = LoggerImpl(javaClass.name)
 
     /**
@@ -87,8 +80,6 @@ abstract class AbstractHealthCheckService(
      * Whether we've seen a health check failure (after the grace period).
      */
     private var hasFailed = false
-
-    private val clock = Clock.systemUTC()
 
     @Throws(Exception::class)
     override fun start(bundleContext: BundleContext)
