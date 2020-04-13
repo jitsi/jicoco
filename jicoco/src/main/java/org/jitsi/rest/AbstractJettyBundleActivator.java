@@ -385,7 +385,7 @@ public abstract class AbstractJettyBundleActivator
         {
             // HTTP
             connector
-                = new MuxServerConnector(
+                = new ServerConnector(
                 server,
                 new HttpConnectionFactory(httpCfg));
         }
@@ -436,7 +436,7 @@ public abstract class AbstractJettyBundleActivator
             httpsCfg.addCustomizer(new SecureRequestCustomizer());
 
             connector
-                = new MuxServerConnector(
+                = new ServerConnector(
                 server,
                 new SslConnectionFactory(
                     sslContextFactory,
