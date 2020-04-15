@@ -30,7 +30,7 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
     /**
      * The interval at which health checks will be performed.
      */
-    private val _interval: Duration = Duration.ofSeconds(10),
+    _interval: Duration = Duration.ofSeconds(10),
     /**
      * If no health checks have been performed in the last {@code timeout}
      * period, the service is considered unhealthy.
