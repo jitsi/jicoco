@@ -30,7 +30,7 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
     /**
      * The interval at which health checks will be performed.
      */
-    _interval: Duration = Duration.ofSeconds(10),
+    interval: Duration = Duration.ofSeconds(10),
     /**
      * If no health checks have been performed in the last {@code timeout}
      * period, the service is considered unhealthy.
@@ -55,7 +55,7 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
      */
     var stickyFailuresGracePeriod: Duration = stickyFailuresGracePeriodDefault,
     private val clock: Clock = Clock.systemUTC()
-): BundleActivator, HealthCheckService, PeriodicRunnable(_interval.toMillis())
+): BundleActivator, HealthCheckService, PeriodicRunnable(interval.toMillis())
 {
     private val logger: Logger = LoggerImpl(javaClass.name)
 
@@ -88,7 +88,7 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
     /**
      * The interval at which health checks will be performed.
      */
-    var interval: Duration by Delegates.observable(_interval) {
+    var interval: Duration by Delegates.observable(interval) {
         _, _, newValue -> period = newValue.toMillis()
     }
 
