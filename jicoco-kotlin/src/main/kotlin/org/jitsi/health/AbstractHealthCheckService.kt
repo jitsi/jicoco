@@ -24,14 +24,18 @@ import org.osgi.framework.BundleContext
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import kotlin.properties.Delegates
 
 abstract class AbstractHealthCheckService @JvmOverloads constructor(
-    val interval: Duration = Duration.ofSeconds(10),
+    /**
+     * The interval at which health checks will be performed.
+     */
+    interval: Duration = Duration.ofSeconds(10),
     /**
      * If no health checks have been performed in the last {@code timeout}
      * period, the service is considered unhealthy.
      */
-    val timeout: Duration = Duration.ofSeconds(30),
+    var timeout: Duration = Duration.ofSeconds(30),
     /**
      * The maximum duration that a call to {@link #performCheck()} is allowed
      * to take. If a call takes longer, the service is considered unhealthy. A
@@ -39,17 +43,17 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
      * <p>
      * Note that if a check never completes, we rely on {@link #timeout} instead.
      */
-    private val maxCheckDuration: Duration = Duration.ofSeconds(3),
+    var maxCheckDuration: Duration = Duration.ofSeconds(3),
     /**
      * If set, a single health check failure after the initial
      * {@link #STICKY_FAILURES_GRACE_PERIOD}, will be result in the service
      * being permanently unhealthy.
      */
-    private val stickyFailures: Boolean = false,
+    var stickyFailures: Boolean = false,
     /**
      * Failures in this period (since the start of the service) are not sticky.
      */
-    private val stickyFailuresGracePeriod: Duration = stickyFailuresGracePeriodDefault,
+    var stickyFailuresGracePeriod: Duration = stickyFailuresGracePeriodDefault,
     private val clock: Clock = Clock.systemUTC()
 ): BundleActivator, HealthCheckService, PeriodicRunnable(interval.toMillis())
 {
@@ -80,6 +84,13 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
      * Whether we've seen a health check failure (after the grace period).
      */
     private var hasFailed = false
+
+    /**
+     * The interval at which health checks will be performed.
+     */
+    var interval: Duration by Delegates.observable(interval) {
+        _, _, newValue -> period = newValue.toMillis()
+    }
 
     @Throws(Exception::class)
     override fun start(bundleContext: BundleContext)
