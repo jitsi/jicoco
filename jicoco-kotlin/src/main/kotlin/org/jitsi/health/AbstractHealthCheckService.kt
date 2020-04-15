@@ -24,6 +24,7 @@ import org.osgi.framework.BundleContext
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import kotlin.properties.Delegates
 
 abstract class AbstractHealthCheckService @JvmOverloads constructor(
     /**
@@ -87,11 +88,9 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
     /**
      * The interval at which health checks will be performed.
      */
-    var interval: Duration = _interval
-        set(value) {
-            period = value.toMillis()
-            field = value
-        }
+    var interval: Duration by Delegates.observable(_interval) {
+        _, _, newValue -> period = newValue.toMillis()
+    }
 
     @Throws(Exception::class)
     override fun start(bundleContext: BundleContext)
