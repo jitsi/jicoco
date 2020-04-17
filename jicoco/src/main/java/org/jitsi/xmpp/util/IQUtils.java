@@ -62,7 +62,7 @@ public final class IQUtils
             org.jivesoftware.smack.packet.IQ smackIQ)
         throws Exception
     {
-        XmlStringBuilder xml = smackIQ.toXML();
+        XmlStringBuilder xml = smackIQ.toXML(null);
 
         SAXReader saxReader = new SAXReader();
         Document document = saxReader.read(new StringReader(xml.toString()));
@@ -107,7 +107,7 @@ public final class IQUtils
 
         IQ.Type type = iq.getType();
         org.jivesoftware.smack.packet.IQ smackIQ = null;
-        org.jivesoftware.smack.packet.XMPPError.Builder smackError = null;
+        org.jivesoftware.smack.packet.StanzaError.Builder smackError = null;
 
         if (iqProvider != null || iq.getError() != null)
         {
@@ -259,22 +259,22 @@ public final class IQUtils
 
     /**
      * Method overload for {@link #createError(
-     * org.jivesoftware.smack.packet.IQ, XMPPError.Condition, String)} with
+     * org.jivesoftware.smack.packet.IQ, StanzaError.Condition, String)} with
      * no error message text.
      *
-     * @see #createError(org.jivesoftware.smack.packet.IQ, XMPPError.Condition,
+     * @see #createError(org.jivesoftware.smack.packet.IQ, StanzaError.Condition,
      * String)
      */
     public static org.jivesoftware.smack.packet.IQ createError(
             org.jivesoftware.smack.packet.IQ    request,
-            XMPPError.Condition                 errorCondition)
+        StanzaError.Condition                 errorCondition)
     {
         return createError(request, errorCondition, null);
     }
 
     /**
-     * A shortcut for <tt>new XMPPError(request,
-     * new XMPPError(errorCondition, errorMessage));</tt>. Create error response
+     * A shortcut for <tt>new StanzaError(request,
+     * new StanzaError(errorCondition, errorMessage));</tt>. Create error response
      * to given <tt>request</tt> IQ.
      *
      * @param request the request IQ for which the error response will be
@@ -287,10 +287,10 @@ public final class IQUtils
      */
     public static org.jivesoftware.smack.packet.IQ createError(
             org.jivesoftware.smack.packet.IQ    request,
-            XMPPError.Condition                 errorCondition,
+        StanzaError.Condition                 errorCondition,
             String                              errorMessage)
     {
-        XMPPError.Builder error = XMPPError.getBuilder(errorCondition);
+        StanzaError.Builder error = StanzaError.getBuilder(errorCondition);
         if (errorMessage != null)
         {
             error.setDescriptiveEnText(errorMessage);
@@ -405,7 +405,7 @@ public final class IQUtils
     public static String responseToXML(
             org.jivesoftware.smack.packet.Stanza response)
     {
-        return response != null ? response.toXML().toString() : "(timeout)";
+        return response != null ? response.toXML(null).toString() : "(timeout)";
     }
 
     /** Prevents the initialization of new <tt>IQUtils</tt> instances. */

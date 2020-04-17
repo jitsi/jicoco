@@ -295,7 +295,12 @@ public class MucClient
                 logger.warn("Closed on error:", e);
             }
 
-            @Override
+            /**
+             * The connection has reconnected successfully to the server. Connections will
+             * reconnect to the server when the previous socket connection was abruptly closed.
+             * @deprecated use {@link #connected(XMPPConnection)} or {@link #authenticated(XMPPConnection, boolean)} instead.
+             */
+            @Deprecated
             public void reconnectionSuccessful()
             {
                 logger.info("Reconnection successful.");
@@ -310,7 +315,16 @@ public class MucClient
                 }
             }
 
-            @Override
+            /**
+             * The connection will retry to reconnect in the specified number of seconds.
+             * <p>
+             * Note: This method is only called if {@link ReconnectionManager#isAutomaticReconnectEnabled()} returns true, i.e.
+             * only when the reconnection manager is enabled for the connection.
+             * </p>
+             *
+             * @param i remaining seconds before attempting a reconnection.
+             */
+            @Deprecated
             public void reconnectingIn(int i)
             {
                 mucs.values().forEach(MucWrapper::resetLastPresenceSent);
@@ -320,7 +334,7 @@ public class MucClient
                 }
             }
 
-            @Override
+            @Deprecated
             public void reconnectionFailed(Exception e)
             {
                 logger.warn("Reconnection failed: ", e);
@@ -532,7 +546,7 @@ public class MucClient
                     mucJid -> mucJid.toLowerCase().equals(fromJidStr)))
         {
             logger.warn("Received an IQ from a non-MUC member: " + fromJid);
-            return IQUtils.createError(iq, XMPPError.Condition.forbidden);
+            return IQUtils.createError(iq, StanzaError.Condition.forbidden);
         }
 
         IQListener iqListener = this.iqListener;
@@ -555,7 +569,7 @@ public class MucClient
                 responseIq
                     = IQUtils.createError(
                     iq,
-                    XMPPError.Condition.internal_server_error,
+                    StanzaError.Condition.internal_server_error,
                     e.getMessage());
             }
         }
@@ -569,7 +583,7 @@ public class MucClient
             responseIq
                 = IQUtils.createError(
                     iq,
-                    XMPPError.Condition.internal_server_error,
+                    StanzaError.Condition.internal_server_error,
                     "Unknown error");
         }
 

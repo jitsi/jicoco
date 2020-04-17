@@ -83,13 +83,13 @@ public abstract class AbstractJSONHandler
      */
     protected static int getHttpStatusCodeForResultIq(IQ responseIQ)
     {
-        XMPPError.Condition condition = responseIQ.getError().getCondition();
+        StanzaError.Condition condition = responseIQ.getError().getCondition();
 
-        if (XMPPError.Condition.not_authorized.equals(condition))
+        if (StanzaError.Condition.not_authorized.equals(condition))
         {
             return HttpServletResponse.SC_UNAUTHORIZED;
         }
-        else if (XMPPError.Condition.service_unavailable.equals(
+        else if (StanzaError.Condition.service_unavailable.equals(
                 condition))
         {
             return HttpServletResponse.SC_SERVICE_UNAVAILABLE;

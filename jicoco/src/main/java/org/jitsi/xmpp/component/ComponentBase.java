@@ -572,7 +572,7 @@ public abstract class ComponentBase
 
                     IQ pingIq = IQUtils.convert(ping);
 
-                    logger.debug("Sending ping IQ: " + ping.toXML());
+                    logger.debug("Sending ping IQ: " + ping.toXML(null));
 
                     send(pingIq);
 
