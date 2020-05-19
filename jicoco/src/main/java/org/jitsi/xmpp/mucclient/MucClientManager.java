@@ -315,6 +315,14 @@ public class MucClientManager
     }
 
     /**
+     * Stops and removed all MucClients.
+     */
+    public void stop()
+    {
+        mucClients.keySet().forEach(this::removeMucClient);
+    }
+
+    /**
      * Return the number of configured {@link MucClient}s.
      */
     public long getClientCount()
