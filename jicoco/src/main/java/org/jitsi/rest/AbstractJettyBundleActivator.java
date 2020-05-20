@@ -406,20 +406,35 @@ public abstract class AbstractJettyBundleActivator
                 JETTY_SSLCONTEXTFACTORY_NEEDCLIENTAUTH,
                 false);
 
-            sslContextFactory.setExcludeCipherSuites(
-                "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
-                ".*NULL.*",
-                ".*RC4.*",
-                ".*MD5.*",
-                ".*DES.*",
-                ".*DSS.*");
+            /* Mozilla Guideline v5.4, Jetty 9.4.15, intermediate configuration
+               https://ssl-config.mozilla.org/#server=jetty&version=9.4.15&config=intermediate&guideline=5.4
+               */
+            /* TLS 1.3 requires Java 11 or later. */
+            String version = System.getProperty("java.version");
+            if (version.startsWith("1.")) {
+                version = version.substring(2, 3);
+            } else {
+                int dot = version.indexOf(".");
+                if (dot != -1) { version = version.substring(0, dot); }
+            }
+            int javaVersion = Integer.parseInt(version);
+
+            if (javaVersion >= 11) {
+                sslContextFactory.setIncludeProtocols("TLSv1.2", "TLSv1.3");
+            }
+            else {
+                sslContextFactory.setIncludeProtocols("TLSv1.2");
+            }
             sslContextFactory.setIncludeCipherSuites(
-                "TLS_DHE_RSA.*",
-                "TLS_ECDHE.*");
-            sslContextFactory.setExcludeProtocols(
-                "SSLv3", "TLSv1", "TLSv1.1");
+                "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+                "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+                "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+                "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+                "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256");
+
             sslContextFactory.setRenegotiationAllowed(false);
             if (sslContextFactoryKeyStorePassword != null)
             {
