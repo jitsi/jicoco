@@ -53,6 +53,7 @@ public class MucClient
     {
         XMPPTCPConnection.setUseStreamManagementDefault(false);
         XMPPTCPConnection.setUseStreamManagementResumptionDefault(false);
+        PingManager.setDefaultPingInterval(30);
     }
 
     /**
@@ -120,11 +121,6 @@ public class MucClient
         return builder.build();
     }
 
-    static
-    {
-        PingManager.setDefaultPingInterval(30);
-    }
-
     /**
      * The {@link AbstractXMPPConnection} object for the connection to
      * the xmpp server
@@ -179,7 +175,7 @@ public class MucClient
      */
     private final Logger logger;
 
-
+    private final PingFailedListener pingFailedListener;
     /**
      * Creates and XMPP connection for the given {@code config}, connects, and
      * joins the MUC described by the {@code config}.
@@ -194,6 +190,7 @@ public class MucClient
                 JMap.of(
                     "id", config.getId(),
                     "hostname", config.getHostname()));
+        pingFailedListener = () -> logger.warn("XMPP Ping failed");
         this.config = config;
     }
 
@@ -250,6 +247,11 @@ public class MucClient
                 createXMPPTCPConnectionConfiguration(config));
         ServiceDiscoveryManager sdm
             = ServiceDiscoveryManager.getInstanceFor(xmppConnection);
+        PingManager pingManager = PingManager.getInstanceFor(xmppConnection);
+        if (pingManager != null)
+        {
+            pingManager.registerPingFailedListener(pingFailedListener);
+        }
 
         // Register the disco#info features.
         mucClientManager.getFeatures().forEach(sdm::addFeature);
@@ -608,6 +610,12 @@ public class MucClient
         catch(Exception e)
         {
             logger.error("Error leaving mucs", e);
+        }
+
+        PingManager pingManager = PingManager.getInstanceFor(xmppConnection);
+        if (pingManager != null)
+        {
+            pingManager.unregisterPingFailedListener(pingFailedListener);
         }
 
         try
