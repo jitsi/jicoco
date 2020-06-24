@@ -289,6 +289,23 @@ public class MucClient
             public void connectionClosed()
             {
                 logger.info("Closed.");
+
+                if (MucClient.this.connectRetry != null)
+                {
+                    // FIXME this is a workaround for an issue that can happen
+                    // during a short network problem (~20 secs) where requests
+                    // ont he client side timeout during it and xmpp server
+                    // tries to close the connection by sending </stream> which
+                    // reaches the client when the network is back. That makes
+                    // smack disconnect the connection and never retries
+
+                    // if the connection was closed, we want to continue trying
+                    // so we will trigger the reconnection logic again
+                    // till we are connected and will relay on smack's reconnect
+                    MucClient.this.connectRetry.runRetryingTask(
+                        new SimpleRetryTask(
+                            0, 5000, true, getConnectAndLoginCallable()));
+                }
             }
 
             @Override
@@ -594,6 +611,7 @@ public class MucClient
         if (this.connectRetry != null)
         {
             this.connectRetry.cancel();
+            this.connectRetry = null;
         }
 
         if (this.executor != null)
