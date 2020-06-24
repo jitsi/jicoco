@@ -289,6 +289,16 @@ public class MucClient
             public void connectionClosed()
             {
                 logger.info("Closed.");
+
+                if (MucClient.this.connectRetry != null)
+                {
+                    // if the connection was closed, we want to continue trying
+                    // so we will trigger the reconnection logic again
+                    // till we are connected and will relay on smack's reconnect
+                    MucClient.this.connectRetry.runRetryingTask(
+                        new SimpleRetryTask(
+                            0, 5000, true, getConnectAndLoginCallable()));
+                }
             }
 
             @Override
@@ -594,6 +604,7 @@ public class MucClient
         if (this.connectRetry != null)
         {
             this.connectRetry.cancel();
+            this.connectRetry = null;
         }
 
         if (this.executor != null)
