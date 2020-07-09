@@ -294,7 +294,7 @@ public class MucClient
                 {
                     // FIXME this is a workaround for an issue that can happen
                     // during a short network problem (~20 secs) where requests
-                    // ont he client side timeout during it and xmpp server
+                    // on the client side timeout during it and xmpp server
                     // tries to close the connection by sending </stream> which
                     // reaches the client when the network is back. That makes
                     // smack disconnect the connection and never retries
@@ -671,8 +671,11 @@ public class MucClient
                 return true;
             }
 
-            logger.info("Logging in.");
-            xmppConnection.login();
+            if (!xmppConnection.isAuthenticated())
+            {
+                logger.info("Logging in.");
+                xmppConnection.login();
+            }
 
             executor.shutdown();
 
