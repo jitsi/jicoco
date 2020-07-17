@@ -21,7 +21,9 @@ import com.typesafe.config.ConfigObject
 import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.ConfigSource
 import java.time.Duration
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
 
 class NewTypesafeConfigSource(
@@ -34,6 +36,10 @@ class NewTypesafeConfigSource(
     }
 
     override fun getterFor(type: KType): (String) -> Any {
+        if (type.isSubtypeOf(typeOf<Enum<*>>())) {
+            @Suppress("UNCHECKED_CAST")
+            return getterForEnum(type.classifier as KClass<Nothing>)
+        }
         return when (type) {
             typeOf<Boolean>() -> wrap { key -> config.getBoolean(key) }
             typeOf<Int>() -> wrap { key -> config.getInt(key) }
@@ -46,6 +52,10 @@ class NewTypesafeConfigSource(
             typeOf<ConfigObject>() -> wrap { key -> config.getObject(key) }
             else -> throw ConfigException.UnsupportedType("Type $type unsupported")
         }
+    }
+
+    private fun <T : Enum<T>> getterForEnum(clazz: KClass<T>): (String) -> Any {
+        return wrap { key -> config.getEnum(clazz.java, key) }
     }
 
     /**

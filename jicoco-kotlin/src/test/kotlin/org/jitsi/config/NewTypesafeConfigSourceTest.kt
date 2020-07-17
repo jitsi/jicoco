@@ -17,20 +17,28 @@
 package org.jitsi.config
 
 import com.typesafe.config.ConfigFactory
-import org.jitsi.metaconfig.ConfigSource
-import org.jitsi.service.configuration.ConfigurationService
+import io.kotlintest.shouldBe
+import io.kotlintest.specs.ShouldSpec
+import kotlin.reflect.typeOf
 
-class NewJitsiConfig {
-    companion object {
-        val TypesafeConfig: ConfigSource = NewTypesafeConfigSource("typesafe config", ConfigFactory.load())
+class NewTypesafeConfigSourceTest : ShouldSpec() {
 
-        var newConfig = TypesafeConfig
+    init {
+        "retrieving an enum" {
+            val config = ConfigFactory.parseString("""
+                color = BLUE
+            """.trimIndent())
+            val source = NewTypesafeConfigSource("test", config)
+            should("work correctly") {
+                source.getterFor(typeOf<Color>())("color") shouldBe Color.BLUE
+            }
+        }
 
-        @JvmStatic
-        val SipCommunicatorProps: ConfigurationService = ReadOnlyConfigurationService()
-        val SipCommunicatorPropsConfigSource: ConfigSource =
-            ConfigurationServiceConfigSource("sip communicator props", SipCommunicatorProps)
-
-        var legacyConfig = SipCommunicatorPropsConfigSource
     }
+}
+
+private enum class Color {
+    RED,
+    BLUE,
+    GREEN
 }
