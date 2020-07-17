@@ -22,6 +22,12 @@ import java.beans.PropertyChangeListener
 import java.nio.file.Paths
 import java.util.Properties
 
+/**
+ * A stripped-down implementation of [ConfigurationService] which serves two purposes:
+ * 1) Injected as an OSGi implementation of [ConfigurationService] for libs which still
+ * expect to find a [ConfigurationService] via OSGi
+ * 2) Wrapped by [ConfigurationServiceConfigSource] to be used in new config
+ */
 class ReadOnlyConfigurationService : ConfigurationService {
     private var properties = Properties()
 

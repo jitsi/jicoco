@@ -16,20 +16,18 @@
 
 package org.jitsi.config
 
-import com.typesafe.config.ConfigFactory
-import org.jitsi.metaconfig.ConfigSource
+import io.kotlintest.specs.ShouldSpec
 import org.jitsi.service.configuration.ConfigurationService
 
-class NewJitsiConfig {
-    companion object {
-        val TypesafeConfig: ConfigSource = NewTypesafeConfigSource("typesafe config", ConfigFactory.load())
+class ReadOnlyConfigurationServiceTest : ShouldSpec() {
 
-        var newConfig = TypesafeConfig
+    init {
+        System.setProperty(ConfigurationService.PNAME_SC_HOME_DIR_LOCATION, "/Users/bbaldino")
+        System.setProperty(ConfigurationService.PNAME_SC_HOME_DIR_NAME, ".sip-communicator")
+        val config = ReadOnlyConfigurationService()
+        println(config.allPropertyNames)
 
-        val SipCommunicatorProps: ConfigurationService = ReadOnlyConfigurationService()
-        val SipCommunicatorPropsConfigSource: ConfigSource =
-            ConfigurationServiceConfigSource("sip communicator props", SipCommunicatorProps)
-
-        var legacyConfig = SipCommunicatorPropsConfigSource
+        println(config.getString("hello.world"))
+        println(config.getPropertyNamesByPrefix("org.jitsi.videobridge", true))
     }
 }
