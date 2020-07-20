@@ -40,6 +40,16 @@ class ConfigurationServiceConfigSource(
             typeOf<Double>() -> { key -> config.getStringOrThrow(key).toDouble() }
             typeOf<Int>() -> { key -> config.getStringOrThrow(key).toInt() }
             typeOf<Long>() -> { key -> config.getStringOrThrow(key).toLong() }
+            // We special handling Map<String, String> and interpret it as:
+            // For the given prefix, return me all the properties which start
+            // with that prefix mapped to their values (retrieved as Strings)
+            typeOf<Map<String, String>>() -> { key ->
+                val props = mutableMapOf<String, String>()
+                for (propName in config.getPropertyNamesByPrefix(key, false)) {
+                    props[propName] = config.getString(propName)
+                }
+                props
+            }
             else -> throw ConfigException.UnsupportedType("Type $type not supported in source '$name'")
         }
     }
