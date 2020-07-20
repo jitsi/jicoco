@@ -17,6 +17,7 @@
 package org.jitsi.config
 
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigList
 import com.typesafe.config.ConfigObject
 import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.ConfigSource
@@ -46,6 +47,7 @@ class NewTypesafeConfigSource(
             typeOf<List<Int>>() -> wrap { key -> config.getIntList(key) }
             typeOf<Duration>() -> wrap { key -> config.getDuration(key) }
             typeOf<ConfigObject>() -> wrap { key -> config.getObject(key) }
+            typeOf<List<Config>>() -> wrap { key -> config.getConfigList(key) }
             else -> throw ConfigException.UnsupportedType("Type $type unsupported")
         }
     }
