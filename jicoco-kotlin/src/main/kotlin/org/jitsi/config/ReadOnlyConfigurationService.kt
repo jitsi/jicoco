@@ -16,76 +16,18 @@
 
 package org.jitsi.config
 
-import org.jitsi.service.configuration.ConfigVetoableChangeListener
 import org.jitsi.service.configuration.ConfigurationService
-import java.beans.PropertyChangeListener
 import java.nio.file.Paths
 import java.util.Properties
 
 /**
- * A stripped-down implementation of [ConfigurationService] which serves two purposes:
- * 1) Injected as an OSGi implementation of [ConfigurationService] for libs which still
- * expect to find a [ConfigurationService] via OSGi
- * 2) Wrapped by [ConfigurationServiceConfigSource] to be used in new config
+ * An implementation of [AbstractReadOnlyConfigurationService] which supports reading
+ * the properties from a file whose location is determined by the
+ * [ConfigurationService.PNAME_SC_HOME_DIR_LOCATION], [ConfigurationService.PNAME_SC_HOME_DIR_NAME]
+ * properties.
  */
-class ReadOnlyConfigurationService : ConfigurationService {
-    private var properties = Properties()
-
-    init {
-        reloadConfiguration()
-    }
-
-    override fun getString(propertyName: String): String? =
-        getProperty(propertyName)?.toString()?.trim()
-
-    override fun getString(propertyName: String, defaultValue: String?): String? =
-        getString(propertyName) ?: defaultValue
-
-    override fun getBoolean(propertyName: String, defaultValue: Boolean): Boolean =
-        getString(propertyName)?.toBoolean() ?: defaultValue
-
-    override fun getDouble(propertyName: String, defaultValue: Double): Double =
-        getString(propertyName)?.toDouble() ?: defaultValue
-
-    override fun getInt(propertyName: String, defaultValue: Int): Int =
-        getString(propertyName)?.toInt() ?: defaultValue
-
-    override fun getLong(propertyName: String, defaultValue: Long): Long =
-        getString(propertyName)?.toLong() ?: defaultValue
-
-    override fun getAllPropertyNames(): MutableList<String> =
-        properties.keys.map { it as String}.toMutableList()
-
-    override fun getProperty(propertyName: String): Any? =
-        properties[propertyName]
-
-    override fun getPropertyNamesByPrefix(prefix: String, exactPrefixMatch: Boolean): MutableList<String> {
-        val matchingPropNames = mutableListOf<String>()
-        for (name in allPropertyNames) {
-            if (exactPrefixMatch) {
-                if (name.substringBeforeLast(delimiter = ".", missingDelimiterValue = "") == prefix) {
-                    matchingPropNames += name
-                }
-            } else if (name.startsWith(prefix)) {
-                matchingPropNames += name
-            }
-        }
-        return matchingPropNames
-    }
-
-    override fun logConfigurationProperties(passwordPattern: String) {
-        val regex = Regex(passwordPattern).takeIf { passwordPattern.isNotEmpty() }
-
-        for (name in allPropertyNames) {
-            var value = getProperty(name) ?: continue
-
-            if (regex?.matches(name) == true) {
-                value = "**********"
-            }
-            // TODO(brian): which logger to use here?
-            println("$name = $value")
-        }
-    }
+class ReadOnlyConfigurationService : AbstractReadOnlyConfigurationService() {
+    override var properties: Properties = Properties()
 
     override fun reloadConfiguration() {
         val scHomeDirLocation = System.getenv(ConfigurationService.PNAME_SC_HOME_DIR_LOCATION)
@@ -109,58 +51,4 @@ class ReadOnlyConfigurationService : ConfigurationService {
             println("Error loading config file: $t")
         }
     }
-
-    override fun getConfigurationFilename(): String = 
-		throw Exception("Unsupported")
-
-    override fun getScHomeDirLocation(): String = 
-		throw Exception("Unsupported")
-
-    override fun getScHomeDirName(): String = 
-		throw Exception("Unsupported")
-
-    override fun addPropertyChangeListener(listener: PropertyChangeListener?) =
-        throw Exception("Unsupported")
-
-    override fun addPropertyChangeListener(propertyName: String?, listener: PropertyChangeListener?) =
-        throw Exception("Unsupported")
-
-    override fun addVetoableChangeListener(listener: ConfigVetoableChangeListener?) = 
-		throw Exception("Unsupported")
-
-    override fun addVetoableChangeListener(propertyName: String?, listener: ConfigVetoableChangeListener?) = 
-		throw Exception("Unsupported")
-
-    override fun removePropertyChangeListener(listener: PropertyChangeListener?) = 
-		throw Exception("Unsupported")
-
-    override fun removePropertyChangeListener(propertyName: String?, listener: PropertyChangeListener?) = 
-		throw Exception("Unsupported")
-
-    override fun removeVetoableChangeListener(listener: ConfigVetoableChangeListener?) = 
-		throw Exception("Unsupported")
-
-    override fun removeVetoableChangeListener(propertyName: String?, listener: ConfigVetoableChangeListener?) = 
-		throw Exception("Unsupported")
-
-    override fun purgeStoredConfiguration() = 
-		throw Exception("Unsupported")
-
-    override fun storeConfiguration() = 
-		throw Exception("Unsupported")
-
-    override fun setProperties(properties: MutableMap<String, Any>?) = 
-		throw Exception("Unsupported")
-
-    override fun setProperty(propertyName: String?, property: Any?) = 
-		throw Exception("Unsupported")
-
-    override fun setProperty(propertyName: String?, property: Any?, isSystem: Boolean) = 
-		throw Exception("Unsupported")
-
-    override fun removeProperty(propertyName: String?) = 
-		throw Exception("Unsupported")
-
-    override fun getPropertyNamesBySuffix(suffix: String?): MutableList<String> = 
-		throw Exception("Unsupported")
 }
