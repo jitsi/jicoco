@@ -31,10 +31,6 @@ class NewTypesafeConfigSource(
     private val config: Config
 ) : ConfigSource {
 
-    init {
-        println("loaded config source $name:\n${config.root().render()}")
-    }
-
     override fun getterFor(type: KType): (String) -> Any {
         if (type.isSubtypeOf(typeOf<Enum<*>>())) {
             @Suppress("UNCHECKED_CAST")
