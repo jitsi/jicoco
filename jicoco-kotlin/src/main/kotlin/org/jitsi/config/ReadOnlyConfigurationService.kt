@@ -36,7 +36,7 @@ class ReadOnlyConfigurationService : ConfigurationService {
     }
 
     override fun getString(propertyName: String): String? =
-        getProperty(propertyName).toString().trim()
+        getProperty(propertyName)?.toString()?.trim()
 
     override fun getString(propertyName: String, defaultValue: String?): String? =
         getString(propertyName) ?: defaultValue
