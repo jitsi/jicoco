@@ -107,6 +107,9 @@
                             <sourceDirs>
                                 <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
                             </sourceDirs>
+                            <args>
+                                <arg>-Xopt-in=kotlin.ExperimentalStdlibApi</arg>
+                            </args>
                         </configuration>
                     </execution>
                 </executions>
