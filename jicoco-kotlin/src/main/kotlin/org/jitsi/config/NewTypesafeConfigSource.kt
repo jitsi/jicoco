@@ -17,7 +17,6 @@
 package org.jitsi.config
 
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigList
 import com.typesafe.config.ConfigObject
 import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.ConfigSource
