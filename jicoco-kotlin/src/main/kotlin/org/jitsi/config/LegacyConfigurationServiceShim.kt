@@ -29,6 +29,7 @@ import java.beans.PropertyChangeListener
  * An interface which extends [ConfigurationService], but adds other methods
  * we need to be able to call to make it more like a [ConfigSource]
  */
+@Deprecated("obsolete in new config")
 interface ExpandedConfigurationService : ConfigurationService {
     fun toStringMasked(): String
 }
@@ -42,6 +43,7 @@ interface ExpandedConfigurationService : ConfigurationService {
  * The constructor is private because we create an instance in [JitsiConfig]
  * and that's the only one which should be used.
  */
+@Deprecated("obsolete in new config")
 class LegacyConfigurationServiceShim private constructor() : ExpandedConfigurationService {
     internal val legacyShimConfig = LegacyShimConfig()
 

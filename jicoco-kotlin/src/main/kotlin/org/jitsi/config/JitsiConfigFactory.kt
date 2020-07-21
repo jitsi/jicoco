@@ -21,6 +21,7 @@ import org.jitsi.utils.config.ConfigSource
  * A factory for instantiating the various config types.  Used as a hook
  * for testing.
  */
+@Deprecated("obsolete with new config")
 class JitsiConfigFactory {
     companion object {
         var newConfigSupplier: () -> ConfigSource = { NewConfig() }

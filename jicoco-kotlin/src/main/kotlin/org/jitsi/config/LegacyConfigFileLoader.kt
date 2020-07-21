@@ -28,6 +28,7 @@ import java.nio.file.Paths
  * load a legacy sip-communicator.properties config file into a [Config]
  * instance.
  */
+@Deprecated("obsolete in new config")
 class LegacyConfigFileLoader {
     companion object {
         private val logger = LoggerImpl(LegacyConfigFileLoader::class.java.name)

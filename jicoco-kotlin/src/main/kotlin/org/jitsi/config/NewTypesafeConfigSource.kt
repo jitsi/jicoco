@@ -28,6 +28,8 @@ import kotlin.reflect.typeOf
 
 /**
  * A [ConfigSource] implementation backed by a [Config] instance.
+ *
+ * (Should be renamed to TypesafeConfigSource once the current one has been removed)
  */
 class NewTypesafeConfigSource(
     override val name: String,

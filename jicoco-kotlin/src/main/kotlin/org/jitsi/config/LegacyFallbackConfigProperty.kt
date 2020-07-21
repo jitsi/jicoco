@@ -27,6 +27,7 @@ import kotlin.reflect.KClass
  * config file under another name which doesn't need to transform the value
  * in any way
  */
+@Deprecated("obsolete in new config")
 open class LegacyFallbackConfigProperty<T : Any>(
     valueType: KClass<T>,
     legacyName: String,
@@ -43,10 +44,12 @@ open class LegacyFallbackConfigProperty<T : Any>(
     }
 )
 
+@Deprecated("obsolete in new config")
 inline fun <reified T : Any> legacyConfigAttributes(
     noinline block: ConfigPropertyAttributesBuilder<T>.() -> Unit
 ): ConfigPropertyAttributes<T> = legacyConfigAttributes(T::class, block)
 
+@Deprecated("obsolete in new config")
 fun <T : Any> legacyConfigAttributes(
     valueType: KClass<T>,
     block: ConfigPropertyAttributesBuilder<T>.() -> Unit
@@ -58,10 +61,12 @@ fun <T : Any> legacyConfigAttributes(
     }
 }
 
+@Deprecated("obsolete in new config")
 inline fun <reified T : Any> newConfigAttributes(
     noinline block: ConfigPropertyAttributesBuilder<T>.() -> Unit
 ): ConfigPropertyAttributes<T> = newConfigAttributes(T::class, block)
 
+@Deprecated("obsolete in new config")
 fun <T : Any> newConfigAttributes(
     valueType: KClass<T>,
     block: ConfigPropertyAttributesBuilder<T>.() -> Unit

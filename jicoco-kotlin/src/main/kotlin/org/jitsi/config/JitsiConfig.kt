@@ -24,6 +24,7 @@ import org.jitsi.utils.logging2.LoggerImpl
  * Creates and holds the [ConfigSource] instances for the legacy and new
  * config files.
  */
+@Deprecated("Use NewJitsiConfig")
 class JitsiConfig {
     companion object {
         private val logger = LoggerImpl(JitsiConfig::class.qualifiedName)

@@ -22,6 +22,8 @@ import org.jitsi.service.configuration.ConfigurationService
 
 /**
  * Holds common [ConfigSource] instances for retrieving configuration.
+ *
+ * Should be renamed to JitsiConfig once the old one is removed.
  */
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class NewJitsiConfig {

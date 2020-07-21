@@ -31,6 +31,7 @@ import kotlin.reflect.KClass
 /**
  * A [ConfigSource] which reads from a typesafe [Config] object.
  */
+@Deprecated("Use NewTypesafeConfigSource")
 open class TypesafeConfigSource(
     override val name: String,
     private val configLoader: () -> Config
