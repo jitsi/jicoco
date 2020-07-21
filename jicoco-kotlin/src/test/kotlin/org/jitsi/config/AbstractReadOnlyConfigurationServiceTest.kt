@@ -19,7 +19,7 @@ package org.jitsi.config
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.service.configuration.ConfigurationService
 
-class ReadOnlyConfigurationServiceTest : ShouldSpec() {
+class AbstractReadOnlyConfigurationServiceTest : ShouldSpec() {
 
     init {
         System.setProperty(ConfigurationService.PNAME_SC_HOME_DIR_LOCATION, "/Users/bbaldino")
