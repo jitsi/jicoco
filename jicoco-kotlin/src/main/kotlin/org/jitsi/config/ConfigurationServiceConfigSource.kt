@@ -22,6 +22,9 @@ import org.jitsi.service.configuration.ConfigurationService
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
+/**
+ * A [ConfigSource] implementation which is backed by a [ConfigurationService] instance.
+ */
 class ConfigurationServiceConfigSource(
     override val name: String,
     private val config: ConfigurationService
@@ -40,7 +43,7 @@ class ConfigurationServiceConfigSource(
             typeOf<Double>() -> { key -> config.getStringOrThrow(key).toDouble() }
             typeOf<Int>() -> { key -> config.getStringOrThrow(key).toInt() }
             typeOf<Long>() -> { key -> config.getStringOrThrow(key).toLong() }
-            // We special handling Map<String, String> and interpret it as:
+            // Map<String, String> is a special case and we interpret it as:
             // For the given prefix, return me all the properties which start
             // with that prefix mapped to their values (retrieved as Strings)
             typeOf<Map<String, String>>() -> { key ->

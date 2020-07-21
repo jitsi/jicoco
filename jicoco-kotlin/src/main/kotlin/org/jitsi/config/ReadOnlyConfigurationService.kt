@@ -23,7 +23,7 @@ import java.util.Properties
 /**
  * An implementation of [AbstractReadOnlyConfigurationService] which supports reading
  * the properties from a file whose location is determined by the
- * [ConfigurationService.PNAME_SC_HOME_DIR_LOCATION], [ConfigurationService.PNAME_SC_HOME_DIR_NAME]
+ * [ConfigurationService.PNAME_SC_HOME_DIR_LOCATION] and [ConfigurationService.PNAME_SC_HOME_DIR_NAME]
  * properties.
  */
 class ReadOnlyConfigurationService : AbstractReadOnlyConfigurationService() {

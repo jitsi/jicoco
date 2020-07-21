@@ -20,6 +20,9 @@ import com.typesafe.config.ConfigFactory
 import org.jitsi.metaconfig.ConfigSource
 import org.jitsi.service.configuration.ConfigurationService
 
+/**
+ * Holds common [ConfigSource] instances for retrieving configuration.
+ */
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class NewJitsiConfig {
     companion object {

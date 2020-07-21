@@ -26,6 +26,9 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
 
+/**
+ * A [ConfigSource] implementation backed by a [Config] instance.
+ */
 class NewTypesafeConfigSource(
     override val name: String,
     private val config: Config
