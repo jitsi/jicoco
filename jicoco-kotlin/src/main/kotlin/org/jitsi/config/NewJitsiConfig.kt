@@ -20,17 +20,34 @@ import com.typesafe.config.ConfigFactory
 import org.jitsi.metaconfig.ConfigSource
 import org.jitsi.service.configuration.ConfigurationService
 
+@Suppress("unused", "MemberVisibilityCanBePrivate")
 class NewJitsiConfig {
     companion object {
+        /**
+         * A [ConfigSource] loaded via [ConfigFactory].
+         */
         val TypesafeConfig: ConfigSource = NewTypesafeConfigSource("typesafe config", ConfigFactory.load())
 
+        /**
+         * The 'new' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
+         */
         var newConfig = TypesafeConfig
 
+        /**
+         * A [ConfigurationService] which can be installed via OSGi for legacy code which still requires it.
+         */
         @JvmStatic
         val SipCommunicatorProps: ConfigurationService = ReadOnlyConfigurationService()
+
+        /**
+         * A [ConfigSource] wrapper around the legacy [ConfigurationService].
+         */
         val SipCommunicatorPropsConfigSource: ConfigSource =
             ConfigurationServiceConfigSource("sip communicator props", SipCommunicatorProps)
 
+        /**
+         * The 'legacy' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
+         */
         var legacyConfig = SipCommunicatorPropsConfigSource
     }
 }
