@@ -31,11 +31,7 @@ import java.util.Properties
  * which pulls [properties] from somewhere else.
  */
 abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
-    protected abstract var properties: Properties
-
-    init {
-        reloadConfiguration()
-    }
+    protected abstract val properties: Properties
 
     override fun getString(propertyName: String): String? =
         getProperty(propertyName)?.toString()?.trim()
@@ -58,8 +54,9 @@ abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
     override fun getAllPropertyNames(): MutableList<String> =
         properties.keys.map { it as String}.toMutableList()
 
-    override fun getProperty(propertyName: String): Any? =
-        properties[propertyName]
+    override fun getProperty(propertyName: String): Any? {
+        return properties[propertyName] ?: System.getProperty(propertyName)
+    }
 
     override fun getPropertyNamesByPrefix(prefix: String, exactPrefixMatch: Boolean): MutableList<String> {
         val matchingPropNames = mutableListOf<String>()

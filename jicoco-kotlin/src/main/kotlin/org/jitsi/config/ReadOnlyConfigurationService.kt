@@ -27,7 +27,11 @@ import java.util.Properties
  * properties.
  */
 class ReadOnlyConfigurationService : AbstractReadOnlyConfigurationService() {
-    override var properties: Properties = Properties()
+    override val properties: Properties = Properties()
+
+    init {
+        reloadConfiguration()
+    }
 
     override fun reloadConfiguration() {
         val scHomeDirLocation = System.getenv(ConfigurationService.PNAME_SC_HOME_DIR_LOCATION)

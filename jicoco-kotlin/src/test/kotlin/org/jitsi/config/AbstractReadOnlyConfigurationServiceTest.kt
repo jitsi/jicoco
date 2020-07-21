@@ -16,18 +16,38 @@
 
 package org.jitsi.config
 
+import io.kotlintest.IsolationMode
+import io.kotlintest.extensions.system.withSystemProperties
+import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.service.configuration.ConfigurationService
+import java.util.Properties
 
 class AbstractReadOnlyConfigurationServiceTest : ShouldSpec() {
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+
+    private val config = TestReadOnlyConfigurationService()
 
     init {
-        System.setProperty(ConfigurationService.PNAME_SC_HOME_DIR_LOCATION, "/Users/bbaldino")
-        System.setProperty(ConfigurationService.PNAME_SC_HOME_DIR_NAME, ".sip-communicator")
-        val config = ReadOnlyConfigurationService()
-        println(config.allPropertyNames)
-
-        println(config.getString("hello.world"))
-        println(config.getPropertyNamesByPrefix("org.jitsi.videobridge", true))
+        "retrieving a property" {
+            "present in both the config and the system" {
+                config["some.prop"] = "42"
+                withSystemProperties("some.prop" to "43") {
+                    should("use the system property") {
+                        config.getInt("some.prop", 0) shouldBe 42
+                    }
+                }
+            }
+            "not present anywhere" {
+                should("return null") {
+                    config.getProperty("missing") shouldBe null
+                }
+            }
+        }
     }
+}
+
+private class TestReadOnlyConfigurationService(
+    override val properties: Properties = Properties()
+) : AbstractReadOnlyConfigurationService(), MutableMap<Any, Any> by properties {
+    override fun reloadConfiguration() {}
 }
