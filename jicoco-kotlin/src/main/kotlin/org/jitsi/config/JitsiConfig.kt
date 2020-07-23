@@ -17,39 +17,42 @@
 package org.jitsi.config
 
 import com.typesafe.config.ConfigFactory
-import org.jitsi.utils.config.ConfigSource
-import org.jitsi.utils.logging2.LoggerImpl
+import org.jitsi.metaconfig.ConfigSource
+import org.jitsi.service.configuration.ConfigurationService
 
 /**
- * Creates and holds the [ConfigSource] instances for the legacy and new
- * config files.
+ * Holds common [ConfigSource] instances for retrieving configuration.
+ *
+ * Should be renamed to JitsiConfig once the old one is removed.
  */
-@Deprecated("Use NewJitsiConfig")
+@Suppress("unused", "MemberVisibilityCanBePrivate")
 class JitsiConfig {
     companion object {
-        private val logger = LoggerImpl(JitsiConfig::class.qualifiedName)
-        val newConfig: ConfigSource = JitsiConfigFactory.newConfigSupplier()
-        val legacyConfig: ConfigSource = JitsiConfigFactory.legacyConfigSupplier()
+        /**
+         * A [ConfigSource] loaded via [ConfigFactory].
+         */
+        val TypesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", ConfigFactory.load())
+
+        /**
+         * The 'new' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
+         */
+        var newConfig = TypesafeConfig
+
+        /**
+         * A [ConfigurationService] which can be installed via OSGi for legacy code which still requires it.
+         */
         @JvmStatic
-        val legacyConfigShim = JitsiConfigFactory.legacyConfigurationServiceShimSupplier()
+        val SipCommunicatorProps: ConfigurationService = ReadOnlyConfigurationService()
 
-        init {
-            dumpConfigs()
-        }
+        /**
+         * A [ConfigSource] wrapper around the legacy [ConfigurationService].
+         */
+        val SipCommunicatorPropsConfigSource: ConfigSource =
+            ConfigurationServiceConfigSource("sip communicator props", SipCommunicatorProps)
 
-        fun reload() {
-            logger.info("Reloading.")
-            ConfigFactory.invalidateCaches()
-            newConfig.reload()
-            legacyConfig.reload()
-            legacyConfigShim.reloadConfiguration()
-            dumpConfigs()
-        }
-
-        private fun dumpConfigs() {
-            logger.debug {"Loaded legacy config:\n${legacyConfig.toStringMasked()}"}
-            logger.debug {"Loaded legacy shim config:\n${legacyConfigShim.toStringMasked()}" }
-            logger.debug {"Loaded new config:\n${newConfig.toStringMasked()}" }
-        }
+        /**
+         * The 'legacy' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
+         */
+        var legacyConfig = SipCommunicatorPropsConfigSource
     }
 }
