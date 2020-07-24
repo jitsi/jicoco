@@ -18,6 +18,7 @@ package org.jitsi.config
 
 import org.jitsi.service.configuration.ConfigVetoableChangeListener
 import org.jitsi.service.configuration.ConfigurationService
+import org.jitsi.utils.logging2.LoggerImpl
 import java.beans.PropertyChangeListener
 import java.util.Properties
 
@@ -31,6 +32,7 @@ import java.util.Properties
  * which pulls [properties] from somewhere else.
  */
 abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
+    protected val logger = LoggerImpl(this::class.qualifiedName)
     protected abstract val properties: Properties
 
     override fun getString(propertyName: String): String? =
@@ -81,8 +83,7 @@ abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
             if (regex?.matches(name) == true) {
                 value = "**********"
             }
-            // TODO(brian): which logger to use here?
-            println("$name = $value")
+            logger.info("$name = $value")
         }
     }
 
