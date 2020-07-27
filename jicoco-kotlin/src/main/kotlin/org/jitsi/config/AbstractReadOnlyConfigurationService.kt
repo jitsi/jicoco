@@ -56,9 +56,8 @@ abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
     override fun getAllPropertyNames(): MutableList<String> =
         properties.keys.map { it as String}.toMutableList()
 
-    override fun getProperty(propertyName: String): Any? {
-        return properties[propertyName] ?: System.getProperty(propertyName)
-    }
+    override fun getProperty(propertyName: String): Any? =
+        properties[propertyName] ?: System.getProperty(propertyName)
 
     override fun getPropertyNamesByPrefix(prefix: String, exactPrefixMatch: Boolean): MutableList<String> {
         val matchingPropNames = mutableListOf<String>()

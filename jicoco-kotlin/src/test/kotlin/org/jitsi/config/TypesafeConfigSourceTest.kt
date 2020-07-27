@@ -57,7 +57,7 @@ class TypesafeConfigSourceTest : ShouldSpec() {
                 }
                 getValue<List<String>>("strings") shouldBe listOf("one", "two", "three")
             }
-            "List<Int>>" {
+            "List<Int>" {
                 withConfig {
                     "ints = [ 41, 42, 43 ]"
                 }
@@ -76,9 +76,9 @@ class TypesafeConfigSourceTest : ShouldSpec() {
                         }
                     """.trimIndent()
                 }
-                val obj = getValue<ConfigObject>("obj")
-                obj["num"]!!.unwrapped() as Number shouldBe 42
-                obj["str"]!!.unwrapped() as String shouldBe "hello"
+                val obj = getValue<ConfigObject>("obj").toConfig()
+                obj.getInt("num") shouldBe 42
+                obj.getString("str") shouldBe "hello"
             }
             "List<Config>" {
                 withConfig {

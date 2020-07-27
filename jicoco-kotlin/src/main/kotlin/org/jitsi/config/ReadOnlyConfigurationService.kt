@@ -37,22 +37,24 @@ class ReadOnlyConfigurationService : AbstractReadOnlyConfigurationService() {
         val scHomeDirLocation = System.getenv(ConfigurationService.PNAME_SC_HOME_DIR_LOCATION)
             ?: System.getProperty(ConfigurationService.PNAME_SC_HOME_DIR_LOCATION)
             ?: run {
-                println("${ConfigurationService.PNAME_SC_HOME_DIR_LOCATION} not set")
+                logger.info("${ConfigurationService.PNAME_SC_HOME_DIR_LOCATION} not set")
                 return
             }
         val scHomeDirName = System.getenv(ConfigurationService.PNAME_SC_HOME_DIR_NAME)
             ?: System.getProperty(ConfigurationService.PNAME_SC_HOME_DIR_NAME)
             ?: run {
-                println("${ConfigurationService.PNAME_SC_HOME_DIR_NAME} not set")
+                logger.info("${ConfigurationService.PNAME_SC_HOME_DIR_NAME} not set")
                 return
             }
         val fileName = "sip-communicator.properties"
-        println("loading config file ${Paths.get(scHomeDirLocation, scHomeDirName, fileName)}")
-        try {
-            val reader = Paths.get(scHomeDirLocation, scHomeDirName, fileName).toFile().bufferedReader()
-            properties.load(reader)
-        } catch (t: Throwable) {
-            println("Error loading config file: $t")
+        with(Paths.get(scHomeDirLocation, scHomeDirName, fileName)) {
+            logger.info("loading config file at path $this")
+            try {
+                val reader = toFile().bufferedReader()
+                properties.load(reader)
+            } catch (t: Throwable) {
+                logger.info("Error loading config file: $t")
+            }
         }
     }
 }
