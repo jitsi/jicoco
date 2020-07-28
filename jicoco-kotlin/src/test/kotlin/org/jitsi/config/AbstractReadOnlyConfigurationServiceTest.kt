@@ -18,7 +18,6 @@ package org.jitsi.config
 
 import io.kotlintest.IsolationMode
 import io.kotlintest.extensions.system.withSystemProperties
-import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.shouldBe

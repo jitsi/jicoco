@@ -17,7 +17,6 @@
 package org.jitsi.config
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
 import io.kotlintest.IsolationMode
 import io.kotlintest.specs.ShouldSpec
 import io.kotlintest.shouldBe

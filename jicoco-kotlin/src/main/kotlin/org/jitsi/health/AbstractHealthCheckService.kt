@@ -102,7 +102,10 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
         executor!!.registerRecurringRunnable(this)
         serviceStartTime = clock.instant()
 
-        logger.info("Started with interval=$period, timeout=$timeout, maxDuration=$maxCheckDuration, stickyFailures=$stickyFailures.")
+        logger.info(
+            "Started with interval=$period, timeout=$timeout, " +
+                "maxDuration=$maxCheckDuration, stickyFailures=$stickyFailures."
+        )
     }
 
     @Throws(Exception::class)
