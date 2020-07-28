@@ -16,106 +16,113 @@
 
 package org.jitsi.config
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
-import com.typesafe.config.ConfigValue
+import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.shouldBe
+import io.kotlintest.specs.AbstractShouldSpec
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.utils.config.ConfigSource
+import org.jitsi.metaconfig.ConfigSource
 import java.time.Duration
-import java.time.Period
-import java.time.temporal.TemporalAmount
+import kotlin.reflect.typeOf
 
 class TypesafeConfigSourceTest : ShouldSpec() {
 
     init {
         "Retrieving a value of type" {
             "Boolean" {
-                withConfig {
-                    "some.boolean.value=true"
-                }
-                getValue<Boolean>("some.boolean.value") shouldBe true
-            }
-            "Number" {
-                withConfig {
-                    "some.number.value=42"
-                }
-                getValue<Number>("some.number.value") shouldBe 42
+                withConfig { "boolean=true" }
+                getValue<Boolean>("boolean") shouldBe true
             }
             "Int" {
-                withConfig {
-                    "some.int.value=42"
-                }
-                getValue<Int>("some.int.value") shouldBe 42
+                withConfig { "int=42" }
+                getValue<Int>("int") shouldBe 42
             }
             "Long" {
-                withConfig {
-                    "some.long.value=42"
-                }
-                getValue<Int>("some.long.value") shouldBe 42
+                withConfig { "long=42" }
+                getValue<Long>("long") shouldBe 42L
             }
             "Double" {
-                withConfig {
-                    "some.double.value=42.42"
-                }
-                getValue<Double>("some.double.value") shouldBe 42.42
+                withConfig { "double=42.5" }
+                getValue<Double>("double") shouldBe 42.5
             }
             "String" {
+                withConfig { "string=\"hello, world\"" }
+                getValue<String>("string") shouldBe "hello, world"
+            }
+            "List<String>" {
                 withConfig {
-                    "some.string.value=\"hello, world\""
+                    "strings = [ \"one\", \"two\", \"three\" ]"
                 }
-                getValue<String>("some.string.value") shouldBe "hello, world"
+                getValue<List<String>>("strings") shouldBe listOf("one", "two", "three")
+            }
+            "List<Int>" {
+                withConfig {
+                    "ints = [ 41, 42, 43 ]"
+                }
+                getValue<List<Int>>("ints") shouldBe listOf(41, 42, 43)
+            }
+            "Duration" {
+                withConfig { "duration = 1 minute" }
+                getValue<Duration>("duration") shouldBe Duration.ofMinutes(1)
             }
             "ConfigObject" {
                 withConfig {
                     """
-                        scope-a {
-                            obj {
-                                num = 42
-                                str = "hello"
-                            }
+                        obj = {
+                            num = 42
+                            str = "hello"
                         }
                     """.trimIndent()
                 }
-                val obj = getValue<ConfigObject>("scope-a.obj")
-                (obj["num"]?.unwrapped() as Number) shouldBe 42
-                (obj["str"]?.unwrapped() as String) shouldBe "hello"
+                val obj = getValue<ConfigObject>("obj").toConfig()
+                obj.getInt("num") shouldBe 42
+                obj.getString("str") shouldBe "hello"
             }
-            "ConfigValue" {
+            "List<Config>" {
                 withConfig {
-                    "some.value=10"
+                    """
+                        objs = [
+                            {
+                                num = 42
+                                str = "hello"
+                            },
+                            {
+                                num = 43
+                                str = "goodbye"
+                            }
+                        ]
+                    """.trimIndent()
                 }
-                getValue<ConfigValue>("some.value").unwrapped() shouldBe 10
+                val objs = getValue<List<Config>>("objs")
+                objs shouldHaveSize 2
+                objs[0].getInt("num") shouldBe 42
+                objs[0].getString("str") shouldBe "hello"
+                objs[1].getInt("num") shouldBe 43
+                objs[1].getString("str") shouldBe "goodbye"
             }
-            "Duration" {
+            "Enum" {
                 withConfig {
-                    "some.duration.value=500 ms"
+                    "color=BLUE"
                 }
-                getValue<Duration>("some.duration.value") shouldBe Duration.ofMillis(500)
-            }
-            "Period" {
-                withConfig {
-                    "some.period.value=1 day"
-                }
-                getValue<Period>("some.period.value") shouldBe Period.ofDays(1)
-            }
-            "TemporalAmount" {
-                withConfig {
-                    "some.temporalamount.value=500 ms"
-                }
-                getValue<TemporalAmount>("some.temporalamount.value") shouldBe Duration.ofMillis(500)
+                getValue<Color>("color") shouldBe Color.BLUE
             }
         }
     }
+}
 
-    private fun ShouldScope.withConfig(block: () -> String) {
-        val config = TypesafeConfigSource("testConfig") { ConfigFactory.parseString(block()) }
-        this.context.putMetaData("config", config)
-    }
+private fun AbstractShouldSpec.ShouldScope.withConfig(block: () -> String) {
+    val config = TypesafeConfigSource("testConfig", ConfigFactory.parseString(block()))
+    this.context.putMetaData("config", config)
+}
 
-    private inline fun <reified T : Any> ShouldScope.getValue(path: String): T {
-        val config = this.context.metaData()["config"] as ConfigSource
-        val getter = config.getterFor(T::class)
-        return getter(path)
-    }
+private inline fun <reified T : Any> AbstractShouldSpec.ShouldScope.getValue(path: String): T {
+    val config = this.context.metaData()["config"] as ConfigSource
+    val getter = config.getterFor(typeOf<T>())
+    return getter(path) as T
+}
+
+private enum class Color {
+    BLUE
 }

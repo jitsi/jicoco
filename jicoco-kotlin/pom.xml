@@ -46,6 +46,11 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>jitsi-metaconfig</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>jicoco</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -86,6 +91,11 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
+                        <configuration>
+                            <args>
+                                <arg>-Xopt-in=kotlin.ExperimentalStdlibApi</arg>
+                            </args>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>test-compile</id>
@@ -97,6 +107,9 @@
                             <sourceDirs>
                                 <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
                             </sourceDirs>
+                            <args>
+                                <arg>-Xopt-in=kotlin.ExperimentalStdlibApi</arg>
+                            </args>
                         </configuration>
                     </execution>
                 </executions>
@@ -152,5 +165,9 @@
        </snapshots>
        <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/</url>
     </repository>
+   <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository> 
     </repositories>
 </project>
