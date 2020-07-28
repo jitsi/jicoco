@@ -55,8 +55,7 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
      */
     var stickyFailuresGracePeriod: Duration = stickyFailuresGracePeriodDefault,
     private val clock: Clock = Clock.systemUTC()
-): BundleActivator, HealthCheckService, PeriodicRunnable(interval.toMillis())
-{
+) : BundleActivator, HealthCheckService, PeriodicRunnable(interval.toMillis()) {
     private val logger: Logger = LoggerImpl(javaClass.name)
 
     /**
@@ -89,16 +88,15 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
      * The interval at which health checks will be performed.
      */
     var interval: Duration by Delegates.observable(interval) {
-        _, _, newValue -> period = newValue.toMillis()
+        _, _, newValue ->
+        period = newValue.toMillis()
     }
 
     @Throws(Exception::class)
-    override fun start(bundleContext: BundleContext)
-    {
+    override fun start(bundleContext: BundleContext) {
         bundleContext.registerService(HealthCheckService::class.java, this, null)
 
-        if (executor == null)
-        {
+        if (executor == null) {
             executor = RecurringRunnableExecutor(javaClass.name)
         }
         executor!!.registerRecurringRunnable(this)
@@ -108,8 +106,7 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
     }
 
     @Throws(Exception::class)
-    override fun stop(bundleContext: BundleContext)
-    {
+    override fun stop(bundleContext: BundleContext) {
         executor?.apply {
             deRegisterRecurringRunnable(this@AbstractHealthCheckService)
             close()
@@ -144,8 +141,7 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
      * Performs a health check and updates this instance's state. Runs
      * periodically in {@link #executor}.
      */
-    override fun run()
-    {
+    override fun run() {
         super.run()
 
         val checkStart = clock.instant()
@@ -153,8 +149,7 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
 
         try {
             performCheck()
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             exception = e
 
             val now = clock.instant()
@@ -180,9 +175,10 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
 
         if (exception == null) {
             logger.info(
-                    "Performed a successful health check in $checkDuration. Sticky failure: ${stickyFailures && hasFailed}")
+                "Performed a successful health check in $checkDuration. Sticky failure: ${stickyFailures && hasFailed}"
+            )
         } else {
-            logger.error( "Health check failed in $checkDuration:", exception)
+            logger.error("Health check failed in $checkDuration:", exception)
         }
     }
 

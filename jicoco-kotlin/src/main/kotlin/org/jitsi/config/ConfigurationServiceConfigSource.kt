@@ -37,7 +37,7 @@ class ConfigurationServiceConfigSource(
      * another property).
      */
     override fun getterFor(type: KType): (String) -> Any {
-        return when(type) {
+        return when (type) {
             typeOf<String>() -> { key -> config.getStringOrThrow(key) }
             typeOf<Boolean>() -> { key -> config.getStringOrThrow(key).toBoolean() }
             typeOf<Double>() -> { key -> config.getStringOrThrow(key).toDouble() }
