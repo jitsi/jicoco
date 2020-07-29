@@ -46,11 +46,6 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>jitsi-metaconfig</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>jicoco</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -58,11 +53,6 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-android-osgi</artifactId>
             <version>1.0-20190327.160432-3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>config</artifactId>
-            <version>1.3.4</version>
         </dependency>
         <dependency>
             <groupId>io.kotlintest</groupId>
@@ -140,34 +130,4 @@
         </plugins>
     </build>
 
-    <repositories>
-    <repository>
-        <id>jitsi-maven-repository-releases</id>
-        <layout>default</layout>
-        <name>Jitsi Maven Repository (Releases)</name>
-        <releases>
-            <enabled>true</enabled>
-        </releases>
-        <snapshots>
-            <enabled>false</enabled>
-        </snapshots>
-        <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
-    </repository>
-    <repository>
-       <id>jitsi-maven-repository-snapshots</id>
-       <layout>default</layout>
-       <name>Jitsi Maven Repository (Snapshots)</name>
-       <releases>
-           <enabled>false</enabled>
-       </releases>
-       <snapshots>
-           <enabled>true</enabled>
-       </snapshots>
-       <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/</url>
-    </repository>
-   <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository> 
-    </repositories>
 </project>
