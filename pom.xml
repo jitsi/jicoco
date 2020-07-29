@@ -36,6 +36,7 @@
         <module>jicoco</module>
         <module>jicoco-kotlin</module>
         <module>jicoco-test-kotlin</module>
+        <module>jicoco-config</module>
     </modules>
 
     <properties>
