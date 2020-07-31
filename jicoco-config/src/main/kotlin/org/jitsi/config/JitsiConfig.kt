@@ -36,7 +36,9 @@ class JitsiConfig {
         /**
          * The 'new' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
          */
-        var newConfig = TypesafeConfig
+        private val _newConfig: ConfigSourceWrapper = ConfigSourceWrapper(TypesafeConfig)
+        val newConfig: ConfigSource
+            get() = _newConfig
 
         /**
          * A [ConfigurationService] which can be installed via OSGi for legacy code which still requires it.
@@ -53,6 +55,16 @@ class JitsiConfig {
         /**
          * The 'legacy' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
          */
-        var legacyConfig = SipCommunicatorPropsConfigSource
+        private val _legacyConfig: ConfigSourceWrapper = ConfigSourceWrapper(SipCommunicatorPropsConfigSource)
+        val legacyConfig: ConfigSource
+            get() = _legacyConfig
+
+        fun useDebugNewConfig(config: ConfigSource) {
+            _newConfig.innerSource = config
+        }
+
+        fun useDebugLegacyConfig(config: ConfigSource) {
+            _legacyConfig.innerSource = config
+        }
     }
 }
