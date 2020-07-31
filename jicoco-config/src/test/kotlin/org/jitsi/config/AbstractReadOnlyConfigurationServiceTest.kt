@@ -28,7 +28,7 @@ import java.util.Properties
 class AbstractReadOnlyConfigurationServiceTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private val config = TestReadOnlyConfigurationService()
+    private val config = FakeReadOnlyConfigurationService()
 
     init {
         "retrieving a property" {
@@ -68,7 +68,7 @@ class AbstractReadOnlyConfigurationServiceTest : ShouldSpec() {
     }
 }
 
-private class TestReadOnlyConfigurationService(
+private class FakeReadOnlyConfigurationService(
     override val properties: Properties = Properties()
 ) : AbstractReadOnlyConfigurationService(), MutableMap<Any, Any> by properties {
     override fun reloadConfiguration() {}
