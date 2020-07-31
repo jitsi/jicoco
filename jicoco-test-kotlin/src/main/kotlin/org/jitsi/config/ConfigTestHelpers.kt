@@ -57,7 +57,7 @@ inline fun useNewConfig(config: String, loadDefaults: Boolean, block: () -> Unit
 inline fun useNewConfig(name: String, config: String, loadDefaults: Boolean, block: () -> Unit) {
     setNewConfig(config, loadDefaults, name)
     block()
-    setNewConfig("", false)
+    setNewConfig("", true)
 }
 
 inline fun useNewConfig(config: String, block: () -> Unit) =
