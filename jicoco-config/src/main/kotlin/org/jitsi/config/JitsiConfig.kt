@@ -19,6 +19,7 @@ package org.jitsi.config
 import com.typesafe.config.ConfigFactory
 import org.jitsi.metaconfig.ConfigSource
 import org.jitsi.service.configuration.ConfigurationService
+import org.jitsi.utils.logging2.LoggerImpl
 
 /**
  * Holds common [ConfigSource] instances for retrieving configuration.
@@ -28,6 +29,8 @@ import org.jitsi.service.configuration.ConfigurationService
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class JitsiConfig {
     companion object {
+        val logger = LoggerImpl(JitsiConfig::class.simpleName)
+
         /**
          * A [ConfigSource] loaded via [ConfigFactory].
          */
@@ -36,7 +39,9 @@ class JitsiConfig {
         /**
          * The 'new' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
          */
-        private val _newConfig: ConfigSourceWrapper = ConfigSourceWrapper(TypesafeConfig)
+        private val _newConfig: ConfigSourceWrapper = ConfigSourceWrapper(TypesafeConfig).also {
+            logger.info("Initialized newConfig: ${TypesafeConfig.description}")
+        }
         val newConfig: ConfigSource
             get() = _newConfig
 
@@ -55,15 +60,19 @@ class JitsiConfig {
         /**
          * The 'legacy' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
          */
-        private val _legacyConfig: ConfigSourceWrapper = ConfigSourceWrapper(SipCommunicatorPropsConfigSource)
+        private val _legacyConfig: ConfigSourceWrapper = ConfigSourceWrapper(SipCommunicatorPropsConfigSource).also {
+            logger.info("Initialized legacyConfig: ${SipCommunicatorPropsConfigSource.description}")
+        }
         val legacyConfig: ConfigSource
             get() = _legacyConfig
 
         fun useDebugNewConfig(config: ConfigSource) {
+            logger.info("Replacing newConfig with ${config.description}")
             _newConfig.innerSource = config
         }
 
         fun useDebugLegacyConfig(config: ConfigSource) {
+            logger.info("Replacing legacyConfig with ${config.description}")
             _legacyConfig.innerSource = config
         }
     }
