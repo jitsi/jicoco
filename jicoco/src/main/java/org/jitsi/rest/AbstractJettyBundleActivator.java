@@ -119,6 +119,12 @@ public abstract class AbstractJettyBundleActivator
         this.config = new JettyBundleActivatorConfig(legacyPropertyPrefix, newPropertyPrefix);
     }
 
+    protected AbstractJettyBundleActivator(
+        String legacyPropertyPrefix)
+    {
+        this(legacyPropertyPrefix, "");
+    }
+
     /**
      * Notifies this {@code AbstractJettyBundleActivator} that a new Jetty
      * {@code Server} instance was initialized and started in a specific
