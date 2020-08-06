@@ -136,6 +136,11 @@
       <artifactId>jitsi-utils</artifactId>
       <version>${jitsi-utils.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>jicoco-config</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <!-- test -->
     <dependency>
       <groupId>junit</groupId>
