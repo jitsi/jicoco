@@ -20,11 +20,9 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
 import io.kotest.core.spec.IsolationMode
-import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.core.spec.style.scopes.ShouldSpecContextScope
 import org.jitsi.metaconfig.ConfigSource
 import java.time.Duration
 import kotlin.reflect.typeOf
@@ -121,7 +119,7 @@ class TypesafeConfigSourceTest : ShouldSpec() {
 
 }
 
-private fun ShouldSpecContextScope.withConfig(configStr: String, block: ConfigScope.() -> Unit) {
+private fun withConfig(configStr: String, block: ConfigScope.() -> Unit) {
     val config = TypesafeConfigSource("testConfig", ConfigFactory.parseString(configStr))
     ConfigScope(config).apply(block)
 }
