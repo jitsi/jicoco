@@ -16,13 +16,12 @@
 
 package org.jitsi.config
 
-import io.kotlintest.IsolationMode
-import io.kotlintest.extensions.system.withSystemProperties
-import io.kotlintest.matchers.collections.shouldContain
-import io.kotlintest.matchers.collections.shouldContainAll
-import io.kotlintest.matchers.collections.shouldHaveSize
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.extensions.system.withSystemProperties
 import java.util.Properties
 
 class AbstractReadOnlyConfigurationServiceTest : ShouldSpec() {
@@ -31,8 +30,8 @@ class AbstractReadOnlyConfigurationServiceTest : ShouldSpec() {
     private val config = TestReadOnlyConfigurationService()
 
     init {
-        "retrieving a property" {
-            "present in both the config and the system" {
+        context("retrieving a property") {
+            context("present in both the config and the system") {
                 config["some.prop"] = "42"
                 withSystemProperties("some.prop" to "43") {
                     should("use the config property") {
@@ -40,24 +39,24 @@ class AbstractReadOnlyConfigurationServiceTest : ShouldSpec() {
                     }
                 }
             }
-            "not present anywhere" {
+            context("not present anywhere") {
                 should("return null") {
                     config.getProperty("missing") shouldBe null
                 }
             }
         }
-        "retrieving all properties by prefix" {
+        context("retrieving all properties by prefix") {
             config["a.b.c.d"] = "one"
             config["a.b.c.e"] = "two"
             config["a.b"] = "three"
-            "when an exact prefix match is requested" {
+            context("when an exact prefix match is requested") {
                 val props = config.getPropertyNamesByPrefix("a.b.c", exactPrefixMatch = true)
                 should("retrieve the right properties") {
                     props shouldHaveSize 2
                     props shouldContainAll listOf("a.b.c.d", "a.b.c.e")
                 }
             }
-            "when an exact prefix match is not requested" {
+            context("when an exact prefix match is not requested") {
                 val props = config.getPropertyNamesByPrefix("a", exactPrefixMatch = false)
                 should("retrieve the right properties") {
                     props shouldHaveSize 3

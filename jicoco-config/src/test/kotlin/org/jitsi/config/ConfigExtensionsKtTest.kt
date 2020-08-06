@@ -18,16 +18,16 @@ package org.jitsi.config
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import io.kotlintest.IsolationMode
-import io.kotlintest.specs.ShouldSpec
-import io.kotlintest.shouldBe
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import org.jitsi.utils.ConfigUtils
 
 class ConfigExtensionsKtTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
-        "mask" {
+        context("mask") {
             val config = ConfigFactory.parseString("""
                 a {
                     pass-prop = s3cr3t
@@ -38,7 +38,7 @@ class ConfigExtensionsKtTest : ShouldSpec() {
                     }
                 }
             """.trimIndent())
-            "with a set field regex" {
+            context("with a set field regex") {
                 ConfigUtils.PASSWORD_SYS_PROPS = "pass"
                 val maskedConfig = config.mask()
                 should("mask out the right values") {
@@ -56,10 +56,10 @@ class ConfigExtensionsKtTest : ShouldSpec() {
                     config.getString("a.b.nested-normal-prop") shouldBe "hello"
                 }
             }
-            "when the field regex is null" {
+            context("when the field regex is null") {
                 ConfigUtils.PASSWORD_SYS_PROPS = null
                 val maskedConfig = config.mask()
-                "should not change anything" {
+                context("should not change anything") {
                     maskedConfig.getString("a.pass-prop") shouldBe "s3cr3t"
                     maskedConfig.getInt("a.normal-prop") shouldBe 10
                     maskedConfig.getInt("a.b.nested-pass-prop") shouldBe 42
