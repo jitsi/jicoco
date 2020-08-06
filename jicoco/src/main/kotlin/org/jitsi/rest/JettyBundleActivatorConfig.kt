@@ -32,7 +32,7 @@ class JettyBundleActivatorConfig(
      */
     val port: Int by config {
         "$legacyPropertyPrefix.jetty.port".from(JitsiConfig.legacyConfig)
-        "$newPropertyPrefix.jetty.port".from(JitsiConfig.newConfig)
+        "$newPropertyPrefix.port".from(JitsiConfig.newConfig)
         "default" { 8080 }
     }
 
@@ -41,7 +41,7 @@ class JettyBundleActivatorConfig(
      */
     val host: String? by optionalconfig {
         "$legacyPropertyPrefix.jetty.host".from(JitsiConfig.legacyConfig)
-        "$newPropertyPrefix.jetty.host".from(JitsiConfig.newConfig)
+        "$newPropertyPrefix.host".from(JitsiConfig.newConfig)
     }
 
     /**
@@ -50,7 +50,7 @@ class JettyBundleActivatorConfig(
      */
     val keyStorePath: String? by optionalconfig {
         "$legacyPropertyPrefix.jetty.keyStorePath".from(JitsiConfig.legacyConfig)
-        "$newPropertyPrefix.jetty.key-store-path".from(JitsiConfig.newConfig)
+        "$newPropertyPrefix.key-store-path".from(JitsiConfig.newConfig)
     }
 
     /**
@@ -59,7 +59,7 @@ class JettyBundleActivatorConfig(
      */
     val keyStorePassword: String? by optionalconfig {
         "$legacyPropertyPrefix.jetty.keyStorePassword".from(JitsiConfig.legacyConfig)
-        "$newPropertyPrefix.jetty.key-store-password".from(JitsiConfig.newConfig)
+        "$newPropertyPrefix.key-store-password".from(JitsiConfig.newConfig)
     }
 
     /**
@@ -68,7 +68,7 @@ class JettyBundleActivatorConfig(
      */
     val needClientAuth: Boolean by config {
         "$legacyPropertyPrefix.jetty.needClientAuth".from(JitsiConfig.legacyConfig)
-        "$newPropertyPrefix.jetty.need-client-auth".from(JitsiConfig.newConfig)
+        "$newPropertyPrefix.need-client-auth".from(JitsiConfig.newConfig)
         "default" { false }
     }
 
@@ -77,7 +77,7 @@ class JettyBundleActivatorConfig(
      */
     val tlsPort: Int by config {
         "$legacyPropertyPrefix.jetty.tls.port".from(JitsiConfig.legacyConfig)
-        "$newPropertyPrefix.jetty.tls-port".from(JitsiConfig.newConfig)
+        "$newPropertyPrefix.tls-port".from(JitsiConfig.newConfig)
         "default" { 8443 }
     }
 }
