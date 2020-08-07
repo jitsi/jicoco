@@ -136,6 +136,11 @@
       <artifactId>jitsi-utils</artifactId>
       <version>${jitsi-utils.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>jicoco-config</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <!-- test -->
     <dependency>
       <groupId>junit</groupId>
@@ -204,8 +209,8 @@
                   </goals>
                   <configuration>
                       <sourceDirs>
-                          <source>src/main/java</source>
                           <source>src/main/kotlin</source>
+                          <source>src/main/java</source>
                       </sourceDirs>
                   </configuration>
               </execution>
@@ -215,6 +220,12 @@
                   <goals>
                       <goal>test-compile</goal>
                   </goals>
+                  <configuration>
+                      <sourceDirs>
+                          <source>src/test/kotlin</source>
+                          <source>src/test/java</source>
+                      </sourceDirs>
+                  </configuration>
               </execution>
           </executions>
           <configuration>
@@ -224,17 +235,25 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
+        <version>3.8.1</version>
         <executions>
             <execution>
-                <id>compile</id>
+                <id>default-compile</id>
+                <phase>none</phase>
+            </execution>
+            <execution>
+                <id>default-testCompile</id>
+                <phase>none</phase>
+            </execution>
+            <execution>
+                <id>java-compile</id>
                 <phase>compile</phase>
                 <goals>
                     <goal>compile</goal>
                 </goals>
             </execution>
             <execution>
-                <id>testCompile</id>
+                <id>java-test-compile</id>
                 <phase>test-compile</phase>
                 <goals>
                     <goal>testCompile</goal>
