@@ -49,7 +49,7 @@ class JettyBundleActivatorConfig(
      * when Jetty serves over HTTPS.
      */
     val keyStorePath: String? by optionalconfig {
-        "$legacyPropertyPrefix.jetty.keyStorePath".from(JitsiConfig.legacyConfig)
+        "$legacyPropertyPrefix.jetty.sslContextFactory.keyStorePath".from(JitsiConfig.legacyConfig)
         "$newPropertyPrefix.key-store-path".from(JitsiConfig.newConfig)
     }
 
@@ -58,7 +58,7 @@ class JettyBundleActivatorConfig(
      * when Jetty serves over HTTPS
      */
     val keyStorePassword: String? by optionalconfig {
-        "$legacyPropertyPrefix.jetty.keyStorePassword".from(JitsiConfig.legacyConfig)
+        "$legacyPropertyPrefix.jetty.sslContextFactory.keyStorePassword".from(JitsiConfig.legacyConfig)
         "$newPropertyPrefix.key-store-password".from(JitsiConfig.newConfig)
     }
 
@@ -67,7 +67,7 @@ class JettyBundleActivatorConfig(
      * [org.eclipse.jetty.util.ssl.SslContextFactory] when Jetty serves over HTTPS
      */
     val needClientAuth: Boolean by config {
-        "$legacyPropertyPrefix.jetty.needClientAuth".from(JitsiConfig.legacyConfig)
+        "$legacyPropertyPrefix.jetty.sslContextFactory.needClientAuth".from(JitsiConfig.legacyConfig)
         "$newPropertyPrefix.need-client-auth".from(JitsiConfig.newConfig)
         "default" { false }
     }
