@@ -21,6 +21,7 @@ import com.typesafe.config.ConfigObject
 import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.ConfigSource
 import java.time.Duration
+import java.util.regex.Pattern
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubtypeOf
@@ -52,6 +53,7 @@ class TypesafeConfigSource(
             typeOf<Duration>() -> wrap { key -> config.getDuration(key) }
             typeOf<ConfigObject>() -> wrap { key -> config.getObject(key) }
             typeOf<List<Config>>() -> wrap { key -> config.getConfigList(key) }
+            typeOf<Pattern>() -> wrap { key -> Pattern.compile(config.getString(key)) }
             else -> throw ConfigException.UnsupportedType("Type $type unsupported")
         }
     }

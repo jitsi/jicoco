@@ -19,12 +19,15 @@ package org.jitsi.config
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.ConfigSource
 import java.time.Duration
+import java.util.regex.Pattern
 import kotlin.reflect.typeOf
 
 class TypesafeConfigSourceTest : ShouldSpec() {
@@ -114,9 +117,20 @@ class TypesafeConfigSourceTest : ShouldSpec() {
                     getValue<Color>("color") shouldBe Color.BLUE
                 }
             }
+            context("Pattern") {
+                withConfig("pattern = \"abc\"") {
+                    getValue<Pattern>("pattern").pattern() shouldBe "abc"
+                }
+                context("when the pattern is invalid") {
+                    withConfig("pattern = \"(\"") {
+                        shouldThrow<ConfigException.UnableToRetrieve.Error> {
+                            getValue<Pattern>("pattern").pattern()
+                        }
+                    }
+                }
+            }
         }
     }
-
 }
 
 private fun withConfig(configStr: String, block: ConfigScope.() -> Unit) {
