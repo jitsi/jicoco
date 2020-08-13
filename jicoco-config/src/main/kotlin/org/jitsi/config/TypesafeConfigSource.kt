@@ -43,7 +43,7 @@ class TypesafeConfigSource(
             return getterForEnum(type.classifier as KClass<Nothing>)
         }
         return when (type) {
-            typeOf<Boolean>() -> wrap { key -> config.getBoolean(key) }
+            typeOf<Boolean>() -> wrap { key -> config.getString(key).toBoolean() }
             typeOf<Int>() -> wrap { key -> config.getInt(key) }
             typeOf<Long>() -> wrap { key -> config.getLong(key) }
             typeOf<Double>() -> wrap { key -> config.getDouble(key) }

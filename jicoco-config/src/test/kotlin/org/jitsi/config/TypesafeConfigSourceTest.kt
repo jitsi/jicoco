@@ -39,6 +39,24 @@ class TypesafeConfigSourceTest : ShouldSpec() {
                 withConfig("boolean=true") {
                     getValue<Boolean>("boolean") shouldBe true
                 }
+                withConfig("boolean=True") {
+                    getValue<Boolean>("boolean") shouldBe true
+                }
+                withConfig("boolean=TRUE") {
+                    getValue<Boolean>("boolean") shouldBe true
+                }
+                withConfig("boolean=\"true\"") {
+                    getValue<Boolean>("boolean") shouldBe true
+                }
+                withConfig("boolean=false") {
+                    getValue<Boolean>("boolean") shouldBe false
+                }
+                withConfig("boolean=X") {
+                    getValue<Boolean>("boolean") shouldBe false
+                }
+                withConfig("boolean=32") {
+                    getValue<Boolean>("boolean") shouldBe false
+                }
             }
             context("Int") {
                 withConfig("int=42") {
