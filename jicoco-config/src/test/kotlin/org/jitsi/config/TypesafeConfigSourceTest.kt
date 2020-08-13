@@ -36,26 +36,21 @@ class TypesafeConfigSourceTest : ShouldSpec() {
     init {
         context("Retrieving a value of type") {
             context("Boolean") {
-                withConfig("boolean=true") {
-                    getValue<Boolean>("boolean") shouldBe true
+                mapOf("true" to true, "True" to true, "TRUE" to true, "\"true\"" to true, "\"True\"" to true,
+                      "false" to false, "False" to false, "FALSE" to false,
+                      "\"false\"" to false, "\"False\"" to false).forEach { (k, v) ->
+                    context("Parsing $k") {
+                        withConfig("boolean=$k") {
+                            getValue<Boolean>("boolean") shouldBe v
+                        }
+                    }
                 }
-                withConfig("boolean=True") {
-                    getValue<Boolean>("boolean") shouldBe true
-                }
-                withConfig("boolean=TRUE") {
-                    getValue<Boolean>("boolean") shouldBe true
-                }
-                withConfig("boolean=\"true\"") {
-                    getValue<Boolean>("boolean") shouldBe true
-                }
-                withConfig("boolean=false") {
-                    getValue<Boolean>("boolean") shouldBe false
-                }
-                withConfig("boolean=X") {
-                    getValue<Boolean>("boolean") shouldBe false
-                }
-                withConfig("boolean=32") {
-                    getValue<Boolean>("boolean") shouldBe false
+                listOf("X", "32", "\"\"").forEach {
+                    context("Parsing $it") {
+                        withConfig("boolean=$it") {
+                            shouldThrow<ConfigException.UnableToRetrieve.WrongType> { getValue<Boolean>("boolean") }
+                        }
+                    }
                 }
             }
             context("Int") {

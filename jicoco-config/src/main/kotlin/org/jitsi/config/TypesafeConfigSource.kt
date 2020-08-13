@@ -43,7 +43,14 @@ class TypesafeConfigSource(
             return getterForEnum(type.classifier as KClass<Nothing>)
         }
         return when (type) {
-            typeOf<Boolean>() -> wrap { key -> config.getString(key).toBoolean() }
+            typeOf<Boolean>() -> wrap { key ->
+                // Typesafe is case-sensitive and does not accept "True" or "False" as valid boolean values.
+                when (config.getString(key).toLowerCase()) {
+                    "true" -> true
+                    "false" -> false
+                    else -> config.getBoolean(key)
+                }
+            }
             typeOf<Int>() -> wrap { key -> config.getInt(key) }
             typeOf<Long>() -> wrap { key -> config.getLong(key) }
             typeOf<Double>() -> wrap { key -> config.getDouble(key) }
@@ -75,6 +82,8 @@ class TypesafeConfigSource(
                 throw ConfigException.UnableToRetrieve.WrongType("Key '$key' in source '$name': ${e.message}")
             } catch (e: com.typesafe.config.ConfigException) {
                 throw ConfigException.UnableToRetrieve.NotFound(e.message ?: "typesafe exception: ${e::class}")
+            } catch (e: ConfigException) {
+                throw e
             } catch (t: Throwable) {
                 throw ConfigException.UnableToRetrieve.Error(t)
             }
