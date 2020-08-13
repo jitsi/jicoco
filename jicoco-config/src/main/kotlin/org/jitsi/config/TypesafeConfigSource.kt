@@ -43,7 +43,14 @@ class TypesafeConfigSource(
             return getterForEnum(type.classifier as KClass<Nothing>)
         }
         return when (type) {
-            typeOf<Boolean>() -> wrap { key -> config.getBoolean(key) }
+            typeOf<Boolean>() -> wrap { key ->
+                // Typesafe is case-sensitive and does not accept "True" or "False" as valid boolean values.
+                when (config.getString(key).toLowerCase()) {
+                    "true" -> true
+                    "false" -> false
+                    else -> config.getBoolean(key)
+                }
+            }
             typeOf<Int>() -> wrap { key -> config.getInt(key) }
             typeOf<Long>() -> wrap { key -> config.getLong(key) }
             typeOf<Double>() -> wrap { key -> config.getDouble(key) }
