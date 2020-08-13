@@ -82,8 +82,6 @@ class TypesafeConfigSource(
                 throw ConfigException.UnableToRetrieve.WrongType("Key '$key' in source '$name': ${e.message}")
             } catch (e: com.typesafe.config.ConfigException) {
                 throw ConfigException.UnableToRetrieve.NotFound(e.message ?: "typesafe exception: ${e::class}")
-            } catch (e: ConfigException) {
-                throw e
             } catch (t: Throwable) {
                 throw ConfigException.UnableToRetrieve.Error(t)
             }
