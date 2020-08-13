@@ -46,7 +46,23 @@ class TypesafeConfigSource(
             typeOf<Boolean>() -> wrap { key -> config.getBoolean(key) }
             typeOf<Int>() -> wrap { key -> config.getInt(key) }
             typeOf<Long>() -> wrap { key -> config.getLong(key) }
-            typeOf<Double>() -> wrap { key -> config.getDouble(key) }
+            // Support expressions such as "5%"
+            typeOf<Double>() -> wrap { key ->
+                try {
+                    config.getDouble(key)
+                } catch (wrongTypeException: com.typesafe.config.ConfigException.WrongType) {
+                    val stringValue: String = config.getString(key).trim()
+                    if (stringValue.endsWith("%")) {
+                        try {
+                            0.01 * stringValue.dropLast(1).toDouble()
+                        } catch (e: Throwable) {
+                            throw wrongTypeException
+                        }
+                    } else {
+                        throw wrongTypeException
+                    }
+                }
+            }
             typeOf<String>() -> wrap { key -> config.getString(key) }
             typeOf<List<String>>() -> wrap { key -> config.getStringList(key) }
             typeOf<List<Int>>() -> wrap { key -> config.getIntList(key) }
