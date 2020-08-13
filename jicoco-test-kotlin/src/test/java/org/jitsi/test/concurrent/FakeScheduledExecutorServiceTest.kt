@@ -77,5 +77,39 @@ class FakeSchedulerExecutorServiceTest : ShouldSpec() {
                 }
             }
         }
+        context("scheduling a fixed rate job") {
+            var numJobRuns = 0
+            executor.scheduleAtFixedRate({
+                numJobRuns++
+                // Elapse time inside the job to simulate a long job
+                executor.clock.elapse(3.secs)
+            }, 5, 5, TimeUnit.SECONDS)
+            should("run the job at a fixed rate") {
+                // Run the first job
+                executor.runOne()
+                // Elapse long enough that the job should be run again, even though it's been less
+                // than the period since the last run
+                executor.clock.elapse(3.secs)
+                executor.runUntil(executor.clock.instant())
+                numJobRuns shouldBe 2
+            }
+        }
+        context("scheduled a fixed delay job") {
+            var numJobRuns = 0
+            executor.scheduleWithFixedDelay({
+                numJobRuns++
+                // Elapse time inside the job to simulate a long job
+                executor.clock.elapse(3.secs)
+            }, 5, 5, TimeUnit.SECONDS)
+            should("run the job with a fixed rate") {
+                // Run the first job
+                executor.runOne()
+                // Elapse long enough that the job would've run if it were at fixed rate,
+                // but shouldn't since it's fixed delay
+                executor.clock.elapse(3.secs)
+                executor.runUntil(executor.clock.instant())
+                numJobRuns shouldBe 1
+            }
+        }
     }
 }
