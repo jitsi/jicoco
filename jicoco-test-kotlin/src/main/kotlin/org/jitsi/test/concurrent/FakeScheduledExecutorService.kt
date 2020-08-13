@@ -25,7 +25,7 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 /**
- * A fake [ScheduledExecutorService] which gives control over when scheduled tasks are running without requiring a
+ * A fake [ScheduledExecutorService] which gives control over when scheduled tasks are run without requiring a
  * separate thread
  */
 abstract class FakeScheduledExecutorService : ScheduledExecutorService {

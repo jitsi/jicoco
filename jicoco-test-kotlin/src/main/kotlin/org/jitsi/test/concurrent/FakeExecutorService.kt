@@ -21,6 +21,10 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
+/**
+ * A fake [ExecutorService] which gives control over when submitted tasks are run
+ * without requiring a separate thread.
+ */
 abstract class FakeExecutorService : ExecutorService {
     private var jobs = JobsTimeline()
     val clock: FakeClock = FakeClock()
