@@ -1,10 +1,25 @@
+/*
+ * Copyright @ 2018 - present 8x8, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.jitsi.test.concurrent
 
-import io.mockk.every
-import io.mockk.mockk
 import org.jitsi.test.time.FakeClock
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.Delayed
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -27,12 +42,7 @@ abstract class FakeScheduledExecutorService : ScheduledExecutorService {
         val job = RecurringJob(command, nextRunTime, Duration.ofMillis(unit.toMillis(period)))
         jobs.add(job)
 
-        return mockk<ScheduledFuture<Unit>>() {
-            every<Boolean> { cancel(any<Boolean>()) } answers {
-                job.cancelled = true
-                true
-            }
-        }
+        return EmptyFuture { job.cancelled = true }
     }
 
     override fun schedule(command: Runnable, delay: Long, unit: TimeUnit): ScheduledFuture<*> {
@@ -41,12 +51,7 @@ abstract class FakeScheduledExecutorService : ScheduledExecutorService {
         val job = Job(command, nextRunTime)
         jobs.add(job)
 
-        return mockk<ScheduledFuture<Unit>>() {
-            every<Boolean> { cancel(any<Boolean>()) } answers {
-                job.cancelled = true
-                true
-            }
-        }
+        return EmptyFuture { job.cancelled = true }
     }
 
     // Note that, when a job is cancelled, we don't remove it from the timeline, we just mark it
@@ -127,7 +132,7 @@ internal open class Job(val command: Runnable, var nextRunTime: Instant) {
 }
 
 internal class RecurringJob(command: Runnable, nextRunTime: Instant, val period: Duration) :
-    Job(command, nextRunTime) {
+        Job(command, nextRunTime) {
 
     fun updateNextRuntime() {
         // TODO: this behavior is correct for scheduledAtFixedRate, but wrong for scheduleWithFixedDelay, so
@@ -144,5 +149,40 @@ internal class JobsTimeline : ArrayList<Job>() {
         val result = super.add(element)
         sortBy(Job::nextRunTime)
         return result
+    }
+}
+
+/**
+ * A simple implementation of [ScheduledFuture<Unit>] which allows passing a handler
+ * to be invoked on cancellation.
+ */
+private class EmptyFuture(
+    private val cancelHandler: () -> Unit
+) : ScheduledFuture<Unit> {
+    private var cancelled = false
+    override fun cancel(mayInterruptIfRunning: Boolean): Boolean {
+        cancelHandler()
+        cancelled = true
+        return true
+    }
+
+    override fun get() {}
+
+    override fun get(timeout: Long, unit: TimeUnit) {}
+
+    override fun getDelay(unit: TimeUnit): Long {
+        TODO("Not yet implemented")
+    }
+
+    override fun isCancelled(): Boolean {
+        return cancelled
+    }
+
+    override fun isDone(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun compareTo(other: Delayed?): Int {
+        TODO("Not yet implemented")
     }
 }
