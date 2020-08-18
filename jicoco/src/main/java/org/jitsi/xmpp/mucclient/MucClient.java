@@ -617,6 +617,7 @@ public class MucClient
         if (this.executor != null)
         {
             this.executor.shutdown();
+            this.executor = null;
         }
 
         // If we are still not connected leave and disconnect my through
@@ -677,7 +678,11 @@ public class MucClient
                 xmppConnection.login();
             }
 
-            executor.shutdown();
+            // The connection is successfully established but we need to keep
+            // the executor alive, since it may be re-utilized by {@link #connectRetry}
+            // in case we ever need to restart the retry-connect-login logic.
+            // Essentially we need to keep the executor alive as long as we keep
+            // the {@link #connectRetry} alive.
 
             return false;
         };
