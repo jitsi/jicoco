@@ -64,8 +64,23 @@ class TypesafeConfigSourceTest : ShouldSpec() {
                 }
             }
             context("Double") {
-                withConfig("double=42.5") {
-                    getValue<Double>("double") shouldBe 42.5
+                mapOf("42" to 42.0, "42.5" to 42.5, "42.5e-2" to 42.5e-2,
+                      "-42" to -42.0, "-42.5" to -42.5, "-42.5e-2" to -42.5e-2,
+                      "42.5%" to 42.5e-2, "42.5 %" to 42.5e-2, "42 %" to 42e-2,
+                      "-42.5%" to -42.5e-2, "-42.5 %" to -42.5e-2, "-42 %" to -42e-2).forEach { (k, v) ->
+
+                    context("Parsing $k") {
+                        withConfig("double=$k") {
+                            getValue<Double>("double") shouldBe v
+                        }
+                    }
+                }
+                listOf("\"\"", "X", "[1,2,3]", "5X", "5.2%%").forEach {
+                    context("Parsing $it") {
+                        withConfig("double=$it") {
+                            shouldThrow<ConfigException.UnableToRetrieve.WrongType> { getValue<Double>("double") }
+                        }
+                    }
                 }
             }
             context("String") {
