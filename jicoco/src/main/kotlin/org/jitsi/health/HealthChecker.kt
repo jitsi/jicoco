@@ -42,15 +42,14 @@ class HealthChecker(
     var timeout: Duration = 30.secs,
     /**
      * The maximum duration that a call to {@link #performCheck()} is allowed
-     * to take. If a call takes longer, the service is considered unhealthy. A
-     * value of {@code null} indicates no max check duration.
+     * to take. If a call takes longer, the service is considered unhealthy.
      * <p>
      * Note that if a check never completes, we rely on {@link #timeout} instead.
      */
     var maxCheckDuration: Duration = 3.secs,
     /**
      * If set, a single health check failure after the initial
-     * {@link #STICKY_FAILURES_GRACE_PERIOD}, will be result in the service
+     * {@link #STICKY_FAILURES_GRACE_PERIOD} will be result in the service
      * being permanently unhealthy.
      */
     var stickyFailures: Boolean = false,
