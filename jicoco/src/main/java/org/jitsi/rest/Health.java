@@ -32,19 +32,19 @@ import javax.ws.rs.core.*;
 public class Health
 {
     @Inject
-    protected HealthCheckServiceProvider healthCheckServiceProvider;
+    protected HealthCheckServiceSupplier healthCheckServiceSupplier;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getHealth()
     {
-        HealthCheckService healthCheckService = healthCheckServiceProvider.get();
+        HealthCheckService healthCheckService = healthCheckServiceSupplier.get();
         if (healthCheckService == null)
         {
             throw new NotFoundException();
         }
 
-        Exception status = healthCheckServiceProvider.get().getResult();
+        Exception status = healthCheckServiceSupplier.get().getResult();
         if (status != null)
         {
             return Response

@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package org.jitsi.osgi;
+package org.jitsi.version;
 
+import org.jitsi.service.*;
 import org.jitsi.utils.version.*;
-import org.osgi.framework.*;
 
-public class VersionServiceProvider extends OsgiServiceProvider<VersionService>
+/**
+ * When binding, we need to get the class.  We can't do that for a generic so we need a concrete
+ * class that is associated with the specific type.  This exists for that purpose and allows for
+ * different implementations (pulling {@link VersionService} from different places)
+ */
+public interface VersionServiceSupplier extends ServiceSupplier<VersionService>
 {
-    public VersionServiceProvider(BundleContext bundleContext)
-    {
-        super(bundleContext, VersionService.class);
-    }
 }

@@ -20,8 +20,8 @@ import org.eclipse.jetty.http.*;
 import org.glassfish.hk2.utilities.binding.*;
 import org.glassfish.jersey.server.*;
 import org.glassfish.jersey.test.*;
-import org.jitsi.osgi.*;
 import org.jitsi.utils.version.*;
+import org.jitsi.version.*;
 import org.junit.*;
 
 import javax.ws.rs.core.*;
@@ -32,16 +32,16 @@ import static org.mockito.Mockito.*;
 
 public class VersionTest extends JerseyTest
 {
-    protected VersionServiceProvider versionServiceProvider;
+    protected VersionServiceSupplier versionServiceSupplier;
     protected VersionService versionService;
     protected static final String BASE_URL = "/about/version";
 
     @Override
     protected Application configure()
     {
-        versionServiceProvider = mock(VersionServiceProvider.class);
+        versionServiceSupplier = mock(VersionServiceSupplier.class);
         versionService = mock(VersionService.class);
-        when(versionServiceProvider.get()).thenReturn(versionService);
+        when(versionServiceSupplier.get()).thenReturn(versionService);
 
         enable(TestProperties.LOG_TRAFFIC);
         enable(TestProperties.DUMP_ENTITY);
@@ -52,7 +52,7 @@ public class VersionTest extends JerseyTest
                     @Override
                     protected void configure()
                     {
-                        bind(versionServiceProvider).to(VersionServiceProvider.class);
+                        bind(versionServiceSupplier).to(VersionServiceSupplier.class);
                     }
                 });
                 register(Version.class);
@@ -77,7 +77,7 @@ public class VersionTest extends JerseyTest
     @Test
     public void testNoVersionService()
     {
-        when(versionServiceProvider.get()).thenReturn(null);
+        when(versionServiceSupplier.get()).thenReturn(null);
         Response resp = target(BASE_URL).request().get();
         assertEquals(HttpStatus.OK_200, resp.getStatus());
         Version.VersionInfo versionInfo = resp.readEntity(Version.VersionInfo.class);

@@ -30,16 +30,16 @@ import static org.mockito.Mockito.*;
 
 public class HealthTest extends JerseyTest
 {
-    protected HealthCheckServiceProvider healthCheckServiceProvider;
+    protected HealthCheckServiceSupplier healthCheckServiceSupplier;
     protected HealthCheckService healthCheckService;
     protected static final String BASE_URL = "/about/health";
 
     @Override
     protected Application configure()
     {
-        healthCheckServiceProvider = mock(HealthCheckServiceProvider.class);
+        healthCheckServiceSupplier = mock(HealthCheckServiceSupplier.class);
         healthCheckService = mock(HealthCheckService.class);
-        when(healthCheckServiceProvider.get()).thenReturn(healthCheckService);
+        when(healthCheckServiceSupplier.get()).thenReturn(healthCheckService);
 
         enable(TestProperties.LOG_TRAFFIC);
         enable(TestProperties.DUMP_ENTITY);
@@ -50,7 +50,7 @@ public class HealthTest extends JerseyTest
                     @Override
                     protected void configure()
                     {
-                        bind(healthCheckServiceProvider).to(HealthCheckServiceProvider.class);
+                        bind(healthCheckServiceSupplier).to(HealthCheckServiceSupplier.class);
                     }
                 });
                 register(Health.class);

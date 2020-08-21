@@ -14,28 +14,23 @@
  * limitations under the License.
  */
 
-package org.jitsi.osgi;
+package org.jitsi.version;
 
+import org.jitsi.osgi.*;
+import org.jitsi.utils.version.*;
 import org.osgi.framework.*;
 
-/**
- * A generic class for providing an OSGI service based on a given
- * {@link BundleContext} and service class
- * @param <T> the service being provided
- */
-public class OsgiServiceProvider<T>
+public class OsgiVersionServiceSupplier implements VersionServiceSupplier
 {
-    protected final BundleContext bundleContext;
-    protected final Class<T> typeClass;
-
-    public OsgiServiceProvider(BundleContext bundleContext, Class<T> typeClass)
+    private final BundleContext bundleContext;
+    public OsgiVersionServiceSupplier(BundleContext bundleContext)
     {
         this.bundleContext = bundleContext;
-        this.typeClass = typeClass;
     }
 
-    public T get()
+    @Override
+    public VersionService get()
     {
-        return ServiceUtils2.getService(bundleContext, typeClass);
+        return ServiceUtils2.getService(bundleContext, VersionService.class);
     }
 }

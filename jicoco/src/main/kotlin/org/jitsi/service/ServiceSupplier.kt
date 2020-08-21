@@ -14,15 +14,8 @@
  * limitations under the License.
  */
 
-package org.jitsi.health;
+package org.jitsi.service
 
-import org.jitsi.osgi.*;
-import org.osgi.framework.*;
-
-public class HealthCheckServiceProvider extends OsgiServiceProvider<HealthCheckService>
-{
-    public HealthCheckServiceProvider(BundleContext bundleContext)
-    {
-        super(bundleContext, HealthCheckService.class);
-    }
+interface ServiceSupplier <T> {
+    fun get(): T
 }
