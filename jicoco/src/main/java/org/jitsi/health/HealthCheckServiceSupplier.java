@@ -16,14 +16,14 @@
 
 package org.jitsi.health;
 
-import org.jitsi.service.*;
+import java.util.function.*;
 
 /**
  * When binding, we need to get the class.  We can't do that for a generic so we need a concrete
  * class that is associated with the specific type.  This exists for that purpose and allows for
  * different implementations (pulling {@link HealthCheckService} from different places)
  */
-public interface HealthCheckServiceSupplier extends ServiceSupplier<HealthCheckService>
+public interface HealthCheckServiceSupplier extends Supplier<HealthCheckService>
 {
 }
 
