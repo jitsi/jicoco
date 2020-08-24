@@ -175,7 +175,11 @@ public class MucClient
      */
     private final Logger logger;
 
-    private final PingFailedListener pingFailedListener;
+    /**
+     * The ping fail listener.
+     */
+    private final PingFailedListener pingFailedListener = new PingFailedListenerImpl();
+
     /**
      * Creates and XMPP connection for the given {@code config}, connects, and
      * joins the MUC described by the {@code config}.
@@ -190,7 +194,6 @@ public class MucClient
                 JMap.of(
                     "id", config.getId(),
                     "hostname", config.getHostname()));
-        pingFailedListener = () -> logger.warn("XMPP Ping failed");
         this.config = config;
     }
 
@@ -855,6 +858,51 @@ public class MucClient
         private void resetLastPresenceSent()
         {
             lastPresenceSent = null;
+        }
+    }
+
+    /**
+     * Detects ping failures and in case of two consecutive failures where the connection is still
+     * connected and authenticated we will close it and let the connectRetry task handle that.
+     */
+    private class PingFailedListenerImpl
+        implements PingFailedListener
+    {
+        /**
+         * When ping fails the PingManager stops scheduling new pings.
+         * That's why we will send manually another one to check and disconnect if that fails.
+         */
+        @Override
+        public void pingFailed()
+        {
+            logger.warn("XMPP Ping failed");
+
+            boolean res = false;
+            try
+            {
+
+                PingManager pingManager = PingManager.getInstanceFor(xmppConnection);
+                if (pingManager != null)
+                {
+                    res = pingManager.pingMyServer(false);
+                }
+            }
+            catch (InterruptedException | SmackException e)
+            {
+                res = false;
+            }
+
+            if (!res)
+            {
+                logger.warn("Second XMPP Ping failed");
+
+                if (xmppConnection.isConnected() && xmppConnection.isAuthenticated())
+                {
+                    // two pings failing in a row where connection is still connected and authenticated
+                    // a weired situation, we will trigger reconnect just in case.
+                    xmppConnection.disconnect();
+                }
+            }
         }
     }
 }
