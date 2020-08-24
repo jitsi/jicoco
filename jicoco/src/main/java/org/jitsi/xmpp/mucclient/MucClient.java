@@ -868,6 +868,10 @@ public class MucClient
     private class PingFailedListenerImpl
         implements PingFailedListener
     {
+        /**
+         * When ping fails the PingManager stops scheduling new pings.
+         * That's why we will send manually another one to check and disconnect if that fails.
+         */
         @Override
         public void pingFailed()
         {
