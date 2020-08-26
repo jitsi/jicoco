@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package org.jitsi.health;
+package org.jitsi.version;
 
-import org.jitsi.osgi.*;
-import org.osgi.framework.*;
+import org.jitsi.utils.version.*;
 
-public class HealthCheckServiceProvider extends OsgiServiceProvider<HealthCheckService>
+import java.util.function.*;
+
+/**
+ * When binding, we need to get the class.  We can't do that for a generic so we need a concrete
+ * class that is associated with the specific type.  This exists for that purpose and allows for
+ * different implementations (pulling {@link VersionService} from different places)
+ */
+public interface VersionServiceSupplier extends Supplier<VersionService>
 {
-    public HealthCheckServiceProvider(BundleContext bundleContext)
-    {
-        super(bundleContext, HealthCheckService.class);
-    }
 }

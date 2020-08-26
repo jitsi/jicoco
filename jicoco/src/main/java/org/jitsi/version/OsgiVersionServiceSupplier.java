@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package org.jitsi.osgi;
+package org.jitsi.version;
 
+import org.jitsi.osgi.*;
 import org.jitsi.utils.version.*;
 import org.osgi.framework.*;
 
-public class VersionServiceProvider extends OsgiServiceProvider<VersionService>
+public class OsgiVersionServiceSupplier implements VersionServiceSupplier
 {
-    public VersionServiceProvider(BundleContext bundleContext)
+    private final BundleContext bundleContext;
+    public OsgiVersionServiceSupplier(BundleContext bundleContext)
     {
-        super(bundleContext, VersionService.class);
+        this.bundleContext = bundleContext;
+    }
+
+    @Override
+    public VersionService get()
+    {
+        return ServiceUtils2.getService(bundleContext, VersionService.class);
     }
 }

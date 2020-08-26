@@ -14,28 +14,16 @@
  * limitations under the License.
  */
 
-package org.jitsi.osgi;
+package org.jitsi.health;
 
-import org.osgi.framework.*;
+import java.util.function.*;
 
 /**
- * A generic class for providing an OSGI service based on a given
- * {@link BundleContext} and service class
- * @param <T> the service being provided
+ * When binding, we need to get the class.  We can't do that for a generic so we need a concrete
+ * class that is associated with the specific type.  This exists for that purpose and allows for
+ * different implementations (pulling {@link HealthCheckService} from different places)
  */
-public class OsgiServiceProvider<T>
+public interface HealthCheckServiceSupplier extends Supplier<HealthCheckService>
 {
-    protected final BundleContext bundleContext;
-    protected final Class<T> typeClass;
-
-    public OsgiServiceProvider(BundleContext bundleContext, Class<T> typeClass)
-    {
-        this.bundleContext = bundleContext;
-        this.typeClass = typeClass;
-    }
-
-    public T get()
-    {
-        return ServiceUtils2.getService(bundleContext, typeClass);
-    }
 }
+
