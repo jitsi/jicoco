@@ -234,7 +234,7 @@ public abstract class AbstractJettyBundleActivator
      */
     protected boolean isTls()
     {
-        return config.getKeyStorePath() != null;
+        return config.isTls();
     }
 
     /**

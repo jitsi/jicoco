@@ -54,6 +54,12 @@ class JettyBundleActivatorConfig(
     }
 
     /**
+     * Whether or not this server should use TLS
+     */
+    val isTls: Boolean
+        get() = keyStorePath != null
+
+    /**
      * The [java.security.KeyStore] password to be used by [org.eclipse.jetty.util.ssl.SslContextFactory]
      * when Jetty serves over HTTPS
      */
