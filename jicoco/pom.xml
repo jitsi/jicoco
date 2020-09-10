@@ -34,6 +34,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <smack.version>4.2.4-47d17fc</smack.version>
     <kotlin.version>1.3.72</kotlin.version>
+    <kotest.version>4.1.3</kotest.version>
   </properties>
 
   <name>jicoco</name>
@@ -178,8 +179,20 @@
       <version>${jersey.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
+      <dependency>
+          <groupId>io.kotest</groupId>
+          <artifactId>kotest-runner-junit5-jvm</artifactId>
+          <version>${kotest.version}</version>
+          <scope>test</scope>
+      </dependency>
+      <dependency>
+          <groupId>io.kotest</groupId>
+          <artifactId>kotest-assertions-core-jvm</artifactId>
+          <version>${kotest.version}</version>
+          <scope>test</scope>
+      </dependency>
+      <dependency>
+          <groupId>org.jetbrains.kotlin</groupId>
         <artifactId>kotlin-stdlib-jdk8</artifactId>
         <version>${kotlin.version}</version>
     </dependency>
