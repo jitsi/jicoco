@@ -34,13 +34,13 @@
 
     <modules>
         <module>jicoco</module>
-        <module>jicoco-kotlin</module>
         <module>jicoco-test-kotlin</module>
+        <module>jicoco-config</module>
     </modules>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jitsi-utils.version>1.0-47-gdb30505</jitsi-utils.version>
+        <jitsi-utils.version>1.0-58-gaa5a28f</jitsi-utils.version>
     </properties>
 
     <build>
@@ -93,4 +93,31 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>jitsi-maven-repository-releases</id>
+            <layout>default</layout>
+            <name>Jitsi Maven Repository (Releases)</name>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
+        </repository>
+        <repository>
+            <id>jitsi-maven-repository-snapshots</id>
+            <layout>default</layout>
+            <name>Jitsi Maven Repository (Snapshots)</name>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/</url>
+        </repository>
+    </repositories>
 </project>

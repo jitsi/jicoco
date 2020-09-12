@@ -17,8 +17,8 @@
 package org.jitsi.rest;
 
 import com.fasterxml.jackson.annotation.*;
-import org.jitsi.osgi.*;
 import org.jitsi.utils.version.*;
+import org.jitsi.version.*;
 
 import javax.inject.*;
 import javax.ws.rs.*;
@@ -34,13 +34,13 @@ import javax.ws.rs.core.*;
 public class Version
 {
     @Inject
-    protected VersionServiceProvider versionServiceProvider;
+    protected VersionServiceSupplier versionServiceSupplier;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public VersionInfo getVersion()
     {
-        VersionService versionService = versionServiceProvider.get();
+        VersionService versionService = versionServiceSupplier.get();
         if (versionService == null)
         {
             return UNKNOWN_VERSION;

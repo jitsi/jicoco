@@ -18,6 +18,7 @@ package org.jitsi.rest;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.util.ssl.*;
+import org.jetbrains.annotations.*;
 import org.jitsi.osgi.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.utils.*;
@@ -26,6 +27,7 @@ import org.osgi.framework.*;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.nio.file.*;
 import java.util.*;
 
 /**
@@ -37,50 +39,6 @@ import java.util.*;
 public abstract class AbstractJettyBundleActivator
     implements BundleActivator
 {
-    /**
-     * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the Jetty HTTP server host.
-     */
-    public static final String JETTY_HOST_PNAME = ".jetty.host";
-
-    /**
-     * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the Jetty HTTP server port. The default value is
-     * {@code 8080}.
-     */
-    public static final String JETTY_PORT_PNAME = ".jetty.port";
-
-    /**
-     * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the keystore password to be utilized by
-     * {@code SslContextFactory} when Jetty serves over HTTPS.
-     */
-    static final String JETTY_SSLCONTEXTFACTORY_KEYSTOREPASSWORD
-        = ".jetty.sslContextFactory.keyStorePassword";
-
-    /**
-     * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the keystore path to be utilized by
-     * {@code SslContextFactory} when Jetty serves over HTTPS.
-     */
-    static final String JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH
-        = ".jetty.sslContextFactory.keyStorePath";
-
-    /**
-     * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies whether client certificate authentication is to
-     * be required by {@code SslContextFactory} when Jetty serves over HTTPS.
-     */
-    static final String JETTY_SSLCONTEXTFACTORY_NEEDCLIENTAUTH
-        = ".jetty.sslContextFactory.needClientAuth";
-
-    /**
-     * The name of the {@code ConfigurationService} and/or {@code System}
-     * property which specifies the Jetty HTTPS server port. The default value
-     * is {@code 8443}.
-     */
-    public static final String JETTY_TLS_PORT_PNAME = ".jetty.tls.port";
-
     /**
      * The {@code Logger} used by the {@code AbstractJettyBundleActivator} class
      * and its instances to print debug information.
@@ -137,16 +95,9 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * The {@code ConfigurationService} which looks up values of configuration
-     * properties.
+     * The config instance
      */
-    protected ConfigurationService cfg;
-
-    /**
-     * The prefix of the names of {@code ConfigurationService} and/or
-     * {@code System} properties to be utilized by this instance.
-     */
-    protected final String propertyPrefix;
+    protected final JettyBundleActivatorConfig config;
 
     /**
      * The Jetty {@code Server} which provides an HTTP(S) interface.
@@ -156,13 +107,22 @@ public abstract class AbstractJettyBundleActivator
     /**
      * Initializes a new {@code AbstractJettyBundleActivator} instance.
      *
-     * @param propertyPrefix the prefix of the names of
-     * {@code ConfigurationService} and/or {@code System} properties to be
-     * utilized by the new instance
+     * @param legacyPropertyPrefix the prefix of the names of {@code ConfigurationService} and/or
+     *                             {@code System} properties to be utilized by the new instance
+     * @param newPropertyPrefix the prefix of the config property names in a new
+     *                          config file
      */
-    protected AbstractJettyBundleActivator(String propertyPrefix)
+    protected AbstractJettyBundleActivator(
+        String legacyPropertyPrefix,
+        String newPropertyPrefix)
     {
-        this.propertyPrefix = propertyPrefix;
+        this.config = new JettyBundleActivatorConfig(legacyPropertyPrefix, newPropertyPrefix);
+    }
+
+    protected AbstractJettyBundleActivator(
+        String legacyPropertyPrefix)
+    {
+        this(legacyPropertyPrefix, "");
     }
 
     /**
@@ -252,82 +212,6 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * Returns the value of a specific {@code boolean}
-     * {@code ConfigurationService} or {@code System} property.
-     *
-     * @param property the name of the property
-     * @param defaultValue the value to be returned if {@code property} does not
-     * have any value assigned in either {@code ConfigurationService} or
-     * {@code System}
-     * @return the value of {@code property} in {@code ConfigurationService} or
-     * {@code System}
-     */
-    protected boolean getCfgBoolean(String property, boolean defaultValue)
-    {
-        return
-            ConfigUtils.getBoolean(cfg, prefixProperty(property), defaultValue);
-    }
-
-    /**
-     * Returns the value of a specific {@code int} {@code ConfigurationService}
-     * or {@code System} property.
-     *
-     * @param property the name of the property
-     * @param defaultValue the value to be returned if {@code property} does not
-     * have any value assigned in either {@code ConfigurationService} or
-     * {@code System}
-     * @return the value of {@code property} in {@code ConfigurationService} or
-     * {@code System}
-     */
-    protected int getCfgInt(String property, int defaultValue)
-    {
-        return ConfigUtils.getInt(cfg, prefixProperty(property), defaultValue);
-    }
-
-    /**
-     * Returns the value of a specific {@code String}
-     * {@code ConfigurationService} or {@code System} property.
-     *
-     * @param property the name of the property
-     * @param defaultValue the value to be returned if {@code property} does not
-     * have any value assigned in either {@code ConfigurationService} or
-     * {@code System}
-     * @return the value of {@code property} in {@code ConfigurationService} or
-     * {@code System}
-     */
-    protected String getCfgString(String property, String defaultValue)
-    {
-        return
-            ConfigUtils.getString(cfg, prefixProperty(property), defaultValue);
-    }
-
-    /**
-     * Gets the port on which the Jetty server is to listen for HTTP requests by
-     * default in the absence of a user specification through
-     * {@link #JETTY_PORT_PNAME}.
-     *
-     * @return the port on which the Jetty server is to listen for HTTP requests
-     * by default
-     */
-    protected int getDefaultPort()
-    {
-        return 8080;
-    }
-
-    /**
-     * Gets the port on which the Jetty server is to listen for HTTPS requests
-     * by default in the absence of a user specification through
-     * {@link #JETTY_TLS_PORT_PNAME}.
-     *
-     * @return the port on which the Jetty server is to listen for HTTPS
-     * requests by default
-     */
-    protected int getDefaultTlsPort()
-    {
-        return 8443;
-    }
-
-    /**
      * @return the port which the configuration specifies should be used by
      * this {@link AbstractJettyBundleActivator}, or -1 if the configuration
      * specifies that this instance should be disabled.
@@ -336,11 +220,11 @@ public abstract class AbstractJettyBundleActivator
     {
         if (isTls())
         {
-            return getCfgInt(JETTY_TLS_PORT_PNAME, getDefaultTlsPort());
+            return config.getTlsPort();
         }
         else
         {
-            return getCfgInt(JETTY_PORT_PNAME, getDefaultPort());
+            return config.getPort();
         }
     }
 
@@ -350,10 +234,7 @@ public abstract class AbstractJettyBundleActivator
      */
     protected boolean isTls()
     {
-        String sslContextFactoryKeyStorePath
-            = getCfgString(JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH, null);
-
-        return sslContextFactoryKeyStorePath != null;
+        return config.isTls();
     }
 
     /**
@@ -371,40 +252,23 @@ public abstract class AbstractJettyBundleActivator
         throws Exception
     {
         HttpConfiguration httpCfg = new HttpConfiguration();
-        int tlsPort = getCfgInt(JETTY_TLS_PORT_PNAME, getDefaultTlsPort());
 
-        httpCfg.setSecurePort(tlsPort);
+        httpCfg.setSecurePort(config.getTlsPort());
         httpCfg.setSecureScheme("https");
 
-        String sslContextFactoryKeyStorePath
-            = getCfgString(JETTY_SSLCONTEXTFACTORY_KEYSTOREPATH, null);
         Connector connector;
 
         // If HTTPS is not enabled, serve over HTTP.
-        if (sslContextFactoryKeyStorePath == null)
+        if (!isTls())
         {
             // HTTP
-            connector
-                = new ServerConnector(
-                server,
-                new HttpConnectionFactory(httpCfg));
+            connector = new ServerConnector(server, new HttpConnectionFactory(httpCfg));
         }
         else
         {
             // HTTPS
-            File sslContextFactoryKeyStoreFile
-                = ConfigUtils.getAbsoluteFile(
-                sslContextFactoryKeyStorePath,
-                cfg);
+            File sslContextFactoryKeyStoreFile = Paths.get(Objects.requireNonNull(config.getKeyStorePath())).toFile();
             SslContextFactory sslContextFactory = new SslContextFactory();
-            String sslContextFactoryKeyStorePassword
-                = getCfgString(
-                JETTY_SSLCONTEXTFACTORY_KEYSTOREPASSWORD,
-                null);
-            boolean sslContextFactoryNeedClientAuth
-                = getCfgBoolean(
-                JETTY_SSLCONTEXTFACTORY_NEEDCLIENTAUTH,
-                false);
 
             /* Mozilla Guideline v5.4, Jetty 9.4.15, intermediate configuration
                https://ssl-config.mozilla.org/#server=jetty&version=9.4.15&config=intermediate&guideline=5.4
@@ -436,15 +300,15 @@ public abstract class AbstractJettyBundleActivator
                 "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256");
 
             sslContextFactory.setRenegotiationAllowed(false);
-            if (sslContextFactoryKeyStorePassword != null)
+            if (config.getKeyStorePassword() != null)
             {
                 sslContextFactory.setKeyStorePassword(
-                    sslContextFactoryKeyStorePassword);
+                    config.getKeyStorePassword());
             }
             sslContextFactory.setKeyStorePath(
                 sslContextFactoryKeyStoreFile.getPath());
             sslContextFactory.setNeedClientAuth(
-                sslContextFactoryNeedClientAuth);
+                config.getNeedClientAuth());
 
             HttpConfiguration httpsCfg = new HttpConfiguration(httpCfg);
 
@@ -463,10 +327,8 @@ public abstract class AbstractJettyBundleActivator
         setPort(connector, getPort());
 
         // host
-        String host = getCfgString(JETTY_HOST_PNAME, null);
-
-        if (host != null)
-            setHost(connector, host);
+        if (config.getHost() != null)
+            setHost(connector, config.getHost());
 
         return connector;
     }
@@ -532,29 +394,6 @@ public abstract class AbstractJettyBundleActivator
     }
 
     /**
-     * Prefixes a specific {@code ConfigurationService} and/or {@code System}
-     * property name with {@link #propertyPrefix} if the property name in
-     * question is incomplete (i.e. starts with a dot).
-     *
-     * @param property the {@code ConfigurationService} and/or {@code System}
-     * property name to prefix
-     * @return a complete {@code ConfigurationService} and/or {@code System}
-     * property name equal to {@code property} if {@code property} is complete
-     * or derived from {@code property} by prefixing if {@code property} is
-     * incomplete
-     */
-    protected String prefixProperty(String property)
-    {
-        if (propertyPrefix != null
-                && property != null
-                && property.startsWith("."))
-        {
-            property = propertyPrefix + property;
-        }
-        return property;
-    }
-
-    /**
      * Sets the host on which a specific {@code Connector} is to listen for
      * incoming network connections.
      *
@@ -608,31 +447,15 @@ public abstract class AbstractJettyBundleActivator
     public void start(BundleContext bundleContext)
         throws Exception
     {
-        cfg
-            = ServiceUtils2.getService(
-                    bundleContext,
-                    ConfigurationService.class);
-
-        boolean started = false;
-
-        try
+        if (willStart(bundleContext))
         {
-            if (willStart(bundleContext))
-            {
-                doStart(bundleContext);
-                didStart(bundleContext);
-                started = true;
-            }
-            else
-            {
-                logger.info("Not starting the Jetty service for "
-                        + getClass().getName() + "(port=" + getPort() + ")");
-            }
+            doStart(bundleContext);
+            didStart(bundleContext);
         }
-        finally
+        else
         {
-            if (!started)
-                cfg = null;
+            logger.info("Not starting the Jetty service for "
+                    + getClass().getName() + "(port=" + getPort() + ")");
         }
     }
 
@@ -648,17 +471,10 @@ public abstract class AbstractJettyBundleActivator
     public void stop(BundleContext bundleContext)
         throws Exception
     {
-        try
+        if (willStop(bundleContext))
         {
-            if (willStop(bundleContext))
-            {
-                doStop(bundleContext);
-                didStop(bundleContext);
-            }
-        }
-        finally
-        {
-            cfg = null;
+            doStop(bundleContext);
+            didStop(bundleContext);
         }
     }
 
