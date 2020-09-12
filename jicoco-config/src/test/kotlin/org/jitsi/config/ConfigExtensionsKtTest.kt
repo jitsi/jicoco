@@ -27,7 +27,8 @@ class ConfigExtensionsKtTest : ShouldSpec() {
 
     init {
         context("mask") {
-            val config = ConfigFactory.parseString("""
+            val config = ConfigFactory.parseString(
+                """
                 a {
                     pass-prop = s3cr3t
                     normal-prop = 10
@@ -36,7 +37,8 @@ class ConfigExtensionsKtTest : ShouldSpec() {
                         nested-normal-prop = hello
                     }
                 }
-            """.trimIndent())
+                """.trimIndent()
+            )
             context("with a set field regex") {
                 ConfigUtils.PASSWORD_SYS_PROPS = "pass"
                 val maskedConfig = config.mask()

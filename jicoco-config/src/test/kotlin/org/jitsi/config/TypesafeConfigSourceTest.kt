@@ -36,9 +36,11 @@ class TypesafeConfigSourceTest : ShouldSpec() {
     init {
         context("Retrieving a value of type") {
             context("Boolean") {
-                mapOf("true" to true, "True" to true, "TRUE" to true, "\"true\"" to true, "\"True\"" to true,
-                      "false" to false, "False" to false, "FALSE" to false,
-                      "\"false\"" to false, "\"False\"" to false).forEach { (k, v) ->
+                mapOf(
+                    "true" to true, "True" to true, "TRUE" to true, "\"true\"" to true, "\"True\"" to true,
+                    "false" to false, "False" to false, "FALSE" to false,
+                    "\"false\"" to false, "\"False\"" to false
+                ).forEach { (k, v) ->
                     context("Parsing $k") {
                         withConfig("boolean=$k") {
                             getValue<Boolean>("boolean") shouldBe v
@@ -64,10 +66,12 @@ class TypesafeConfigSourceTest : ShouldSpec() {
                 }
             }
             context("Double") {
-                mapOf("42" to 42.0, "42.5" to 42.5, "42.5e-2" to 42.5e-2,
-                      "-42" to -42.0, "-42.5" to -42.5, "-42.5e-2" to -42.5e-2,
-                      "42.5%" to 42.5e-2, "42.5 %" to 42.5e-2, "42 %" to 42e-2,
-                      "-42.5%" to -42.5e-2, "-42.5 %" to -42.5e-2, "-42 %" to -42e-2).forEach { (k, v) ->
+                mapOf(
+                    "42" to 42.0, "42.5" to 42.5, "42.5e-2" to 42.5e-2,
+                    "-42" to -42.0, "-42.5" to -42.5, "-42.5e-2" to -42.5e-2,
+                    "42.5%" to 42.5e-2, "42.5 %" to 42.5e-2, "42 %" to 42e-2,
+                    "-42.5%" to -42.5e-2, "-42.5 %" to -42.5e-2, "-42 %" to -42e-2
+                ).forEach { (k, v) ->
 
                     context("Parsing $k") {
                         withConfig("double=$k") {

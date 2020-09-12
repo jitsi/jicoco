@@ -63,7 +63,6 @@ inline fun useNewConfig(name: String, config: String, loadDefaults: Boolean, blo
 inline fun useNewConfig(config: String, block: () -> Unit) =
     useNewConfig(config, false, block)
 
-
 /**
  * Creates a [TypesafeConfigSource] using the parsed value of [config] and
  * defaults in reference.conf if [loadDefaults] is set with name [name] and
