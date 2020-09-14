@@ -34,7 +34,10 @@ class JitsiConfig {
         /**
          * A [ConfigSource] loaded via [ConfigFactory].
          */
-        val TypesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", ConfigFactory.load())
+        var TypesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", ConfigFactory.load())
+            private set
+
+        private var numTypesafeReloads = 0
 
         /**
          * The 'new' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
@@ -74,6 +77,15 @@ class JitsiConfig {
         fun useDebugLegacyConfig(config: ConfigSource) {
             logger.info("Replacing legacyConfig with ${config.description}")
             _legacyConfig.innerSource = config
+        }
+
+        fun reloadNewConfig() {
+            logger.info("Reloading the Typesafe config source (previously reloaded $numTypesafeReloads times).")
+            ConfigFactory.invalidateCaches()
+            TypesafeConfig = TypesafeConfigSource(
+                "typesafe config (reloaded ${numTypesafeReloads++} times)",
+                ConfigFactory.load())
+            _newConfig.innerSource = TypesafeConfig
         }
     }
 }
