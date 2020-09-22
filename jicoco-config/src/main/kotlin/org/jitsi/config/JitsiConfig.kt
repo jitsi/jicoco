@@ -31,6 +31,10 @@ class JitsiConfig {
     companion object {
         val logger = LoggerImpl(JitsiConfig::class.simpleName)
 
+        init {
+            System.setProperty("config.strategy", "org.jitsi.config.JitsiConfigLoadingStrategy")
+        }
+
         /**
          * A [ConfigSource] loaded via [ConfigFactory].
          */
