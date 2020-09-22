@@ -16,6 +16,7 @@
 
 package org.jitsi.config
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.jitsi.metaconfig.ConfigSource
 import org.jitsi.service.configuration.ConfigurationService
@@ -31,10 +32,46 @@ class JitsiConfig {
     companion object {
         val logger = LoggerImpl(JitsiConfig::class.simpleName)
 
+        var typesafeConfigLoader: () -> Config = {
+            // When loading the new config, we want the following priority for config values:
+            // 1. Values in a file specified by '-Dconfig.{file|resource|url}'
+            // 2. Values in an application.{conf|json|properties} classpath resource
+            // 3. Values in any reference.{conf|json|properties} classpath resources
+            // A normal call to 'ConfigFactory.load' will _only_ load an application.* file if no
+            // '-Dconfig.*' was given, so in order to explicitly fall back to an application.* file,
+            // we need custom logic here.
+            // Note: The simple/tempting way to implement the above priorities is the following:
+            // ConfigFactory.defaultApplication()
+            //     .withFallback(ConfigFactory.parseResourcesAnySyntax("application"))
+            //     .withFallback(ConfigFactory.defaultReference())
+            // But, in the case where no '-Dconfig.*' argument was passed, this will load application.*
+            // twice, which can cause issues with properties which use concatenation (i.e. 'path += "/something"'),
+            // because they will be run twice.
+
+            // ConfigFactory.defaultApplication will load any file specified by '-Dconfig.{file|resource|url}` and,
+            // if none were set, will load 'application.{conf|json|properties}'.
+            val defaultAppConfig = ConfigFactory.defaultApplication()
+            // Here's the hack: we need to check whether or not 'application.*' was already loaded, there isn't
+            // a great way to do that, so we check if the origin of the config from the above call includes contains
+            // "target.*classes" to see if we loaded an application config file from the classpath.  If we haven't,
+            // we load application.* explicitly. If we have, we do nothing.
+            val configWithApplicationConfig = if (defaultAppConfig.origin().url().toString().contains("target.*classes")) {
+                // We already fell through and loaded application.*
+                defaultAppConfig
+            } else {
+                // application.* has not been loaded yet, fall back to it
+                defaultAppConfig.withFallback(ConfigFactory.parseResourcesAnySyntax("application"))
+            }
+            // Now fall back to the reference.* files
+            configWithApplicationConfig
+                .withFallback(ConfigFactory.defaultReference())
+                .resolve()
+        }
+
         /**
          * A [ConfigSource] loaded via [ConfigFactory].
          */
-        var TypesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", ConfigFactory.load())
+        var TypesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", typesafeConfigLoader())
             private set
 
         private var numTypesafeReloads = 0
@@ -84,7 +121,8 @@ class JitsiConfig {
             ConfigFactory.invalidateCaches()
             TypesafeConfig = TypesafeConfigSource(
                 "typesafe config (reloaded ${numTypesafeReloads++} times)",
-                ConfigFactory.load())
+                typesafeConfigLoader()
+            )
             _newConfig.innerSource = TypesafeConfig
         }
     }
