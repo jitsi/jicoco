@@ -84,7 +84,8 @@ class JitsiConfig {
             ConfigFactory.invalidateCaches()
             TypesafeConfig = TypesafeConfigSource(
                 "typesafe config (reloaded ${numTypesafeReloads++} times)",
-                ConfigFactory.load())
+                ConfigFactory.load()
+            )
             _newConfig.innerSource = TypesafeConfig
         }
     }
