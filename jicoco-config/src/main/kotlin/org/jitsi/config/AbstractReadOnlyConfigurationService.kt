@@ -54,7 +54,7 @@ abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
         getString(propertyName)?.toLong() ?: defaultValue
 
     override fun getAllPropertyNames(): MutableList<String> =
-        properties.keys.map { it as String}.toMutableList()
+        properties.keys.map { it as String }.toMutableList()
 
     override fun getProperty(propertyName: String): Any? =
         properties[propertyName] ?: System.getProperty(propertyName)
@@ -87,13 +87,13 @@ abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
     }
 
     override fun getConfigurationFilename(): String =
-		throw Exception("Unsupported")
+        throw Exception("Unsupported")
 
-    override fun getScHomeDirLocation(): String = 
-		throw Exception("Unsupported")
+    override fun getScHomeDirLocation(): String =
+        throw Exception("Unsupported")
 
-    override fun getScHomeDirName(): String = 
-		throw Exception("Unsupported")
+    override fun getScHomeDirName(): String =
+        throw Exception("Unsupported")
 
     override fun addPropertyChangeListener(listener: PropertyChangeListener?) =
         throw Exception("Unsupported")
@@ -101,42 +101,42 @@ abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
     override fun addPropertyChangeListener(propertyName: String?, listener: PropertyChangeListener?) =
         throw Exception("Unsupported")
 
-    override fun addVetoableChangeListener(listener: ConfigVetoableChangeListener?) = 
-		throw Exception("Unsupported")
+    override fun addVetoableChangeListener(listener: ConfigVetoableChangeListener?) =
+        throw Exception("Unsupported")
 
-    override fun addVetoableChangeListener(propertyName: String?, listener: ConfigVetoableChangeListener?) = 
-		throw Exception("Unsupported")
+    override fun addVetoableChangeListener(propertyName: String?, listener: ConfigVetoableChangeListener?) =
+        throw Exception("Unsupported")
 
-    override fun removePropertyChangeListener(listener: PropertyChangeListener?) = 
-		throw Exception("Unsupported")
+    override fun removePropertyChangeListener(listener: PropertyChangeListener?) =
+        throw Exception("Unsupported")
 
-    override fun removePropertyChangeListener(propertyName: String?, listener: PropertyChangeListener?) = 
-		throw Exception("Unsupported")
+    override fun removePropertyChangeListener(propertyName: String?, listener: PropertyChangeListener?) =
+        throw Exception("Unsupported")
 
-    override fun removeVetoableChangeListener(listener: ConfigVetoableChangeListener?) = 
-		throw Exception("Unsupported")
+    override fun removeVetoableChangeListener(listener: ConfigVetoableChangeListener?) =
+        throw Exception("Unsupported")
 
-    override fun removeVetoableChangeListener(propertyName: String?, listener: ConfigVetoableChangeListener?) = 
-		throw Exception("Unsupported")
+    override fun removeVetoableChangeListener(propertyName: String?, listener: ConfigVetoableChangeListener?) =
+        throw Exception("Unsupported")
 
-    override fun purgeStoredConfiguration() = 
-		throw Exception("Unsupported")
+    override fun purgeStoredConfiguration() =
+        throw Exception("Unsupported")
 
-    override fun storeConfiguration() = 
-		throw Exception("Unsupported")
+    override fun storeConfiguration() =
+        throw Exception("Unsupported")
 
-    override fun setProperties(properties: MutableMap<String, Any>?) = 
-		throw Exception("Unsupported")
+    override fun setProperties(properties: MutableMap<String, Any>?) =
+        throw Exception("Unsupported")
 
-    override fun setProperty(propertyName: String?, property: Any?) = 
-		throw Exception("Unsupported")
+    override fun setProperty(propertyName: String?, property: Any?) =
+        throw Exception("Unsupported")
 
-    override fun setProperty(propertyName: String?, property: Any?, isSystem: Boolean) = 
-		throw Exception("Unsupported")
+    override fun setProperty(propertyName: String?, property: Any?, isSystem: Boolean) =
+        throw Exception("Unsupported")
 
-    override fun removeProperty(propertyName: String?) = 
-		throw Exception("Unsupported")
+    override fun removeProperty(propertyName: String?) =
+        throw Exception("Unsupported")
 
-    override fun getPropertyNamesBySuffix(suffix: String?): MutableList<String> = 
-		throw Exception("Unsupported")
+    override fun getPropertyNamesBySuffix(suffix: String?): MutableList<String> =
+        throw Exception("Unsupported")
 }

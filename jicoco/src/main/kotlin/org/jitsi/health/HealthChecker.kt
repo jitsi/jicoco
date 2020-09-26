@@ -92,7 +92,7 @@ class HealthChecker(
      * The interval at which health checks will be performed.
      */
     var interval: Duration by Delegates.observable(interval) {
-            _, _, newValue -> period = newValue.toMillis()
+        _, _, newValue -> period = newValue.toMillis()
     }
 
     /**
@@ -115,9 +115,12 @@ class HealthChecker(
         }
         executor!!.registerRecurringRunnable(this)
 
-        logger.info("Started with interval=$period, timeout=$timeout, maxDuration=$maxCheckDuration, stickyFailures=$stickyFailures.")
+        logger.info("Started with interval=$period, timeout=$timeout, " +
+                "maxDuration=$maxCheckDuration, stickyFailures=$stickyFailures."
+        )
     }
 
+    @Throws(Exception::class)
     fun stop() {
         executor?.apply {
             deRegisterRecurringRunnable(this@HealthChecker)
@@ -131,8 +134,7 @@ class HealthChecker(
      * Performs a health check and updates this instance's state. Runs
      * periodically in {@link #executor}.
      */
-    override fun run()
-    {
+    override fun run() {
         super.run()
 
         val checkStart = clock.instant()
@@ -140,8 +142,7 @@ class HealthChecker(
 
         try {
             healthCheckFunc()
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             exception = e
 
             val now = clock.instant()
@@ -167,9 +168,10 @@ class HealthChecker(
 
         if (exception == null) {
             logger.info(
-                "Performed a successful health check in $checkDuration. Sticky failure: ${stickyFailures && hasFailed}")
+                "Performed a successful health check in $checkDuration. Sticky failure: ${stickyFailures && hasFailed}"
+            )
         } else {
-            logger.error( "Health check failed in $checkDuration:", exception)
+            logger.error("Health check failed in $checkDuration:", exception)
         }
     }
 

@@ -23,7 +23,7 @@ import io.mockk.spyk
 import org.jitsi.utils.secs
 import java.util.concurrent.TimeUnit
 
-class FakeSchedulerExecutorServiceTest : ShouldSpec() {
+class FakeScheduledExecutorServiceTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
@@ -31,9 +31,12 @@ class FakeSchedulerExecutorServiceTest : ShouldSpec() {
 
         context("Scheduling a recurring job") {
             var numJobRuns = 0
-            val handle = executor.scheduleAtFixedRate({
-                numJobRuns++
-            }, 5, 5, TimeUnit.SECONDS)
+            val handle = executor.scheduleAtFixedRate(
+                {
+                    numJobRuns++
+                },
+                5, 5, TimeUnit.SECONDS
+            )
             context("and then calling runOne") {
                 executor.runOne()
                 should("have run the job") {
@@ -79,11 +82,14 @@ class FakeSchedulerExecutorServiceTest : ShouldSpec() {
         }
         context("scheduling a fixed rate job") {
             var numJobRuns = 0
-            executor.scheduleAtFixedRate({
-                numJobRuns++
-                // Elapse time inside the job to simulate a long job
-                executor.clock.elapse(3.secs)
-            }, 5, 5, TimeUnit.SECONDS)
+            executor.scheduleAtFixedRate(
+                {
+                    numJobRuns++
+                    // Elapse time inside the job to simulate a long job
+                    executor.clock.elapse(3.secs)
+                },
+                5, 5, TimeUnit.SECONDS
+            )
             should("run the job at a fixed rate") {
                 // Run the first job
                 executor.runOne()
@@ -96,11 +102,14 @@ class FakeSchedulerExecutorServiceTest : ShouldSpec() {
         }
         context("scheduled a fixed delay job") {
             var numJobRuns = 0
-            executor.scheduleWithFixedDelay({
-                numJobRuns++
-                // Elapse time inside the job to simulate a long job
-                executor.clock.elapse(3.secs)
-            }, 5, 5, TimeUnit.SECONDS)
+            executor.scheduleWithFixedDelay(
+                {
+                    numJobRuns++
+                    // Elapse time inside the job to simulate a long job
+                    executor.clock.elapse(3.secs)
+                },
+                5, 5, TimeUnit.SECONDS
+            )
             should("run the job with a fixed rate") {
                 // Run the first job
                 executor.runOne()

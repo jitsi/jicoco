@@ -54,7 +54,12 @@ abstract class FakeScheduledExecutorService : ScheduledExecutorService {
         return EmptyFuture { job.cancelled = true }
     }
 
-    override fun scheduleWithFixedDelay(command: Runnable, initialDelay: Long, delay: Long, unit: TimeUnit): ScheduledFuture<*> {
+    override fun scheduleWithFixedDelay(
+        command: Runnable,
+        initialDelay: Long,
+        delay: Long,
+        unit: TimeUnit
+    ): ScheduledFuture<*> {
         val nextRunTime = clock.instant().plus(Duration.ofMillis(unit.toMillis(initialDelay)))
         val job = FixedDelayJob(command, nextRunTime, Duration.ofMillis(unit.toMillis(delay)))
         jobs.add(job)
@@ -143,13 +148,21 @@ internal abstract class RecurringJob(command: Runnable, nextRunTime: Instant) : 
     abstract fun updateNextRuntime(now: Instant)
 }
 
-internal class FixedRateJob(command: Runnable, nextRunTime: Instant, val period: Duration) : RecurringJob(command, nextRunTime) {
+internal class FixedRateJob(
+    command: Runnable,
+    nextRunTime: Instant,
+    val period: Duration
+) : RecurringJob(command, nextRunTime) {
     override fun updateNextRuntime(now: Instant) {
         nextRunTime += period
     }
 }
 
-internal class FixedDelayJob(command: Runnable, nextRunTime: Instant, val period: Duration) : RecurringJob(command, nextRunTime) {
+internal class FixedDelayJob(
+    command: Runnable,
+    nextRunTime: Instant,
+    val period: Duration
+) : RecurringJob(command, nextRunTime) {
     override fun updateNextRuntime(now: Instant) {
         nextRunTime = now + period
     }

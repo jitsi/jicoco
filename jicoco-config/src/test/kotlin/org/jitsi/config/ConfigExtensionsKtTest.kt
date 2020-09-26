@@ -17,7 +17,6 @@
 package org.jitsi.config
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -28,7 +27,8 @@ class ConfigExtensionsKtTest : ShouldSpec() {
 
     init {
         context("mask") {
-            val config = ConfigFactory.parseString("""
+            val config = ConfigFactory.parseString(
+                """
                 a {
                     pass-prop = s3cr3t
                     normal-prop = 10
@@ -37,7 +37,8 @@ class ConfigExtensionsKtTest : ShouldSpec() {
                         nested-normal-prop = hello
                     }
                 }
-            """.trimIndent())
+                """.trimIndent()
+            )
             context("with a set field regex") {
                 ConfigUtils.PASSWORD_SYS_PROPS = "pass"
                 val maskedConfig = config.mask()
