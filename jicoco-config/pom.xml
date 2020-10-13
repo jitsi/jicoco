@@ -45,6 +45,9 @@
             <artifactId>jitsi-utils</artifactId>
             <version>${jitsi-utils.version}</version>
         </dependency>
+        <!-- NOTE: Temporarily use a 'custom' release from jitpack to get the fix we merged here.
+            Once https://github.com/lightbend/config/issues/702 has been resolved/the new version
+            released, we can go back to using the official release version-->
         <dependency>
             <groupId>com.github.lightbend</groupId>
             <artifactId>config</artifactId>
