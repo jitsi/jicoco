@@ -884,7 +884,12 @@ public class MucClient
                 PingManager pingManager = PingManager.getInstanceFor(xmppConnection);
                 if (pingManager != null)
                 {
-                    res = pingManager.pingMyServer(false);
+                    if (res = pingManager.pingMyServer(false))
+                    {
+                        // When the ping manager failed, it stopped performing periodic pings. If our backup attempt
+                        // succeeded, and we go on without a reconnect we need to restart it.
+                        pingManager.pingServerIfNecessary();
+                    }
                 }
             }
             catch (InterruptedException | SmackException e)
