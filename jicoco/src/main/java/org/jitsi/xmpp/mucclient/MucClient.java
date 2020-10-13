@@ -875,38 +875,14 @@ public class MucClient
         @Override
         public void pingFailed()
         {
-            logger.warn("XMPP Ping failed");
+            logger.warn("Ping failed, the XMPP connection needs to reconnect.");
 
-            boolean res = false;
-            try
+            if (xmppConnection.isConnected() && xmppConnection.isAuthenticated())
             {
-
-                PingManager pingManager = PingManager.getInstanceFor(xmppConnection);
-                if (pingManager != null)
-                {
-                    if (res = pingManager.pingMyServer(false))
-                    {
-                        // When the ping manager failed, it stopped performing periodic pings. If our backup attempt
-                        // succeeded, and we go on without a reconnect we need to restart it.
-                        pingManager.pingServerIfNecessary();
-                    }
-                }
-            }
-            catch (InterruptedException | SmackException e)
-            {
-                res = false;
-            }
-
-            if (!res)
-            {
-                logger.warn("Second XMPP Ping failed");
-
-                if (xmppConnection.isConnected() && xmppConnection.isAuthenticated())
-                {
-                    // two pings failing in a row where connection is still connected and authenticated
-                    // a weired situation, we will trigger reconnect just in case.
-                    xmppConnection.disconnect();
-                }
+                logger.warn("XMPP connection still connected, will trigger a disconnect.");
+                // two pings failing in a row where connection is still connected and authenticated
+                // a weired situation, we will trigger reconnect just in case.
+                xmppConnection.disconnect();
             }
         }
     }
