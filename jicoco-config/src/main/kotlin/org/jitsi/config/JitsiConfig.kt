@@ -34,7 +34,15 @@ class JitsiConfig {
         /**
          * A [ConfigSource] loaded via [ConfigFactory].
          */
-        var TypesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", ConfigFactory.load())
+        var TypesafeConfig: ConfigSource = TypesafeConfigSource(
+            "typesafe config",
+            // Parse an application replacement (something passed via -Dconfig.file), if there is one
+            ConfigFactory.parseApplicationReplacement().orElse(ConfigFactory.empty())
+                // Fallback to application.(conf|json|properties)
+                .withFallback(ConfigFactory.parseResourcesAnySyntax("application"))
+                // Fallback to reference.(conf|json|properties)
+                .withFallback(ConfigFactory.defaultReference())
+        )
             private set
 
         private var numTypesafeReloads = 0
