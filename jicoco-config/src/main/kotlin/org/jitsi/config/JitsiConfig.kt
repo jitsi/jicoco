@@ -94,8 +94,9 @@ class JitsiConfig {
         fun reloadNewConfig() {
             logger.info("Reloading the Typesafe config source (previously reloaded $numTypesafeReloads times).")
             ConfigFactory.invalidateCaches()
+            numTypesafeReloads++
             TypesafeConfig = TypesafeConfigSource(
-                "typesafe config (reloaded ${numTypesafeReloads++} times)",
+                "typesafe config (reloaded $numTypesafeReloads times)",
                 loadNewConfig()
             )
             _newConfig.innerSource = TypesafeConfig
