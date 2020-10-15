@@ -86,9 +86,7 @@ class JitsiConfig {
                 // Fallback to application.(conf|json|properties)
                 .withFallback(ConfigFactory.parseResourcesAnySyntax("application"))
                 // Fallback to reference.(conf|json|properties)
-                .withFallback(ConfigFactory.defaultReference()).also {
-                    println("loaded config: ${it.root().render()}")
-                }
+                .withFallback(ConfigFactory.defaultReference())
         }
 
         fun reloadNewConfig() {
