@@ -16,6 +16,7 @@
 
 package org.jitsi.config
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.jitsi.metaconfig.ConfigSource
 import org.jitsi.service.configuration.ConfigurationService
@@ -34,7 +35,7 @@ class JitsiConfig {
         /**
          * A [ConfigSource] loaded via [ConfigFactory].
          */
-        var TypesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", ConfigFactory.load())
+        var TypesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", loadNewConfig())
             private set
 
         private var numTypesafeReloads = 0
@@ -79,12 +80,22 @@ class JitsiConfig {
             _legacyConfig.innerSource = config
         }
 
+        private fun loadNewConfig(): Config {
+            // Parse an application replacement (something passed via -Dconfig.file), if there is one
+            return ConfigFactory.parseApplicationReplacement().orElse(ConfigFactory.empty())
+                // Fallback to application.(conf|json|properties)
+                .withFallback(ConfigFactory.parseResourcesAnySyntax("application"))
+                // Fallback to reference.(conf|json|properties)
+                .withFallback(ConfigFactory.defaultReference())
+        }
+
         fun reloadNewConfig() {
             logger.info("Reloading the Typesafe config source (previously reloaded $numTypesafeReloads times).")
             ConfigFactory.invalidateCaches()
+            numTypesafeReloads++
             TypesafeConfig = TypesafeConfigSource(
-                "typesafe config (reloaded ${numTypesafeReloads++} times)",
-                ConfigFactory.load()
+                "typesafe config (reloaded $numTypesafeReloads times)",
+                loadNewConfig()
             )
             _newConfig.innerSource = TypesafeConfig
         }
