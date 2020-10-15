@@ -319,7 +319,6 @@ public class MucClient
             @Override
             public void reconnectingIn(int i)
             {
-                mucs.values().forEach(MucWrapper::resetLastPresenceSent);
                 logger.info("Reconnecting in " + i);
             }
 
