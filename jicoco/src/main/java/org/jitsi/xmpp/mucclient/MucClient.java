@@ -60,14 +60,12 @@ public class MucClient
      * The {@link Logger} used by the {@link MucClient} class and its instances
      * for logging output.
      */
-    private static final Logger classLogger
-            = new LoggerImpl(MucClient.class.getName());
+    private static final Logger classLogger = new LoggerImpl(MucClient.class.getName());
 
     /**
      * The IQ types we are interested in.
      */
-    private static final IQ.Type[] IQ_TYPES
-        = new IQ.Type[]{ IQ.Type.get, IQ.Type.set};
+    private static final IQ.Type[] IQ_TYPES = new IQ.Type[]{ IQ.Type.get, IQ.Type.set};
 
     /**
      * Creates a Smack {@link XMPPTCPConnectionConfiguration} based on
@@ -101,13 +99,12 @@ public class MucClient
             = XMPPTCPConnectionConfiguration.builder()
                 .setHost(config.getHostname())
                 .setXmppDomain(domainJid)
-                .setUsernameAndPassword(
-                    config.getUsername(),
-                    config.getPassword());
+                .setUsernameAndPassword(config.getUsername(), config.getPassword());
 
         String portStr = config.getPort();
 
-        if (portStr != null && !portStr.isEmpty()) {
+        if (portStr != null && !portStr.isEmpty())
+        {
             builder.setPort(Integer.parseInt(portStr));
         }
 
@@ -203,8 +200,7 @@ public class MucClient
      */
     void start()
     {
-        this.executor = ExecutorUtils.newScheduledThreadPool(
-            1, true, MucClientManager.class.getSimpleName());
+        this.executor = ExecutorUtils.newScheduledThreadPool(1, true, MucClientManager.class.getSimpleName());
 
         this.executor.execute(() ->
         {
@@ -214,8 +210,7 @@ public class MucClient
             }
             catch(Exception e)
             {
-                logger.error(
-                    "Failed to initialize and start a MucClient: ", e);
+                logger.error("Failed to initialize and start a MucClient: ", e);
             }
         });
     }
@@ -245,11 +240,8 @@ public class MucClient
             iqHandlerMode = IQRequestHandler.Mode.sync;
         }
 
-        xmppConnection
-            = new XMPPTCPConnection(
-                createXMPPTCPConnectionConfiguration(config));
-        ServiceDiscoveryManager sdm
-            = ServiceDiscoveryManager.getInstanceFor(xmppConnection);
+        xmppConnection = new XMPPTCPConnection(createXMPPTCPConnectionConfiguration(config));
+        ServiceDiscoveryManager sdm = ServiceDiscoveryManager.getInstanceFor(xmppConnection);
         PingManager pingManager = PingManager.getInstanceFor(xmppConnection);
         if (pingManager != null)
         {
@@ -259,8 +251,7 @@ public class MucClient
         // Register the disco#info features.
         mucClientManager.getFeatures().forEach(sdm::addFeature);
 
-        ReconnectionManager reconnectionManager
-            = ReconnectionManager.getInstanceFor(xmppConnection);
+        ReconnectionManager reconnectionManager = ReconnectionManager.getInstanceFor(xmppConnection);
         reconnectionManager.enableAutomaticReconnection();
 
         xmppConnection.addConnectionListener(new ConnectionListener()
@@ -306,8 +297,7 @@ public class MucClient
                     // so we will trigger the reconnection logic again
                     // till we are connected and will relay on smack's reconnect
                     MucClient.this.connectRetry.runRetryingTask(
-                        new SimpleRetryTask(
-                            0, 5000, true, getConnectAndLoginCallable()));
+                        new SimpleRetryTask(0, 5000, true, getConnectAndLoginCallable()));
                 }
             }
 
@@ -361,8 +351,7 @@ public class MucClient
 
         this.connectRetry = new RetryStrategy(this.executor);
 
-        this.connectRetry.runRetryingTask(new SimpleRetryTask(
-            0, 5000, true, getConnectAndLoginCallable()));
+        this.connectRetry.runRetryingTask(new SimpleRetryTask(0, 5000, true, getConnectAndLoginCallable()));
     }
 
     /**
@@ -526,9 +515,7 @@ public class MucClient
                     {
                         if (logger.isDebugEnabled())
                         {
-                            logger.debug(
-                                "Received an IQ with type " + type + ": "
-                                    + iqRequest.toString());
+                            logger.debug("Received an IQ with type " + type + ": " + iqRequest.toString());
                         }
                         return handleIq(iqRequest);
                     }
@@ -549,9 +536,8 @@ public class MucClient
 
         EntityBareJid fromJid = iq.getFrom().asEntityBareJidIfPossible();
         String fromJidStr = fromJid.toString().toLowerCase();
-        if (fromJid == null
-            || !this.config.getMucJids().stream().anyMatch(
-                    mucJid -> mucJid.toLowerCase().equals(fromJidStr)))
+        if (this.config.getMucJids().stream()
+                .noneMatch(mucJid -> mucJid.toLowerCase().equals(fromJidStr)))
         {
             logger.warn("Received an IQ from a non-MUC member: " + fromJid);
             return IQUtils.createError(iq, XMPPError.Condition.forbidden);
@@ -570,29 +556,16 @@ public class MucClient
             }
             catch (Exception e)
             {
-                logger.warn(
-                    "Exception processing IQ, returning internal" +
-                        " server error. Request: " + iq.toString(), e);
-
-                responseIq
-                    = IQUtils.createError(
-                    iq,
-                    XMPPError.Condition.internal_server_error,
-                    e.getMessage());
+                logger.warn("Exception processing IQ, returning internal server error. Request: " + iq.toString(), e);
+                responseIq = IQUtils.createError(iq, XMPPError.Condition.internal_server_error, e.getMessage());
             }
         }
 
         if (responseIq == null)
         {
             logger.info(
-                "Failed to produce a response for IQ, returning internal" +
-                    " server error. Request: " +iq.toString());
-
-            responseIq
-                = IQUtils.createError(
-                    iq,
-                    XMPPError.Condition.internal_server_error,
-                    "Unknown error");
+                    "Failed to produce a response for IQ, returning internal server error. Request: " +iq.toString());
+            responseIq = IQUtils.createError(iq, XMPPError.Condition.internal_server_error, "Unknown error");
         }
 
         return responseIq;
@@ -671,7 +644,6 @@ public class MucClient
             catch(Exception t)
             {
                 logger.warn(MucClient.this + " error connecting", t);
-
                 return true;
             }
 
@@ -760,13 +732,11 @@ public class MucClient
                 logger.info("Leaving a MUC we already occupy.");
                 muc.leave();
             }
-            MultiUserChatManager mucManager
-                = MultiUserChatManager.getInstanceFor(xmppConnection);
+            MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(xmppConnection);
             muc = mucManager.getMultiUserChat(mucJid);
             muc.addPresenceInterceptor(presenceInterceptor);
 
-            MultiUserChat.MucCreateConfigFormHandle mucCreateHandle
-                = muc.createOrJoin(mucNickname);
+            MultiUserChat.MucCreateConfigFormHandle mucCreateHandle = muc.createOrJoin(mucNickname);
             if (mucCreateHandle != null)
             {
                 // the room was just created. Let's send a config
@@ -798,11 +768,7 @@ public class MucClient
         {
             if (lastPresenceSent == null)
             {
-                if (logger.isDebugEnabled())
-                {
-                    logger.info(
-                        "Not setting an extension yet, presence not sent.");
-                }
+                logger.debug(() -> "Not setting an extension yet, presence not sent.");
                 return;
             }
 
@@ -811,8 +777,7 @@ public class MucClient
             // it indicates that the client lost its synchronization and causes
             // the MUC service to re-send the presence of each occupant in the
             // room.
-            lastPresenceSent.removeExtension(
-                MUCInitialPresence.ELEMENT, MUCInitialPresence.NAMESPACE);
+            lastPresenceSent.removeExtension(MUCInitialPresence.ELEMENT, MUCInitialPresence.NAMESPACE);
 
             // Remove the old extensions if present and override
             extensions.forEach(lastPresenceSent::overrideExtension);
@@ -837,8 +802,7 @@ public class MucClient
          */
         private void removePresenceExtension(String elementName, String namespace)
         {
-            if (lastPresenceSent != null
-                && lastPresenceSent.removeExtension(elementName, namespace) != null)
+            if (lastPresenceSent != null && lastPresenceSent.removeExtension(elementName, namespace) != null)
             {
                 try
                 {
