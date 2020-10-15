@@ -332,7 +332,7 @@ public class MucClient
         mucClientManager.getRegisteredIqs().forEach(this::registerIQ);
         setIQListener(mucClientManager.getIqListener());
 
-        logger.info("Dispatching thread o connect and login.");
+        logger.info("Dispatching a thread to connect and login.");
         this.connectRetry = new RetryStrategy(this.executor);
         this.connectRetry.runRetryingTask(new SimpleRetryTask(0, 5000, true, getConnectAndLoginCallable()));
     }
