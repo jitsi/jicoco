@@ -224,10 +224,7 @@ public class MucClient
     private void initializeConnectAndJoin()
         throws Exception
     {
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("Initializing a new MucClient for " + config);
-        }
+        logger.info("Initializing a new MucClient for " + config);
 
         if (!config.isComplete())
         {
@@ -265,10 +262,7 @@ public class MucClient
             @Override
             public void authenticated(XMPPConnection xmppConnection, boolean b)
             {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug("Authenticated, b=" + b);
-                }
+                logger.info("Authenticated, b=" + b);
                 try
                 {
                     joinMucs();
@@ -326,10 +320,7 @@ public class MucClient
             public void reconnectingIn(int i)
             {
                 mucs.values().forEach(MucWrapper::resetLastPresenceSent);
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug("Reconnecting in " + i);
-                }
+                logger.info("Reconnecting in " + i);
             }
 
             @Override
@@ -342,15 +333,8 @@ public class MucClient
         mucClientManager.getRegisteredIqs().forEach(this::registerIQ);
         setIQListener(mucClientManager.getIqListener());
 
-        // Note: the connected() and authenticated() callbacks execute
-        // synchronously, so this will also trigger the call to joinMucs()
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("About to connect and login.");
-        }
-
+        logger.info("Dispatching thread o connect and login.");
         this.connectRetry = new RetryStrategy(this.executor);
-
         this.connectRetry.runRetryingTask(new SimpleRetryTask(0, 5000, true, getConnectAndLoginCallable()));
     }
 
@@ -366,11 +350,6 @@ public class MucClient
                MultiUserChatException.NotAMucServiceException,
                XmppStringprepException
     {
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("About to join MUCs: " + config.getMucJids());
-        }
-
         for (String mucJidStr : config.getMucJids())
         {
             EntityBareJid mucJid = JidCreate.entityBareFrom(mucJidStr);
@@ -471,6 +450,11 @@ public class MucClient
      */
     public void setPresenceExtensions(Collection<ExtensionElement> extensions)
     {
+        if (!isConnected())
+        {
+            logger.warn("Cannot set presence extension: not connected.");
+            return;
+        }
         mucs.values().forEach(ms->ms.setPresenceExtensions(extensions));
     }
 
@@ -513,10 +497,7 @@ public class MucClient
                     @Override
                     public IQ handleIQRequest(IQ iqRequest)
                     {
-                        if (logger.isDebugEnabled())
-                        {
-                            logger.debug("Received an IQ with type " + type + ": " + iqRequest.toString());
-                        }
+                        logger.debug(() -> "Received an IQ with type " + type + ": " + iqRequest.toString());
                         return handleIq(iqRequest);
                     }
                 }
@@ -768,7 +749,7 @@ public class MucClient
         {
             if (lastPresenceSent == null)
             {
-                logger.debug(() -> "Not setting an extension yet, presence not sent.");
+                logger.warn(() -> "Cannot set presence extensions: no previous presence available.");
                 return;
             }
 
@@ -821,6 +802,7 @@ public class MucClient
          */
         private void resetLastPresenceSent()
         {
+            logger.debug("Resetting lastPresenceSent");
             lastPresenceSent = null;
         }
     }
