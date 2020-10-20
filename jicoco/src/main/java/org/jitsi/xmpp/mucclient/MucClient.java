@@ -630,7 +630,23 @@ public class MucClient
             if (!xmppConnection.isAuthenticated())
             {
                 logger.info("Logging in.");
-                xmppConnection.login();
+                try
+                {
+                    xmppConnection.login();
+                }
+                catch (SmackException.AlreadyLoggedInException e)
+                {
+                    logger.info("Already logged in.");
+                }
+                catch (Exception e)
+                {
+                    // We've observed the XMPPTCPConnection get in a broken state where it is connected, but unable to
+                    // login (because the locally cached SASL mechanisms supported by the server are empty). We
+                    // disconnect in order to trigger a re-connect and clear that state on the next attempt.
+                    logger.warn("Failed to login. Disconnecting to trigger a re-connect.");
+                    xmppConnection.disconnect();
+                    return true;
+                }
             }
 
             // The connection is successfully established but we need to keep
