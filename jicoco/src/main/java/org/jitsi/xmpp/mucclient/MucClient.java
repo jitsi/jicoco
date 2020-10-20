@@ -358,11 +358,11 @@ public class MucClient
     }
 
     /**
-     * Whether the XMPP connection is currently connected.
+     * Whether the XMPP connection is currently connected (and authenticated).
      */
     boolean isConnected()
     {
-        return xmppConnection != null && xmppConnection.isConnected();
+        return xmppConnection != null && xmppConnection.isConnected() && xmppConnection.isAuthenticated();
     }
 
     /**
