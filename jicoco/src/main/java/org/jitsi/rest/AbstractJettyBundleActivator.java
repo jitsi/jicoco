@@ -268,7 +268,7 @@ public abstract class AbstractJettyBundleActivator
         {
             // HTTPS
             File sslContextFactoryKeyStoreFile = Paths.get(Objects.requireNonNull(config.getKeyStorePath())).toFile();
-            SslContextFactory sslContextFactory = new SslContextFactory();
+            SslContextFactory sslContextFactory = new SslContextFactory.Server();
 
             /* Mozilla Guideline v5.4, Jetty 9.4.15, intermediate configuration
                https://ssl-config.mozilla.org/#server=jetty&version=9.4.15&config=intermediate&guideline=5.4
