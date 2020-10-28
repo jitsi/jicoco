@@ -18,7 +18,6 @@ package org.jitsi.config
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigResolveOptions
 import org.jitsi.metaconfig.ConfigSource
 import org.jitsi.service.configuration.ConfigurationService
 import org.jitsi.utils.logging2.LoggerImpl
