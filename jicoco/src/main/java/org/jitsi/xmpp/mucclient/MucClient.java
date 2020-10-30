@@ -263,14 +263,6 @@ public class MucClient
             public void authenticated(XMPPConnection xmppConnection, boolean b)
             {
                 logger.info("Authenticated, b=" + b);
-                try
-                {
-                    joinMucs();
-                }
-                catch(Exception e)
-                {
-                    throw new RuntimeException(e);
-                }
             }
 
             @Override
@@ -615,6 +607,16 @@ public class MucClient
                     // disconnect in order to trigger a re-connect and clear that state on the next attempt.
                     logger.warn("Failed to login. Disconnecting to trigger a re-connect.");
                     xmppConnection.disconnect();
+                    return true;
+                }
+
+                try
+                {
+                    joinMucs();
+                }
+                catch(Exception e)
+                {
+                    logger.warn("Failed to join the MUCs.", e);
                     return true;
                 }
             }
