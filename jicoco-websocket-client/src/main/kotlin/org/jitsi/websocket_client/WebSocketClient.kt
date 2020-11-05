@@ -150,11 +150,6 @@ class WebSocketClient(
         }
     }
 
-    enum class WsProtocol {
-        WS,
-        WSS
-    }
-
     private fun WsProtocol.toUrlProtocol(): URLProtocol {
         return when (this) {
             WsProtocol.WS -> URLProtocol.WS
