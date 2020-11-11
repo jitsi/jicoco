@@ -18,6 +18,14 @@ package org.jitsi.websocket_client
 
 enum class WsProtocol {
     WS,
-    WSS
+    WSS;
+
+    override fun toString(): String {
+        return when (this) {
+            WS -> "ws"
+            WSS -> "wss"
+
+        }
+    }
 }
 

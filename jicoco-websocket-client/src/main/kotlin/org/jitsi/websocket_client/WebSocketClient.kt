@@ -72,10 +72,13 @@ class WebSocketClient(
     private var wsSession: DefaultClientWebSocketSession? = null
 
     fun sendString(data: String) {
+        require(isConnected())
         coroutineScope.launch {
             msgsToSend.send(Frame.Text(data))
         }
     }
+
+    fun isConnected(): Boolean = wsSession != null
 
     // Starts the run loop for sending and receiving websocket messages
     private suspend fun DefaultClientWebSocketSession.startLoop() {
@@ -111,6 +114,7 @@ class WebSocketClient(
      * [SunCertPathBuilderException] WSS cert issue
      */
     fun connect(): Boolean {
+        logger.debug { "Connecting to $wsProtocol://$host:$port/$path" }
         return try {
             wsSession = runBlocking {
                 client.webSocketSession {
@@ -133,8 +137,8 @@ class WebSocketClient(
      * Start the (asynchronous) loops to handle sending and receiving messages
      */
     fun run() {
+        require(isConnected())
         coroutineScope.launch {
-            requireNotNull(wsSession)
             wsSession?.startLoop()
         }
     }
@@ -149,11 +153,11 @@ class WebSocketClient(
             job.cancelAndJoin()
         }
     }
+}
 
-    private fun WsProtocol.toUrlProtocol(): URLProtocol {
-        return when (this) {
-            WsProtocol.WS -> URLProtocol.WS
-            WsProtocol.WSS -> URLProtocol.WSS
-        }
+private fun WsProtocol.toUrlProtocol(): URLProtocol {
+    return when (this) {
+        WsProtocol.WS -> URLProtocol.WS
+        WsProtocol.WSS -> URLProtocol.WSS
     }
 }
