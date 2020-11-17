@@ -40,7 +40,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jitsi-utils.version>1.0-58-gaa5a28f</jitsi-utils.version>
+        <jitsi-utils.version>1.0-63-g0bddad1</jitsi-utils.version>
     </properties>
 
     <build>
