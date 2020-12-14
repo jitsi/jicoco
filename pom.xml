@@ -36,6 +36,7 @@
         <module>jicoco</module>
         <module>jicoco-test-kotlin</module>
         <module>jicoco-config</module>
+        <module>jicoco-websocket-client</module>
     </modules>
 
     <properties>
