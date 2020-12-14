@@ -25,9 +25,12 @@ import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.server.SslConnectionFactory
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
+import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.jitsi.utils.getJavaVersion
 import java.nio.file.Paths
+import java.util.EnumSet
+import javax.servlet.DispatcherType
 
 /**
  * Create a non-secure Jetty server instance listening on the given [port] and [host] address.
@@ -91,6 +94,7 @@ fun createSecureJettyServer(
     val server = Server().apply {
         handler = ServletContextHandler()
     }
+
     val connector = ServerConnector(
         server,
         SslConnectionFactory(
@@ -133,6 +137,15 @@ fun JettyBundleActivatorConfig.isEnabled(): Boolean = port != -1 || tlsPort != -
 // a ServletContextHandler handler.
 val Server.servletContextHandler: ServletContextHandler
     get() = handler as ServletContextHandler
+
+fun ServletContextHandler.enableCors(pathSpec: String = "/*") {
+    addFilter(CrossOriginFilter::class.java, pathSpec, EnumSet.of(DispatcherType.REQUEST)).apply {
+        setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*")
+        setInitParameter(CrossOriginFilter.ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*")
+        setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST")
+        setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM, "X-Requested-With,Content-Type,Accept,Origin")
+    }
+}
 
 fun Server.addServlet(servlet: ServletHolder, pathSpec: String) =
     this.servletContextHandler.addServlet(servlet, pathSpec)
