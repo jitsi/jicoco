@@ -15,18 +15,15 @@
  */
 package org.jitsi.rest;
 
-import org.junit.*;
-import org.junit.runner.*;
-import org.junit.runners.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Some test for JSON pattern matcher.
  *
  * @author Pawel Domas
  */
-@RunWith(JUnit4.class)
 public class RESTUtilTests
 {
     @Test

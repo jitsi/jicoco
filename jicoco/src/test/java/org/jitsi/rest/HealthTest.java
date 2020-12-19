@@ -21,11 +21,11 @@ import org.glassfish.hk2.utilities.binding.*;
 import org.glassfish.jersey.server.*;
 import org.glassfish.jersey.test.*;
 import org.jitsi.health.*;
-import org.junit.*;
 
 import javax.ws.rs.core.*;
+import org.junit.jupiter.api.*;
 
-import static junit.framework.TestCase.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class HealthTest extends JerseyTest
@@ -33,6 +33,22 @@ public class HealthTest extends JerseyTest
     protected HealthCheckServiceSupplier healthCheckServiceSupplier;
     protected HealthCheckService healthCheckService;
     protected static final String BASE_URL = "/about/health";
+
+    // See: https://github.com/eclipse-ee4j/jersey/issues/3662
+    // do not name this setup()
+    @BeforeEach
+    void beforeEach() throws Exception
+    {
+        super.setUp();
+    }
+
+    // See: https://github.com/eclipse-ee4j/jersey/issues/3662
+    // do not name this tearDown()
+    @AfterEach
+    void afterEach() throws Exception
+    {
+        super.tearDown();
+    }
 
     @Override
     protected Application configure()

@@ -15,25 +15,32 @@
  */
 package org.jitsi.retry;
 
-import org.junit.*;
-import org.junit.runner.*;
-import org.junit.runners.*;
-
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+import org.jitsi.retry.RetryStrategy.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-/**
- *
- */
-@RunWith(JUnit4.class)
 public class RetryStrategyTest
 {
     @Test
     public void testRetryCount()
-        throws InterruptedException
     {
-        RetryStrategy retryStrategy = new RetryStrategy();
+        AtomicInteger scheduleCalls = new AtomicInteger();
+        AtomicReference<TaskRunner> runner = new AtomicReference<>();
+        ScheduledExecutorService mockedExecutor = mock(ScheduledExecutorService.class);
+        when(mockedExecutor.schedule(any(TaskRunner.class), anyLong(), eq(TimeUnit.MILLISECONDS))).then(a -> {
+            scheduleCalls.getAndIncrement();
+            runner.set((TaskRunner) a.getArguments()[0]);
+            return null;
+        });
+        RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
 
         long initialDelay = 150L;
         long retryDelay = 50L;
@@ -43,31 +50,46 @@ public class RetryStrategyTest
             = new TestCounterTask(
                     initialDelay, retryDelay, false, targetRetryCount);
 
-        retryStrategy.runRetryingTask(retryTask);
+        // must not schedule on construction
+        assertEquals(0, scheduleCalls.get());
 
-        // Check if the task has not been executed before initial delay
+        // do schedule now
+        retryStrategy.runRetryingTask(retryTask);
+        assertEquals(1, scheduleCalls.get());
+
+        // Check that is scheduled, not immediately executed on the same thread
         assertEquals(0, retryTask.counter);
 
-        Thread.sleep(initialDelay + 10L);
+        // simulate execution
+        runner.get().run();
 
         // Should be 1 after 1st pass
         assertEquals(1, retryTask.counter);
 
-        // Now sleep two time retry delay
-        Thread.sleep(retryDelay * 2L + 10L);
+        // Now schedule and run two more times
+        assertEquals(2, scheduleCalls.get());
+        runner.get().run();
+        assertEquals(3, scheduleCalls.get());
+        runner.get().run();
         assertEquals(3, retryTask.counter);
 
-        // Sleep a bit more to check if it has stopped
-        Thread.sleep(retryDelay + 10L);
+        // check if it has stopped
+        assertEquals(3, scheduleCalls.get());
         assertEquals(3, retryTask.counter);
-
     }
 
     @Test
     public void testRetryWithException()
-        throws InterruptedException
     {
-        RetryStrategy retryStrategy = new RetryStrategy();
+        AtomicInteger scheduleCalls = new AtomicInteger();
+        AtomicReference<TaskRunner> runner = new AtomicReference<>();
+        ScheduledExecutorService mockedExecutor = mock(ScheduledExecutorService.class);
+        when(mockedExecutor.schedule(any(TaskRunner.class), anyLong(), eq(TimeUnit.MILLISECONDS))).then(a -> {
+            scheduleCalls.getAndIncrement();
+            runner.set((TaskRunner) a.getArguments()[0]);
+            return null;
+        });
+        RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
 
         long initialDelay = 30L;
         long retryDelay = 50L;
@@ -81,8 +103,10 @@ public class RetryStrategyTest
         retryTask.exceptionOnCount = 1;
 
         retryStrategy.runRetryingTask(retryTask);
-
-        Thread.sleep(initialDelay + 3L * retryDelay + 20L);
+        assertEquals(1, scheduleCalls.get());
+        runner.get().run();
+        assertEquals(2, scheduleCalls.get());
+        runner.get().run();
 
         assertEquals(1, retryTask.counter);
 
@@ -97,17 +121,31 @@ public class RetryStrategyTest
         retryTask.setRetryAfterException(true);
 
         retryStrategy.runRetryingTask(retryTask);
+        assertEquals(3, scheduleCalls.get());
+        runner.get().run();
 
-        Thread.sleep(initialDelay + 4L * retryDelay);
+        assertEquals(4, scheduleCalls.get());
+        runner.get().run();
+        assertEquals(5, scheduleCalls.get());
+        runner.get().run();
+        assertEquals(6, scheduleCalls.get());
+        runner.get().run();
 
-        assertEquals(3 , retryTask.counter);
+        assertEquals(3, retryTask.counter);
     }
 
     @Test
     public void testCancel()
-        throws InterruptedException
     {
-        RetryStrategy retryStrategy = new RetryStrategy();
+        AtomicInteger scheduleCalls = new AtomicInteger();
+        AtomicReference<TaskRunner> runner = new AtomicReference<>();
+        ScheduledExecutorService mockedExecutor = mock(ScheduledExecutorService.class);
+        when(mockedExecutor.schedule(any(TaskRunner.class), anyLong(), eq(TimeUnit.MILLISECONDS))).then(a -> {
+            scheduleCalls.getAndIncrement();
+            runner.set((TaskRunner) a.getArguments()[0]);
+            return null;
+        });
+        RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
 
         long initialDelay = 30L;
         long retryDelay = 50L;
@@ -118,19 +156,17 @@ public class RetryStrategyTest
                     initialDelay, retryDelay, false, targetRetryCount);
 
         retryStrategy.runRetryingTask(retryTask);
-
-        Thread.sleep(initialDelay + 10L);
+        assertEquals(1, scheduleCalls.get());
+        runner.get().run();
+        assertEquals(1, retryTask.counter);
+        assertEquals(2, scheduleCalls.get());
 
         retryStrategy.cancel();
-
-        assertEquals(1, retryTask.counter);
-
-        Thread.sleep(2L * retryDelay);
-
-        assertEquals(1, retryTask.counter);
+        assertEquals(2, scheduleCalls.get());
+        assertTrue(retryTask.isCancelled());
     }
 
-    private class TestCounterTask
+    private static class TestCounterTask
         extends RetryTask
     {
         int counter;
@@ -169,7 +205,7 @@ public class RetryStrategyTest
                         // Will not throw on next attempt
                         exceptionOnCount = -1;
                         // Throw error
-                        throw new Exception("Unexpected error in retry job");
+                        throw new Exception("Simulated error in retry job");
                     }
 
                     // Retry as long as the counter stays below the target
