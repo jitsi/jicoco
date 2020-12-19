@@ -85,8 +85,8 @@ public abstract class ComponentBase
 
     /**
      * The name of subdomain on which this component will be available.
-     * So the JID of component will be constructed as follows:<br/>
-     * {@link #domain} + ". " + <tt>subdomain</tt><br/>
+     * So the JID of component will be constructed as follows:<br><br>
+     * {@link #domain} + ". " + <tt>subdomain</tt><br><br>
      * eg. "jicofo" + "." + "example.com" = "jicofo.example.com"
      */
     private final String subdomain;
