@@ -287,35 +287,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>release</id>
-            <build>
-                <plugins>
-                    <!--
-                     This project has Kotlin sources and should use Dokka. Dokka fails with a weird
-                     exception however, similar to https://github.com/Kotlin/dokka/issues/1599.
-                     Thus for now, create Java Javadoc only.
-                    -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.2.0</version>
-                        <configuration>
-                            <doclint>-missing</doclint>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>javadoc</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

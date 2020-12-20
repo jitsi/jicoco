@@ -89,8 +89,8 @@
         <pluginManagement>
             <plugins>
                 <!--
-                 Dokka is not added as plugin for all projects because it fails
-                 for jicoco, see comment there.
+                 Dokka is not added as plugin for all projects because it randomly fails
+                 for jicoco, see also https://github.com/Kotlin/dokka/issues/1599
                 -->
                 <plugin>
                     <groupId>org.jetbrains.dokka</groupId>
@@ -98,22 +98,14 @@
                     <version>${dokka.version}</version>
                     <executions>
                         <execution>
-                            <phase>prepare-package</phase>
+                            <phase>package</phase>
                             <goals>
-                                <goal>dokka</goal>
-                                <goal>javadoc</goal>
                                 <goal>javadocJar</goal>
                             </goals>
                         </execution>
                     </executions>
                     <configuration>
-                        <dokkaPlugins>
-                            <plugin>
-                                <groupId>org.jetbrains.dokka</groupId>
-                                <artifactId>kotlin-as-java-plugin</artifactId>
-                                <version>${dokka.version}</version>
-                            </plugin>
-                        </dokkaPlugins>
+                        <languageVersion>1.3</languageVersion>
                     </configuration>
                 </plugin>
             </plugins>
