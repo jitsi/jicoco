@@ -52,8 +52,7 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
      */
     stickyFailuresGracePeriod: Duration = stickyFailuresGracePeriodDefault,
     clock: Clock = Clock.systemUTC()
-): BundleActivator
-{
+) : BundleActivator {
     private val healthCheck = HealthChecker(
         interval,
         timeout,
@@ -64,15 +63,13 @@ abstract class AbstractHealthCheckService @JvmOverloads constructor(
         clock = clock
     )
     @Throws(Exception::class)
-    override fun start(bundleContext: BundleContext)
-    {
+    override fun start(bundleContext: BundleContext) {
         bundleContext.registerService(HealthCheckService::class.java, healthCheck, null)
         healthCheck.start()
     }
 
     @Throws(Exception::class)
-    override fun stop(bundleContext: BundleContext)
-    {
+    override fun stop(bundleContext: BundleContext) {
     }
 
     /**
