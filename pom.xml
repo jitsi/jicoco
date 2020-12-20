@@ -131,9 +131,8 @@
                 <version>1.7.0</version>
                 <executions>
                     <execution>
-                        <id>format-and-check</id>
+                        <id>check</id>
                         <goals>
-                            <goal>format</goal>
                             <goal>check</goal>
                         </goals>
                     </execution>
