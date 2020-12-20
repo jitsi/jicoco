@@ -121,6 +121,14 @@
                 <groupId>com.github.gantsign.maven</groupId>
                 <artifactId>ktlint-maven-plugin</artifactId>
                 <version>1.7.0</version>
+                <configuration>
+                    <sourceRoots>
+                        <sourceRoot>${project.basedir}/src/main/kotlin</sourceRoot>
+                    </sourceRoots>
+                    <testSourceRoots>
+                        <testSourceRoot>${project.basedir}/src/test/kotlin</testSourceRoot>
+                    </testSourceRoots>
+                </configuration>
                 <executions>
                     <execution>
                         <id>check</id>
