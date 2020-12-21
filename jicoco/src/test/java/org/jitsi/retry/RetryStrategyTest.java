@@ -15,31 +15,25 @@
  */
 package org.jitsi.retry;
 
+import java.time.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import org.jitsi.retry.RetryStrategy.*;
+import org.jitsi.test.concurrent.*;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class RetryStrategyTest
 {
     @Test
     public void testRetryCount()
     {
-        AtomicInteger scheduleCalls = new AtomicInteger();
-        AtomicReference<TaskRunner> runner = new AtomicReference<>();
-        ScheduledExecutorService mockedExecutor = mock(ScheduledExecutorService.class);
-        when(mockedExecutor.schedule(any(TaskRunner.class), anyLong(), eq(TimeUnit.MILLISECONDS))).then(a -> {
-            scheduleCalls.getAndIncrement();
-            runner.set((TaskRunner) a.getArguments()[0]);
-            return null;
-        });
+        FakeScheduledExecutorService mockedExecutor = mock(
+            FakeScheduledExecutorService.class,
+            withSettings()
+                .useConstructor()
+                .defaultAnswer(CALLS_REAL_METHODS)
+        );
         RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
 
         long initialDelay = 150L;
@@ -50,45 +44,40 @@ public class RetryStrategyTest
             = new TestCounterTask(
                     initialDelay, retryDelay, false, targetRetryCount);
 
-        // must not schedule on construction
-        assertEquals(0, scheduleCalls.get());
-
-        // do schedule now
         retryStrategy.runRetryingTask(retryTask);
-        assertEquals(1, scheduleCalls.get());
+        mockedExecutor.run();
 
-        // Check that is scheduled, not immediately executed on the same thread
+        // Check if the task has not been executed before initial delay
         assertEquals(0, retryTask.counter);
 
-        // simulate execution
-        runner.get().run();
+        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        mockedExecutor.run();
 
         // Should be 1 after 1st pass
         assertEquals(1, retryTask.counter);
 
-        // Now schedule and run two more times
-        assertEquals(2, scheduleCalls.get());
-        runner.get().run();
-        assertEquals(3, scheduleCalls.get());
-        runner.get().run();
+        // Now sleep two time retry delay
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+        mockedExecutor.run();
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+        mockedExecutor.run();
         assertEquals(3, retryTask.counter);
 
-        // check if it has stopped
-        assertEquals(3, scheduleCalls.get());
+        // Sleep a bit more to check if it has stopped
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+        mockedExecutor.run();
         assertEquals(3, retryTask.counter);
     }
 
     @Test
     public void testRetryWithException()
     {
-        AtomicInteger scheduleCalls = new AtomicInteger();
-        AtomicReference<TaskRunner> runner = new AtomicReference<>();
-        ScheduledExecutorService mockedExecutor = mock(ScheduledExecutorService.class);
-        when(mockedExecutor.schedule(any(TaskRunner.class), anyLong(), eq(TimeUnit.MILLISECONDS))).then(a -> {
-            scheduleCalls.getAndIncrement();
-            runner.set((TaskRunner) a.getArguments()[0]);
-            return null;
-        });
+        FakeScheduledExecutorService mockedExecutor = mock(
+            FakeScheduledExecutorService.class,
+            withSettings()
+                .useConstructor()
+                .defaultAnswer(CALLS_REAL_METHODS)
+        );
         RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
 
         long initialDelay = 30L;
@@ -103,10 +92,14 @@ public class RetryStrategyTest
         retryTask.exceptionOnCount = 1;
 
         retryStrategy.runRetryingTask(retryTask);
-        assertEquals(1, scheduleCalls.get());
-        runner.get().run();
-        assertEquals(2, scheduleCalls.get());
-        runner.get().run();
+
+        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        mockedExecutor.run();
+        for (int i = 0; i < 3; i++)
+        {
+            mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+            mockedExecutor.run();
+        }
 
         assertEquals(1, retryTask.counter);
 
@@ -121,15 +114,15 @@ public class RetryStrategyTest
         retryTask.setRetryAfterException(true);
 
         retryStrategy.runRetryingTask(retryTask);
-        assertEquals(3, scheduleCalls.get());
-        runner.get().run();
 
-        assertEquals(4, scheduleCalls.get());
-        runner.get().run();
-        assertEquals(5, scheduleCalls.get());
-        runner.get().run();
-        assertEquals(6, scheduleCalls.get());
-        runner.get().run();
+
+        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        mockedExecutor.run();
+        for (int i = 0; i < 4; i++)
+        {
+            mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+            mockedExecutor.run();
+        }
 
         assertEquals(3, retryTask.counter);
     }
@@ -137,14 +130,12 @@ public class RetryStrategyTest
     @Test
     public void testCancel()
     {
-        AtomicInteger scheduleCalls = new AtomicInteger();
-        AtomicReference<TaskRunner> runner = new AtomicReference<>();
-        ScheduledExecutorService mockedExecutor = mock(ScheduledExecutorService.class);
-        when(mockedExecutor.schedule(any(TaskRunner.class), anyLong(), eq(TimeUnit.MILLISECONDS))).then(a -> {
-            scheduleCalls.getAndIncrement();
-            runner.set((TaskRunner) a.getArguments()[0]);
-            return null;
-        });
+        FakeScheduledExecutorService mockedExecutor = mock(
+            FakeScheduledExecutorService.class,
+            withSettings()
+                .useConstructor()
+                .defaultAnswer(CALLS_REAL_METHODS)
+        );
         RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
 
         long initialDelay = 30L;
@@ -156,14 +147,20 @@ public class RetryStrategyTest
                     initialDelay, retryDelay, false, targetRetryCount);
 
         retryStrategy.runRetryingTask(retryTask);
-        assertEquals(1, scheduleCalls.get());
-        runner.get().run();
-        assertEquals(1, retryTask.counter);
-        assertEquals(2, scheduleCalls.get());
+
+        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        mockedExecutor.run();
 
         retryStrategy.cancel();
-        assertEquals(2, scheduleCalls.get());
-        assertTrue(retryTask.isCancelled());
+
+        assertEquals(1, retryTask.counter);
+
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay));
+        mockedExecutor.run();
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay));
+        mockedExecutor.run();
+
+        assertEquals(1, retryTask.counter);
     }
 
     private static class TestCounterTask
@@ -194,25 +191,19 @@ public class RetryStrategyTest
         @Override
         public Callable<Boolean> getCallable()
         {
-            return new Callable<Boolean>()
+            return () ->
             {
-                @Override
-                public Boolean call()
-                    throws Exception
+                if (exceptionOnCount == counter)
                 {
-                    if (exceptionOnCount == counter)
-                    {
-                        // Will not throw on next attempt
-                        exceptionOnCount = -1;
-                        // Throw error
-                        throw new Exception("Simulated error in retry job");
-                    }
-
-                    // Retry as long as the counter stays below the target
-                    return ++counter < targetRetryCount;
+                    // Will not throw on next attempt
+                    exceptionOnCount = -1;
+                    // Throw error
+                    throw new Exception("Simulated error in retry job");
                 }
+
+                // Retry as long as the counter stays below the target
+                return ++counter < targetRetryCount;
             };
         }
     }
-
 }
