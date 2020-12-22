@@ -136,7 +136,7 @@ public class MucClientConfiguration
 
     /**
      * Loads a list of {@link MucClientConfiguration} objects based on
-     * properties in a {@link Map<String, String>} with a given {@code prefix}.
+     * properties in a {@link Map} with a given {@code prefix}.
      *
      * The properties can be described with map entries like this for an
      * ID of "":

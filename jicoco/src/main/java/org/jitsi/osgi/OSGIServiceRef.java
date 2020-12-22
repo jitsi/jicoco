@@ -20,13 +20,14 @@ import org.osgi.framework.*;
 /**
  * Class can be used for lazy OSGi service reference. The intention is to
  * replace common code:
- * <p><code>
- * if (configService == null)<br/>
- * {<br/>
- *     configService = ServiceUtil.getService(...);<br/>
- * }<br/>
- * return configService;<br/>
- * </code></p>
+ *
+ * <pre>
+ * if (configService == null)
+ * {
+ *     configService = ServiceUtil.getService(...);
+ * }
+ * return configService;
+ * </pre>
  *
  * @author Pawel Domas
  */

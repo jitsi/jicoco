@@ -92,7 +92,8 @@ class HealthChecker(
      * The interval at which health checks will be performed.
      */
     var interval: Duration by Delegates.observable(interval) {
-        _, _, newValue -> period = newValue.toMillis()
+        _, _, newValue ->
+        period = newValue.toMillis()
     }
 
     /**
@@ -109,13 +110,13 @@ class HealthChecker(
     }
 
     fun start() {
-        if (executor == null)
-        {
+        if (executor == null) {
             executor = RecurringRunnableExecutor(javaClass.name)
         }
         executor!!.registerRecurringRunnable(this)
 
-        logger.info("Started with interval=$period, timeout=$timeout, " +
+        logger.info(
+            "Started with interval=$period, timeout=$timeout, " +
                 "maxDuration=$maxCheckDuration, stickyFailures=$stickyFailures."
         )
     }

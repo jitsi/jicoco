@@ -15,18 +15,10 @@
  */
 package org.jitsi.cmd;
 
-import org.junit.*;
-import org.junit.runner.*;
-import org.junit.runners.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.junit.jupiter.api.*;
 
-/**
- *
- * @author Pawel Domas
- */
-@RunWith(JUnit4.class)
 public class CmdLineArgsTest
 {
     /**
@@ -90,6 +82,4 @@ public class CmdLineArgsTest
                 e.getMessage());
         }
     }
-
-
 }

@@ -15,25 +15,26 @@
  */
 package org.jitsi.retry;
 
-import org.junit.*;
-import org.junit.runner.*;
-import org.junit.runners.*;
-
+import java.time.*;
 import java.util.concurrent.*;
+import org.jitsi.test.concurrent.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-/**
- *
- */
-@RunWith(JUnit4.class)
 public class RetryStrategyTest
 {
     @Test
     public void testRetryCount()
-        throws InterruptedException
     {
-        RetryStrategy retryStrategy = new RetryStrategy();
+        FakeScheduledExecutorService mockedExecutor = mock(
+            FakeScheduledExecutorService.class,
+            withSettings()
+                .useConstructor()
+                .defaultAnswer(CALLS_REAL_METHODS)
+        );
+        RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
 
         long initialDelay = 150L;
         long retryDelay = 50L;
@@ -44,30 +45,40 @@ public class RetryStrategyTest
                     initialDelay, retryDelay, false, targetRetryCount);
 
         retryStrategy.runRetryingTask(retryTask);
+        mockedExecutor.run();
 
         // Check if the task has not been executed before initial delay
         assertEquals(0, retryTask.counter);
 
-        Thread.sleep(initialDelay + 10L);
+        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        mockedExecutor.run();
 
         // Should be 1 after 1st pass
         assertEquals(1, retryTask.counter);
 
         // Now sleep two time retry delay
-        Thread.sleep(retryDelay * 2L + 10L);
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+        mockedExecutor.run();
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+        mockedExecutor.run();
         assertEquals(3, retryTask.counter);
 
         // Sleep a bit more to check if it has stopped
-        Thread.sleep(retryDelay + 10L);
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+        mockedExecutor.run();
         assertEquals(3, retryTask.counter);
-
     }
 
     @Test
     public void testRetryWithException()
-        throws InterruptedException
     {
-        RetryStrategy retryStrategy = new RetryStrategy();
+        FakeScheduledExecutorService mockedExecutor = mock(
+            FakeScheduledExecutorService.class,
+            withSettings()
+                .useConstructor()
+                .defaultAnswer(CALLS_REAL_METHODS)
+        );
+        RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
 
         long initialDelay = 30L;
         long retryDelay = 50L;
@@ -82,7 +93,13 @@ public class RetryStrategyTest
 
         retryStrategy.runRetryingTask(retryTask);
 
-        Thread.sleep(initialDelay + 3L * retryDelay + 20L);
+        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        mockedExecutor.run();
+        for (int i = 0; i < 3; i++)
+        {
+            mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+            mockedExecutor.run();
+        }
 
         assertEquals(1, retryTask.counter);
 
@@ -98,16 +115,28 @@ public class RetryStrategyTest
 
         retryStrategy.runRetryingTask(retryTask);
 
-        Thread.sleep(initialDelay + 4L * retryDelay);
 
-        assertEquals(3 , retryTask.counter);
+        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        mockedExecutor.run();
+        for (int i = 0; i < 4; i++)
+        {
+            mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+            mockedExecutor.run();
+        }
+
+        assertEquals(3, retryTask.counter);
     }
 
     @Test
     public void testCancel()
-        throws InterruptedException
     {
-        RetryStrategy retryStrategy = new RetryStrategy();
+        FakeScheduledExecutorService mockedExecutor = mock(
+            FakeScheduledExecutorService.class,
+            withSettings()
+                .useConstructor()
+                .defaultAnswer(CALLS_REAL_METHODS)
+        );
+        RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
 
         long initialDelay = 30L;
         long retryDelay = 50L;
@@ -119,18 +148,22 @@ public class RetryStrategyTest
 
         retryStrategy.runRetryingTask(retryTask);
 
-        Thread.sleep(initialDelay + 10L);
+        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        mockedExecutor.run();
 
         retryStrategy.cancel();
 
         assertEquals(1, retryTask.counter);
 
-        Thread.sleep(2L * retryDelay);
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay));
+        mockedExecutor.run();
+        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay));
+        mockedExecutor.run();
 
         assertEquals(1, retryTask.counter);
     }
 
-    private class TestCounterTask
+    private static class TestCounterTask
         extends RetryTask
     {
         int counter;
@@ -158,25 +191,19 @@ public class RetryStrategyTest
         @Override
         public Callable<Boolean> getCallable()
         {
-            return new Callable<Boolean>()
+            return () ->
             {
-                @Override
-                public Boolean call()
-                    throws Exception
+                if (exceptionOnCount == counter)
                 {
-                    if (exceptionOnCount == counter)
-                    {
-                        // Will not throw on next attempt
-                        exceptionOnCount = -1;
-                        // Throw error
-                        throw new Exception("Unexpected error in retry job");
-                    }
-
-                    // Retry as long as the counter stays below the target
-                    return ++counter < targetRetryCount;
+                    // Will not throw on next attempt
+                    exceptionOnCount = -1;
+                    // Throw error
+                    throw new Exception("Simulated error in retry job");
                 }
+
+                // Retry as long as the counter stays below the target
+                return ++counter < targetRetryCount;
             };
         }
     }
-
 }

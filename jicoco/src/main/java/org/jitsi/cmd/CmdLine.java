@@ -23,9 +23,11 @@ import java.util.*;
 /**
  * Utility class for parsing command line arguments that take some value.
  * Arguments can have one of the following formats:
+ * <ul>
  * <li>"arg=value"</li>
  * <li>"-arg=value"</li>
  * <li>"--arg=value"</li>
+ * </ul>
  * It's also possible to specify required arguments. If any of required
  * arguments is not found {@link ParseException} will be thrown by
  * {@link #parse(String[])}.
