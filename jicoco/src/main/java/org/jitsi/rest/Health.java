@@ -16,9 +16,9 @@
 
 package org.jitsi.rest;
 
+import org.jetbrains.annotations.*;
 import org.jitsi.health.*;
 
-import javax.inject.*;
 import javax.servlet.http.*;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -31,20 +31,19 @@ import javax.ws.rs.core.*;
 @Path("/about/health")
 public class Health
 {
-    @Inject
-    protected HealthCheckServiceSupplier healthCheckServiceSupplier;
+    @NotNull
+    private final HealthCheckService healthCheckService;
+
+    public Health(@NotNull HealthCheckService healthCheckService)
+    {
+        this.healthCheckService = healthCheckService;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getHealth()
     {
-        HealthCheckService healthCheckService = healthCheckServiceSupplier.get();
-        if (healthCheckService == null)
-        {
-            throw new NotFoundException();
-        }
-
-        Exception status = healthCheckServiceSupplier.get().getResult();
+        Exception status = healthCheckService.getResult();
         if (status != null)
         {
             return Response
