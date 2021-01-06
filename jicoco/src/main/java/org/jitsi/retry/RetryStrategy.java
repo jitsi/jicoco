@@ -15,9 +15,7 @@
  */
 package org.jitsi.retry;
 
-import org.jitsi.osgi.*;
 import org.jitsi.utils.logging.*;
-import org.osgi.framework.*;
 
 import java.util.concurrent.*;
 
@@ -77,32 +75,6 @@ public class RetryStrategy
     }
 
     /**
-     * Creates new <tt>RetryStrategy</tt> instance that will use
-     * <tt>ScheduledExecutorService</tt> obtained from given OSGi
-     * <tt>osgiContext</tt>.
-     *
-     * @param osgiContext OSGi context that should contain registered
-     *                    <tt>ScheduledExecutorService</tt> service instance.
-     *
-     * @throws IllegalArgumentException if given <tt>osgiContext</tt> does not
-     *         have any <tt>ScheduledExecutorService</tt> service instances
-     *         registered.
-     */
-    public RetryStrategy(BundleContext osgiContext)
-        throws IllegalArgumentException
-    {
-        this.executor
-            = ServiceUtils2.getService(
-                    osgiContext,
-                    ScheduledExecutorService.class);
-
-        if (executor == null)
-            throw new IllegalArgumentException(
-                "Failed to obtain ScheduledExecutorService" +
-                    " from given OSGi context");
-    }
-
-    /**
      * Creates new instance of <tt>RetryStrategy</tt> that will use given
      * <tt>ScheduledExecutorService</tt> to schedule retry attempts.
      *
@@ -115,7 +87,9 @@ public class RetryStrategy
     public RetryStrategy(ScheduledExecutorService retryExecutor)
     {
         if (retryExecutor == null)
+        {
             throw new NullPointerException("executor");
+        }
 
         this.executor = retryExecutor;
     }
