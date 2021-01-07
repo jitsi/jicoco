@@ -17,41 +17,31 @@
 package org.jitsi.rest;
 
 import com.fasterxml.jackson.annotation.*;
-import org.jitsi.utils.version.*;
-import org.jitsi.version.*;
+import org.jetbrains.annotations.*;
 
-import javax.inject.*;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
 /**
- * A generic version REST endpoint which pulls version information from
- * a {@link VersionService}, if one is present.  Otherwise returns
- * {@link Version#UNKNOWN_VERSION}
+ * A generic version REST endpoint.
  *
  */
 @Path("/about/version")
 public class Version
 {
-    @Inject
-    protected VersionServiceSupplier versionServiceSupplier;
+    @NotNull
+    private final VersionInfo versionInfo;
+
+    public Version(@NotNull org.jitsi.utils.version.Version version)
+    {
+        versionInfo = new VersionInfo(version.getApplicationName(), version.toString(), System.getProperty("os.name"));
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public VersionInfo getVersion()
     {
-        VersionService versionService = versionServiceSupplier.get();
-        if (versionService == null)
-        {
-            return UNKNOWN_VERSION;
-        }
-        org.jitsi.utils.version.Version version = versionService.getCurrentVersion();
-
-        return new VersionInfo(
-            version.getApplicationName(),
-            version.toString(),
-            System.getProperty("os.name")
-        );
+        return versionInfo;
     }
 
     static class VersionInfo {
@@ -67,6 +57,4 @@ public class Version
             this.os = os;
         }
     }
-
-    protected static VersionInfo UNKNOWN_VERSION = new VersionInfo("", "", "");
 }

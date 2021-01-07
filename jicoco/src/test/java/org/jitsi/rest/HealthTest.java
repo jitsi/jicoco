@@ -17,7 +17,6 @@
 package org.jitsi.rest;
 
 import org.eclipse.jetty.http.*;
-import org.glassfish.hk2.utilities.binding.*;
 import org.glassfish.jersey.server.*;
 import org.glassfish.jersey.test.*;
 import org.jitsi.health.*;
@@ -30,7 +29,6 @@ import static org.mockito.Mockito.*;
 
 public class HealthTest extends JerseyTest
 {
-    protected HealthCheckServiceSupplier healthCheckServiceSupplier;
     protected HealthCheckService healthCheckService;
     protected static final String BASE_URL = "/about/health";
 
@@ -53,23 +51,13 @@ public class HealthTest extends JerseyTest
     @Override
     protected Application configure()
     {
-        healthCheckServiceSupplier = mock(HealthCheckServiceSupplier.class);
         healthCheckService = mock(HealthCheckService.class);
-        when(healthCheckServiceSupplier.get()).thenReturn(healthCheckService);
 
         enable(TestProperties.LOG_TRAFFIC);
         enable(TestProperties.DUMP_ENTITY);
         return new ResourceConfig() {
             {
-                register(new AbstractBinder()
-                {
-                    @Override
-                    protected void configure()
-                    {
-                        bind(healthCheckServiceSupplier).to(HealthCheckServiceSupplier.class);
-                    }
-                });
-                register(Health.class);
+                register(new Health(healthCheckService));
             }
         };
     }
