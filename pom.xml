@@ -234,6 +234,8 @@
 
             <modules>
                 <module>jicoco</module>
+                <module>jicoco-config</module>
+                <module>jicoco-test-kotlin</module>
             </modules>
 
             <repositories>
