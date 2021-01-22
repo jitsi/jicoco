@@ -69,7 +69,7 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>jitsi-utils</artifactId>
-                <version>1.0-72-gcf6d1f8</version>
+                <version>1.0-74-g0d09c0e</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.jetbrains.kotlin</groupId>
@@ -234,6 +234,8 @@
 
             <modules>
                 <module>jicoco</module>
+                <module>jicoco-config</module>
+                <module>jicoco-test-kotlin</module>
             </modules>
 
             <repositories>
