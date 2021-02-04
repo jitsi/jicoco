@@ -86,4 +86,6 @@ class JettyBundleActivatorConfig(
         "$newPropertyPrefix.tls-port".from(JitsiConfig.newConfig)
         "default" { 8443 }
     }
+
+    override fun toString() = "host=$host, port=$port, tlsPort=$tlsPort, isTls=$isTls, keyStorePath=$keyStorePath"
 }
