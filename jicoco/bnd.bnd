@@ -1,4 +1,4 @@
-Export-Package: org.jitsi.*
+Export-Package: org.jitsi.assertions,org.jitsi.cmd,org.jitsi.health,org.jitsi.meet,org.jitsi.rest,org.jitsi.retry,org.jitsi.xmpp,org.jitsi.shutdown
 Import-Package: *;version=!
 Bundle-SymbolicName: org.jitsi.jicoco
 -noextraheaders: true
