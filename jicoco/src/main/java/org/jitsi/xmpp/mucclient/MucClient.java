@@ -296,7 +296,7 @@ public class MucClient
             }
         });
 
-        mucClientManager.getRegisteredIqs().forEach(this::registerIQ);
+        mucClientManager.getRegisteredIqs().entrySet().forEach(e -> registerIQ(e.getKey(), e.getValue()));
         setIQListener(mucClientManager.getIqListener());
 
         logger.info("Dispatching a thread to connect and login.");
@@ -446,10 +446,11 @@ public class MucClient
     /**
      * Indicates to this instance that the {@link #iqListener} is interested
      * in IQs of a specific type, represented as an {@link IQ} instance.
-     * @param iq the IQ which represents the IQ type (i.e. an element name and
-     * a namespace).
+     * @param iq the IQ which represents the IQ type (i.e. an element name and a namespace).
+     * @param requireResponse whether to send an error stanza as a response if the {@link IQListener} produces
+     * {@code null} for requests of this type.
      */
-    void registerIQ(IQ iq)
+    void registerIQ(IQ iq, boolean requireResponse)
     {
         for (IQ.Type type : IQ_TYPES)
         {
@@ -463,7 +464,7 @@ public class MucClient
                     public IQ handleIQRequest(IQ iqRequest)
                     {
                         logger.debug(() -> "Received an IQ with type " + type + ": " + iqRequest.toString());
-                        return handleIq(iqRequest);
+                        return handleIq(iqRequest, requireResponse);
                     }
                 }
             );
@@ -474,9 +475,11 @@ public class MucClient
      * Handles an IQ received from Smack by passing it to the listener which is
      * registered.
      * @param iq the IQ to handle.
+     * @param requireResponse whether to send an error stanza as a response if the {@link IQListener} produces
+     * {@code null}.
      * @return the response.
      */
-    private IQ handleIq(IQ iq)
+    private IQ handleIq(IQ iq, boolean requireResponse)
     {
         IQ responseIq = null;
 
@@ -507,7 +510,7 @@ public class MucClient
             }
         }
 
-        if (responseIq == null)
+        if (requireResponse && responseIq == null)
         {
             logger.info(
                     "Failed to produce a response for IQ, returning internal server error. Request: " +iq.toString());
