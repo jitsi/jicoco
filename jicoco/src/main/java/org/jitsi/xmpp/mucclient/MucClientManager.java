@@ -62,10 +62,9 @@ public class MucClientManager
     private IQListener iqListener;
 
     /**
-     * The list of IQs which {@link #iqListener} is interested in
-     * receiving, represented by {@link IQ} instances.
+     * The list of IQs which {@link #iqListener} is interested in receiving, represented by {@link IQ} instances.
      */
-    private List<IQ> registeredIqs = new LinkedList<>();
+    private Map<IQ, Boolean> registeredIqs = new HashMap<>();
 
     /**
      * The list of extensions to be added to the presence in the MUC in each
@@ -249,15 +248,27 @@ public class MucClientManager
      * represented in an {@link IQ}.
      *
      * @param iq the IQ which represents a [element name, namespace] pair.
+     * @param requireResponse whether to send an error stanza as a response if the {@link IQListener} produces
+     * {@code null} for requests of this type. Using {@code false} allows asynchronous handling of the request.
      */
-    public void registerIQ(IQ iq)
+    public void registerIQ(IQ iq, boolean requireResponse)
     {
         synchronized (syncRoot)
         {
-            registeredIqs.add(iq);
+            registeredIqs.put(iq, requireResponse);
             mucClients.values()
-                .forEach(mucClient -> mucClient.registerIQ(iq));
+                .forEach(mucClient -> mucClient.registerIQ(iq, requireResponse));
         }
+    }
+
+    public void registerIQ(IQ iq)
+    {
+        registerIQ(iq, true);
+    }
+
+    public void registerIQ(String elementName, String namespace)
+    {
+        registerIQ(elementName, namespace, true);
     }
 
     /**
@@ -266,26 +277,30 @@ public class MucClientManager
      *
      * @param elementName the child element name.
      * @param namespace the child element namespace.
+     * @param requireResponse whether to send an error stanza as a response if the {@link IQListener} produces
+     * {@code null} for requests of this type. Using {@code false} allows asynchronous handling of the request.
      */
-    public void registerIQ(String elementName, String namespace)
+    public void registerIQ(String elementName, String namespace, boolean requireResponse)
     {
-        registerIQ(new IQ(elementName, namespace)
-            {
-                @Override
-                protected IQChildElementXmlStringBuilder getIQChildElementBuilder(
-                    IQChildElementXmlStringBuilder xml)
+        registerIQ(
+                new IQ(elementName, namespace)
                 {
-                    return null;
-                }
-            });
+                    @Override
+                    protected IQChildElementXmlStringBuilder getIQChildElementBuilder(
+                            IQChildElementXmlStringBuilder xml)
+                    {
+                        return null;
+                    }
+                },
+                requireResponse);
     }
 
     /**
      * @return the list of registered IQ types.
      */
-    List<IQ> getRegisteredIqs()
+    Map<IQ, Boolean> getRegisteredIqs()
     {
-        return new LinkedList<>(registeredIqs);
+        return new HashMap<>(registeredIqs);
     }
 
     /**
@@ -331,7 +346,7 @@ public class MucClientManager
     }
 
     /**
-     * Return the number of {@link MucClient}s that are succesfully connected
+     * Return the number of {@link MucClient}s that are successfully connected
      * to XMPP.
      */
     public long getClientConnectedCount()
@@ -353,7 +368,7 @@ public class MucClientManager
     }
 
     /**
-     * Return the number of MUCs that have been succesfully joined.
+     * Return the number of MUCs that have been successfully joined.
      */
     public long getMucJoinedCount()
     {
