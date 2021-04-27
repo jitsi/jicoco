@@ -87,5 +87,15 @@ class JettyBundleActivatorConfig(
         "default" { 8443 }
     }
 
-    override fun toString() = "host=$host, port=$port, tlsPort=$tlsPort, isTls=$isTls, keyStorePath=$keyStorePath"
+    /**
+     * Whether Jetty server version should be sent in HTTP responses
+     */
+    val sendServerVersion: Boolean by config {
+        "$legacyPropertyPrefix.jetty.sendServerVersion".from(JitsiConfig.legacyConfig)
+        "$newPropertyPrefix.sendServerVersion".from(JitsiConfig.newConfig)
+        "default" { true }
+    }
+
+    override fun toString() = "host=$host, port=$port, tlsPort=$tlsPort, isTls=$isTls, keyStorePath=$keyStorePath, " +
+            "sendServerVersion=$sendServerVersion"
 }
