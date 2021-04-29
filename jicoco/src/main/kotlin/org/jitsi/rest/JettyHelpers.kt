@@ -17,14 +17,19 @@
 
 package org.jitsi.rest
 
-import org.eclipse.jetty.server.*
+import org.eclipse.jetty.server.HttpConfiguration
+import org.eclipse.jetty.server.HttpConnectionFactory
+import org.eclipse.jetty.server.SecureRequestCustomizer
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.ServerConnector
+import org.eclipse.jetty.server.SslConnectionFactory
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.jitsi.utils.getJavaVersion
 import java.nio.file.Paths
-import java.util.*
+import java.util.EnumSet
 import javax.servlet.DispatcherType
 
 /**
