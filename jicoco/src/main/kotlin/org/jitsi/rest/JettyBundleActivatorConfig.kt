@@ -91,8 +91,7 @@ class JettyBundleActivatorConfig(
      * Whether Jetty server version should be sent in HTTP responses
      */
     val sendServerVersion: Boolean by config {
-        "$legacyPropertyPrefix.jetty.sendServerVersion".from(JitsiConfig.legacyConfig)
-        "$newPropertyPrefix.sendServerVersion".from(JitsiConfig.newConfig)
+        "$newPropertyPrefix.send-server-version".from(JitsiConfig.newConfig)
         "default" { true }
     }
 
