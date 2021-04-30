@@ -96,5 +96,5 @@ class JettyBundleActivatorConfig(
     }
 
     override fun toString() = "host=$host, port=$port, tlsPort=$tlsPort, isTls=$isTls, keyStorePath=$keyStorePath, " +
-            "sendServerVersion=$sendServerVersion"
+        "sendServerVersion=$sendServerVersion"
 }
