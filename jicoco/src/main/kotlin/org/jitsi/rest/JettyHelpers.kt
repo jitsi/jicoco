@@ -34,15 +34,20 @@ import javax.servlet.DispatcherType
 
 /**
  * Create a non-secure Jetty server instance listening on the given [port] and [host] address.
+ * [sendServerVersion] controls whether Jetty should send its server version in the error responses or not.
  */
 fun createJettyServer(
     port: Int,
-    host: String? = null
+    host: String? = null,
+    sendServerVersion: Boolean = true
 ): Server {
+    val config = HttpConfiguration().apply {
+        this.sendServerVersion = sendServerVersion
+    }
     val server = Server().apply {
         handler = ServletContextHandler()
     }
-    val connector = ServerConnector(server, HttpConnectionFactory(HttpConfiguration())).apply {
+    val connector = ServerConnector(server, HttpConnectionFactory(config)).apply {
         this.port = port
         this.host = host
     }
@@ -54,13 +59,15 @@ fun createJettyServer(
  * Create a secure Jetty server instance listening on the given [port] and [host] address and using the
  * KeyStore located at [keyStorePath], optionally protected by [keyStorePassword].  [needClientAuth] sets whether
  * client auth is needed for SSL (see [SslContextFactory.setNeedClientAuth]).
+ * [sendServerVersion] controls whether Jetty should send its server version in the error responses or not.
  */
 fun createSecureJettyServer(
     port: Int,
     keyStorePath: String,
     host: String? = null,
     keyStorePassword: String? = null,
-    needClientAuth: Boolean = false
+    needClientAuth: Boolean = false,
+    sendServerVersion: Boolean = true
 ): Server {
     val sslContextFactoryKeyStoreFile = Paths.get(keyStorePath).toFile()
     val sslContextFactory = SslContextFactory.Server().apply {
@@ -90,6 +97,7 @@ fun createSecureJettyServer(
         securePort = port
         secureScheme = "https"
         addCustomizer(SecureRequestCustomizer())
+        this.sendServerVersion = sendServerVersion
     }
     val server = Server().apply {
         handler = ServletContextHandler()
@@ -120,12 +128,14 @@ fun createServer(config: JettyBundleActivatorConfig): Server {
             config.keyStorePath!!,
             config.host,
             config.keyStorePassword,
-            config.needClientAuth
+            config.needClientAuth,
+            config.sendServerVersion
         )
     } else {
         createJettyServer(
             config.port,
-            config.host
+            config.host,
+            config.sendServerVersion
         )
     }
 }
