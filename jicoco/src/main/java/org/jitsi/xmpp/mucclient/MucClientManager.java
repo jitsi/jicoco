@@ -357,6 +357,14 @@ public class MucClientManager
     }
 
     /**
+     * Return a list of ids for MUC client configs that have been added.
+     */
+    public List<String> getMucClientIds()
+    {
+        return new ArrayList<>(mucClients.keySet());
+    }
+
+    /**
      * Return the number of configured MUCs.
      */
     public long getMucCount()
