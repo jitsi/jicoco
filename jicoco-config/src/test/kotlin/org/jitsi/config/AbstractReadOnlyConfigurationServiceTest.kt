@@ -17,11 +17,11 @@
 package org.jitsi.config
 
 import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.extensions.system.withSystemProperties
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.extensions.system.withSystemProperties
 import java.util.Properties
 
 class AbstractReadOnlyConfigurationServiceTest : ShouldSpec() {
