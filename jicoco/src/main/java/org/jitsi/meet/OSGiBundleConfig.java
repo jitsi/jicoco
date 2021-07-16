@@ -178,7 +178,7 @@ public abstract class OSGiBundleConfig
         // be set only if the System property in question does not have a value
         // set yet.
 
-        Map<String,String> defaults = new HashMap<>();
+        Map<String, String> defaults = new HashMap<>();
         String true_ = Boolean.toString(true);
         //String false_ = Boolean.toString(false);
 
@@ -209,7 +209,7 @@ public abstract class OSGiBundleConfig
     {
         Map<String, String> defaults = getSystemPropertyDefaults();
 
-        for (Map.Entry<String,String> e : defaults.entrySet())
+        for (Map.Entry<String, String> e : defaults.entrySet())
         {
             String key = e.getKey();
 
