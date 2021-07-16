@@ -116,13 +116,17 @@ public abstract class OSGiBundleConfig
     {
         String[][] bundlesFromFile = loadBundlesFromFile(BUNDLES_FILE);
         String[][] extensionsBundlesFromFile = loadBundlesFromFile(EXTENSION_FILE);
-        if (bundlesFromFile == null) {
+        if (bundlesFromFile == null)
+        {
             bundlesFromFile = getBundlesImpl();
         }
         String[][] allBundles;
-        if (bundlesFromFile == null) {
+        if (bundlesFromFile == null)
+        {
             allBundles = extensionsBundlesFromFile;
-        } else {
+        }
+        else
+        {
             allBundles = ArrayUtils.concat(bundlesFromFile, extensionsBundlesFromFile);
         }
         return allBundles;
@@ -142,12 +146,14 @@ public abstract class OSGiBundleConfig
      * Returns absolute path to the directory where jar files with bundles
      * supposed to be placed at to load them.
      */
-    public String getBundlesJarsPath() {
+    public String getBundlesJarsPath()
+    {
         File file = ConfigUtils.getAbsoluteFile(BUNDLES_JARS_PATH, null);
         if (file == null || !file.exists())
         {
             File localPath = new File(BUNDLES_JARS_PATH);
-            if (localPath == null || !localPath.exists()) {
+            if (localPath == null || !localPath.exists())
+            {
                 return null;
             }
             return localPath.getAbsolutePath();
@@ -172,7 +178,7 @@ public abstract class OSGiBundleConfig
         // be set only if the System property in question does not have a value
         // set yet.
 
-        Map<String,String> defaults = new HashMap<>();
+        Map<String, String> defaults = new HashMap<>();
         String true_ = Boolean.toString(true);
         //String false_ = Boolean.toString(false);
 
@@ -203,7 +209,7 @@ public abstract class OSGiBundleConfig
     {
         Map<String, String> defaults = getSystemPropertyDefaults();
 
-        for (Map.Entry<String,String> e : defaults.entrySet())
+        for (Map.Entry<String, String> e : defaults.entrySet())
         {
             String key = e.getKey();
 

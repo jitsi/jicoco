@@ -21,7 +21,9 @@ import org.xeustechnologies.jcl.*;
  * Class store specific (jar class loader) and default class loader.
  * Used for loadable plugins at jar files.
  */
-public class OSGiClassLoader extends ClassLoader {
+public class OSGiClassLoader
+    extends ClassLoader
+{
 
     /**
      * Plugin's (jar's) class loader. Will be checked first to load class.
@@ -52,9 +54,12 @@ public class OSGiClassLoader extends ClassLoader {
      * @throws ClassNotFoundException if jar class loader or default class
      * loader will throw exception.
      */
-    public Class<?> loadClass(String className) throws ClassNotFoundException {
+    public Class<?> loadClass(String className)
+        throws ClassNotFoundException
+    {
         Class res = proxyClassLoader.loadClass(className);
-        if (res == null) {
+        if (res == null)
+        {
             return defaultClassLoader.loadClass(className);
         }
         return res;
