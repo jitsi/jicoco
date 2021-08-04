@@ -78,7 +78,7 @@ public abstract class OSGiBundleConfig
             {
                 String line = input.nextLine();
 
-                if (!StringUtils.isNullOrEmpty(line))
+                if (line != null && !line.trim().isEmpty())
                 {
                     lines.add(new String[] { line.trim() });
                 }
