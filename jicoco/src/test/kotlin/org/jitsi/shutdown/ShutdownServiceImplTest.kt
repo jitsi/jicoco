@@ -20,6 +20,7 @@ import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.async
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
@@ -31,7 +32,7 @@ class ShutdownServiceImplTest : ShouldSpec({
     val shutdownService = ShutdownServiceImpl()
 
     context("beginning shutdown") {
-        should("notify waiters").config(timeout = 5.seconds) {
+        should("notify waiters").config(timeout = Duration.seconds(5)) {
             val result = async {
                 shutdownService.waitForShutdown()
                 true
@@ -42,7 +43,7 @@ class ShutdownServiceImplTest : ShouldSpec({
     }
     context("waiting after shutdown is done") {
         shutdownService.beginShutdown()
-        should("return 'immediately'").config(timeout = 500.milliseconds) {
+        should("return 'immediately'").config(timeout = Duration.milliseconds(500)) {
             shutdownService.waitForShutdown()
         }
     }
