@@ -115,6 +115,11 @@ public class MucClient
             builder.setHostnameVerifier(new TrustAllHostnameVerifier());
         }
 
+        // Uses SASL Mechanisms ANONYMOUS and PLAIN to authenticate, but tries to authenticate with GSSAPI when
+        // it's offered by the server which does not work with the server components using jicoco.
+        // Disable GSSAPI.
+        SASLAuthentication.unregisterSASLMechanism("org.jivesoftware.smack.sasl.javax.SASLGSSAPIMechanism");
+
         return builder.build();
     }
 
