@@ -18,8 +18,9 @@ package org.jitsi.xmpp.util;
 import org.jetbrains.annotations.*;
 import org.jivesoftware.smack.packet.*;
 import org.jivesoftware.smack.provider.*;
+import org.jivesoftware.smack.util.*;
+import org.jivesoftware.smack.xml.*;
 import org.jxmpp.jid.impl.*;
-import org.xmlpull.v1.*;
 
 import java.io.*;
 
@@ -35,35 +36,23 @@ import java.io.*;
 public final class IQUtils
 {
     private static XmlPullParserFactory xmlPullParserFactory;
-    static
-    {
-        try
-        {
-            xmlPullParserFactory = XmlPullParserFactory.newInstance();
-            xmlPullParserFactory.setNamespaceAware(true);
-        }
-        catch (XmlPullParserException e)
-        {
-            xmlPullParserFactory = null;
-        }
-    }
 
     /**
      * Method overload for {@link #createError(
-     * org.jivesoftware.smack.packet.IQ, XMPPError.Condition, String)} with
+     * org.jivesoftware.smack.packet.IQ, StanzaError.Condition, String)} with
      * no error message text.
      *
-     * @see #createError(org.jivesoftware.smack.packet.IQ, XMPPError.Condition,
+     * @see #createError(org.jivesoftware.smack.packet.IQ, StanzaError.Condition,
      * String)
      */
-    public static IQ createError(IQ request, XMPPError.Condition errorCondition)
+    public static IQ createError(IQ request, StanzaError.Condition errorCondition)
     {
         return createError(request, errorCondition, null);
     }
 
     /**
-     * A shortcut for <tt>new XMPPError(request,
-     * new XMPPError(errorCondition, errorMessage));</tt>. Create error response
+     * A shortcut for <tt>new StanzaError(request,
+     * new StanzaError(errorCondition, errorMessage));</tt>. Create error response
      * to given <tt>request</tt> IQ.
      *
      * @param request the request IQ for which the error response will be
@@ -74,16 +63,16 @@ public final class IQUtils
      *
      * @return an IQ which is an XMPP error response to given <tt>request</tt>.
      */
-    public static IQ createError(IQ request, XMPPError.Condition errorCondition, String errorMessage)
+    public static IQ createError(IQ request, StanzaError.Condition errorCondition, String errorMessage)
     {
-        XMPPError.Builder error = XMPPError.getBuilder(errorCondition);
+        StanzaError.Builder error = StanzaError.getBuilder(errorCondition);
         if (errorMessage != null)
         {
             error.setDescriptiveEnText(errorMessage);
         }
 
         return org.jivesoftware.smack.packet.IQ.createErrorResponse(
-                request, error);
+                request, error.build());
     }
 
     /**
@@ -105,12 +94,11 @@ public final class IQUtils
             throw new IllegalStateException("XmlPullParserFactory not initialized.");
         }
 
-        XmlPullParser parser = xmlPullParserFactory.newPullParser();
+        XmlPullParser parser = PacketParserUtils.getParserFor(iqStr);
 
-        parser.setInput(new StringReader(iqStr));
-        int eventType = parser.next();
+        XmlPullParser.Event eventType = parser.next();
 
-        if (XmlPullParser.START_TAG == eventType)
+        if (XmlPullParser.Event.START_ELEMENT == eventType)
         {
             String name = parser.getName();
 
@@ -122,16 +110,16 @@ public final class IQUtils
                 String type = parser.getAttributeValue("", "type");
 
                 eventType = parser.next();
-                if (XmlPullParser.START_TAG == eventType)
+                if (XmlPullParser.Event.START_ELEMENT == eventType)
                 {
                     smackIQ = iqProvider.parse(parser);
 
                     if (smackIQ != null)
                     {
                         eventType = parser.getEventType();
-                        if (XmlPullParser.END_TAG != eventType)
+                        if (XmlPullParser.Event.END_ELEMENT != eventType)
                         {
-                            throw new IllegalStateException(eventType + " != XmlPullParser.END_TAG");
+                            throw new IllegalStateException(eventType + " != XmlPullParser.Event.END_ELEMENT");
                         }
 
                         smackIQ.setType(IQ.Type.fromString(type));
@@ -142,7 +130,7 @@ public final class IQUtils
                 }
                 else
                 {
-                    throw new IllegalStateException(eventType + " != XmlPullParser.START_TAG");
+                    throw new IllegalStateException(eventType + " != XmlPullParser.Event.START_ELEMENT");
                 }
             }
             else
@@ -152,7 +140,7 @@ public final class IQUtils
         }
         else
         {
-            throw new IllegalStateException(eventType + " != XmlPullParser.START_TAG");
+            throw new IllegalStateException(eventType + " != XmlPullParser.Event.START_ELEMENT");
         }
 
         return smackIQ;

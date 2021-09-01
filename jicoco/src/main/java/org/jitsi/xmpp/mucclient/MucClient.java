@@ -31,6 +31,7 @@ import org.jivesoftware.smackx.muc.*;
 import org.jivesoftware.smackx.muc.packet.*;
 import org.jivesoftware.smackx.ping.*;
 import org.jivesoftware.smackx.xdata.*;
+import org.jivesoftware.smackx.xdata.form.*;
 import org.jxmpp.jid.*;
 import org.jxmpp.jid.impl.*;
 import org.jxmpp.jid.parts.*;
@@ -281,24 +282,6 @@ public class MucClient
             {
                 logger.warn("Closed on error:", e);
             }
-
-            @Override
-            public void reconnectionSuccessful()
-            {
-                logger.info("Reconnection successful.");
-            }
-
-            @Override
-            public void reconnectingIn(int i)
-            {
-                logger.info("Reconnecting in " + i);
-            }
-
-            @Override
-            public void reconnectionFailed(Exception e)
-            {
-                logger.warn("Reconnection failed: ", e);
-            }
         });
 
         mucClientManager.getRegisteredIqs().entrySet().forEach(e -> registerIQ(e.getKey(), e.getValue()));
@@ -316,6 +299,7 @@ public class MucClient
                SmackException.NoResponseException,
                InterruptedException,
                XMPPException.XMPPErrorException,
+               MultiUserChatException.MucNotJoinedException,
                MultiUserChatException.MucAlreadyJoinedException,
                MultiUserChatException.NotAMucServiceException,
                XmppStringprepException
@@ -494,7 +478,7 @@ public class MucClient
                 .noneMatch(mucJid -> mucJid.toLowerCase().equals(fromJidStr)))
         {
             logger.warn("Received an IQ from a non-MUC member: " + fromJid);
-            return IQUtils.createError(iq, XMPPError.Condition.forbidden);
+            return IQUtils.createError(iq, StanzaError.Condition.forbidden);
         }
 
         IQListener iqListener = this.iqListener;
@@ -511,7 +495,7 @@ public class MucClient
             catch (Exception e)
             {
                 logger.warn("Exception processing IQ, returning internal server error. Request: " + iq.toString(), e);
-                responseIq = IQUtils.createError(iq, XMPPError.Condition.internal_server_error, e.getMessage());
+                responseIq = IQUtils.createError(iq, StanzaError.Condition.internal_server_error, e.getMessage());
             }
         }
 
@@ -519,7 +503,7 @@ public class MucClient
         {
             logger.info(
                     "Failed to produce a response for IQ, returning internal server error. Request: " +iq.toString());
-            responseIq = IQUtils.createError(iq, XMPPError.Condition.internal_server_error, "Unknown error");
+            responseIq = IQUtils.createError(iq, StanzaError.Condition.internal_server_error, "Unknown error");
         }
 
         return responseIq;
@@ -689,6 +673,7 @@ public class MucClient
                    SmackException.NoResponseException,
                    InterruptedException,
                    XMPPException.XMPPErrorException,
+                   MultiUserChatException.MucNotJoinedException,
                    MultiUserChatException.MucAlreadyJoinedException,
                    MultiUserChatException.NotAMucServiceException
 
@@ -713,16 +698,10 @@ public class MucClient
                 // making the room non-anonymous, so that others can
                 // recognize our JID
                 Form config = muc.getConfigurationForm();
-                Form answer = config.createAnswerForm();
+                FillableForm answer = config.getFillableForm();
                 // Room non-anonymous
                 String whoisFieldName = "muc#roomconfig_whois";
-                FormField whois = answer.getField(whoisFieldName);
-                if (whois == null)
-                {
-                    whois = new FormField(whoisFieldName);
-                    answer.addField(whois);
-                }
-                whois.addValue("anyone");
+                answer.setAnswer(whoisFieldName, "anyone");
                 muc.sendConfigurationForm(answer);
             }
             logger.info("Joined MUC: " + mucJid);
@@ -742,6 +721,8 @@ public class MucClient
                 return;
             }
 
+            lastPresenceSent = lastPresenceSent.cloneWithNewId();
+
             // The initial presence sent by smack contains an empty "x"
             // extension. If this extension is included in a subsequent stanza,
             // it indicates that the client lost its synchronization and causes
@@ -751,8 +732,6 @@ public class MucClient
 
             // Remove the old extensions if present and override
             extensions.forEach(lastPresenceSent::overrideExtension);
-
-            lastPresenceSent.setStanzaId(StanzaIdUtil.newStanzaId());
 
             try
             {
