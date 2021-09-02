@@ -35,8 +35,6 @@ import java.io.*;
  */
 public final class IQUtils
 {
-    private static XmlPullParserFactory xmlPullParserFactory;
-
     /**
      * Method overload for {@link #createError(
      * org.jivesoftware.smack.packet.IQ, StanzaError.Condition, String)} with
@@ -89,12 +87,7 @@ public final class IQUtils
     {
         T smackIQ;
 
-        if (xmlPullParserFactory == null)
-        {
-            throw new IllegalStateException("XmlPullParserFactory not initialized.");
-        }
-
-        XmlPullParser parser = PacketParserUtils.getParserFor(iqStr);
+        XmlPullParser parser = SmackXmlParser.newXmlParser(new StringReader(iqStr));
 
         XmlPullParser.Event eventType = parser.next();
 
