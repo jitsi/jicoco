@@ -88,6 +88,11 @@
             <version>${smack.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.igniterealtime.smack</groupId>
+            <artifactId>smack-xmlparser-stax</artifactId>
+            <version>${smack.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-jetty-http</artifactId>
             <version>${jersey.version}</version>
