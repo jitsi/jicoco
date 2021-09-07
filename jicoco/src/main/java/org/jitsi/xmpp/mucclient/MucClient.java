@@ -116,6 +116,9 @@ public class MucClient
             builder.setHostnameVerifier(new TrustAllHostnameVerifier());
         }
 
+        // TODO set this to required if we're not connecting to localhost (or based on config)
+        builder.setSecurityMode(ConnectionConfiguration.SecurityMode.ifpossible);
+
         // Uses SASL Mechanisms ANONYMOUS and PLAIN to authenticate, but tries to authenticate with GSSAPI when
         // it's offered by the server which does not work with the server components using jicoco.
         // Disable GSSAPI.
