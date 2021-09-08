@@ -187,6 +187,24 @@ public class MucClient
     private final PingFailedListener pingFailedListener = new PingFailedListenerImpl();
 
     /**
+     * The reconnection listener.
+     */
+    private final ReconnectionListener reconnectionListener = new ReconnectionListener()
+    {
+        @Override
+        public void reconnectingIn(int i)
+        {
+            logger.info("Reconnecting in " + i);
+        }
+
+        @Override
+        public void reconnectionFailed(Exception e)
+        {
+            logger.warn("Reconnection failed: ", e);
+        }
+    };
+
+    /**
      * Creates and XMPP connection for the given {@code config}, connects, and
      * joins the MUC described by the {@code config}.
      *
@@ -287,20 +305,7 @@ public class MucClient
             }
         });
 
-        ReconnectionManager.getInstanceFor(xmppConnection).addReconnectionListener(new ReconnectionListener()
-        {
-            @Override
-            public void reconnectingIn(int i)
-            {
-                logger.info("Reconnecting in " + i);
-            }
-
-            @Override
-            public void reconnectionFailed(Exception e)
-            {
-                logger.warn("Reconnection failed: ", e);
-            }
-        });
+        ReconnectionManager.getInstanceFor(xmppConnection).addReconnectionListener(reconnectionListener);
 
         mucClientManager.getRegisteredIqs().entrySet().forEach(e -> registerIQ(e.getKey(), e.getValue()));
         setIQListener(mucClientManager.getIqListener());
@@ -541,6 +546,8 @@ public class MucClient
     void stop()
     {
         this.connectRetry.cancel();
+
+        ReconnectionManager.getInstanceFor(xmppConnection).removeReconnectionListener(reconnectionListener);
 
         if (this.executor != null)
         {
