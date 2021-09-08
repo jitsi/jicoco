@@ -287,6 +287,21 @@ public class MucClient
             }
         });
 
+        ReconnectionManager.getInstanceFor(xmppConnection).addReconnectionListener(new ReconnectionListener()
+        {
+            @Override
+            public void reconnectingIn(int i)
+            {
+                logger.info("Reconnecting in " + i);
+            }
+
+            @Override
+            public void reconnectionFailed(Exception e)
+            {
+                logger.warn("Reconnection failed: ", e);
+            }
+        });
+
         mucClientManager.getRegisteredIqs().entrySet().forEach(e -> registerIQ(e.getKey(), e.getValue()));
         setIQListener(mucClientManager.getIqListener());
 
