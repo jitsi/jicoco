@@ -34,7 +34,7 @@
     <properties>
         <jetty.version>9.4.41.v20210516</jetty.version>
         <jersey.version>2.34</jersey.version>
-        <smack.version>4.2.4-47d17fc</smack.version>
+        <smack.version>4.4.3</smack.version>
     </properties>
 
     <dependencies>
@@ -85,6 +85,11 @@
         <dependency>
             <groupId>org.igniterealtime.smack</groupId>
             <artifactId>smack-tcp</artifactId>
+            <version>${smack.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.igniterealtime.smack</groupId>
+            <artifactId>smack-xmlparser-stax</artifactId>
             <version>${smack.version}</version>
         </dependency>
         <dependency>
