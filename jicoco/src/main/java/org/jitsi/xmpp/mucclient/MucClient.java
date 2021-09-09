@@ -322,7 +322,6 @@ public class MucClient
                SmackException.NoResponseException,
                InterruptedException,
                XMPPException.XMPPErrorException,
-               MultiUserChatException.MucNotJoinedException,
                MultiUserChatException.MucAlreadyJoinedException,
                MultiUserChatException.NotAMucServiceException,
                XmppStringprepException
@@ -698,7 +697,6 @@ public class MucClient
                    SmackException.NoResponseException,
                    InterruptedException,
                    XMPPException.XMPPErrorException,
-                   MultiUserChatException.MucNotJoinedException,
                    MultiUserChatException.MucAlreadyJoinedException,
                    MultiUserChatException.NotAMucServiceException
 
@@ -710,7 +708,7 @@ public class MucClient
             {
                 muc.removePresenceInterceptor(presenceInterceptor);
                 logger.info("Leaving a MUC we already occupy.");
-                muc.leave();
+                leave();
             }
             MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(xmppConnection);
             muc = mucManager.getMultiUserChat(mucJid);
