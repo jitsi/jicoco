@@ -400,7 +400,8 @@ public class MucClientConfiguration
 
     /**
      * Gets the security mode for the Smack XMPP connection.
-     * @throws IllegalArgumentException if it's not a valid security mode ("required", "ifpossible", or "disabled").
+     * @throws IllegalArgumentException if it's not a valid security mode ("required", "ifpossible", "disabled",
+     * or null).
      */
     public ConnectionConfiguration.SecurityMode getSecurityMode()
     {
@@ -414,7 +415,7 @@ public class MucClientConfiguration
 
     /**
      * Sets the security mode ("required", "ifpossible", or "disabled")
-     * for the Smack XMPP connection.
+     * for the Smack XMPP connection, or null for the default behavior.
      */
     public void setSecurityMode(ConnectionConfiguration.SecurityMode securityMode)
     {
