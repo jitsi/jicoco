@@ -18,6 +18,7 @@ package org.jitsi.xmpp.mucclient;
 
 import org.jitsi.service.configuration.*;
 import org.jitsi.utils.logging.*;
+import org.jivesoftware.smack.*;
 
 import java.util.*;
 
@@ -105,6 +106,13 @@ public class MucClientConfiguration
      * This is not a required property.
      */
     public static String IQ_HANDLER_MODE = "IQ_HANDLER_MODE";
+
+    /**
+     * The name of the property (without a prefix) which specifies
+     * the security mode ("required", "ifpossible", or "disabled")
+     * for the Smack XMPP connection.
+     */
+    public static String SECURITY_MODE = "SECURITY_MODE";
 
     /**
      * Loads a list of {@link MucClientConfiguration} objects based on
@@ -391,6 +399,29 @@ public class MucClientConfiguration
     }
 
     /**
+     * Gets the security mode for the Smack XMPP connection.
+     * @throws IllegalArgumentException if it's not a valid security mode ("required", "ifpossible", or "disabled").
+     */
+    public ConnectionConfiguration.SecurityMode getSecurityMode()
+    {
+        String securityModeStr = props.get(SECURITY_MODE);
+        if (securityModeStr == null)
+        {
+            return null;
+        }
+        return ConnectionConfiguration.SecurityMode.valueOf(securityModeStr);
+    }
+
+    /**
+     * Sets the security mode ("required", "ifpossible", or "disabled")
+     * for the Smack XMPP connection.
+     */
+    public void setSecurityMode(ConnectionConfiguration.SecurityMode securityMode)
+    {
+        props.put(SECURITY_MODE, securityMode.toString());
+    }
+
+    /**
      * Checks whether this {@link MucClientConfiguration} has all of the required
      * properties.
      * @return {@code true} if all required properties are set, and
@@ -398,6 +429,15 @@ public class MucClientConfiguration
      */
     public boolean isComplete()
     {
+        /* Validate that security mode is valid. */
+        try
+        {
+            getSecurityMode();
+        }
+        catch (IllegalArgumentException e)
+        {
+            return false;
+        }
         return getHostname() != null && getUsername() != null
             && getPassword() != null
             && getMucJids() != null
