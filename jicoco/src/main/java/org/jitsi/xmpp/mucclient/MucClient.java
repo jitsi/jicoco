@@ -116,8 +116,26 @@ public class MucClient
             builder.setHostnameVerifier(new TrustAllHostnameVerifier());
         }
 
-        // TODO set this to required if we're not connecting to localhost (or based on config)
-        builder.setSecurityMode(ConnectionConfiguration.SecurityMode.ifpossible);
+        ConnectionConfiguration.SecurityMode securityMode = config.getSecurityMode();
+        if (securityMode == null)
+        {
+            String hostname = config.getHostname();
+            /* We want to allow security to be disabled on loopback. */
+            if (hostname.equals("localhost") || hostname.equals("127.0.0.1") || hostname.equals("::1"))
+            {
+                securityMode = ConnectionConfiguration.SecurityMode.ifpossible;
+            }
+            else
+            {
+                securityMode = ConnectionConfiguration.SecurityMode.required;
+            }
+        }
+        if (securityMode == ConnectionConfiguration.SecurityMode.disabled)
+        {
+            classLogger.warn("XMPP security is disabled!");
+        }
+
+        builder.setSecurityMode(securityMode);
 
         // Uses SASL Mechanisms ANONYMOUS and PLAIN to authenticate, but tries to authenticate with GSSAPI when
         // it's offered by the server which does not work with the server components using jicoco.
