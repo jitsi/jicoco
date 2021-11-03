@@ -119,11 +119,20 @@ public class MucClient
         ConnectionConfiguration.SecurityMode securityMode = config.getSecurityMode();
         if (securityMode == null)
         {
-            securityMode = ConnectionConfiguration.SecurityMode.required;
+            String hostname = config.getHostname();
+            /* We want to allow security to be disabled on loopback. */
+            if (hostname.equals("localhost") || hostname.equals("127.0.0.1") || hostname.equals("::1"))
+            {
+                securityMode = ConnectionConfiguration.SecurityMode.ifpossible;
+            }
+            else
+            {
+                securityMode = ConnectionConfiguration.SecurityMode.required;
+            }
         }
         if (securityMode == ConnectionConfiguration.SecurityMode.disabled)
         {
-            classLogger.warn("XMPP security is disabled!")
+            classLogger.warn("XMPP security is disabled!");
         }
 
         builder.setSecurityMode(securityMode);
