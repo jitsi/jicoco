@@ -418,7 +418,7 @@ public class MucClientConfiguration
      */
     public void setSecurityMode(ConnectionConfiguration.SecurityMode securityMode)
     {
-        props.put(SECURITY_MODE, securityMode.toString());
+        props.put(SECURITY_MODE, securityMode != null ? securityMode.toString() : null);
     }
 
     /**
