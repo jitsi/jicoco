@@ -24,13 +24,11 @@ import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
 import org.jivesoftware.smack.packet.*;
-import org.jivesoftware.smack.packet.id.*;
 import org.jivesoftware.smack.tcp.*;
 import org.jivesoftware.smackx.disco.*;
 import org.jivesoftware.smackx.muc.*;
 import org.jivesoftware.smackx.muc.packet.*;
 import org.jivesoftware.smackx.ping.*;
-import org.jivesoftware.smackx.xdata.*;
 import org.jivesoftware.smackx.xdata.form.*;
 import org.jxmpp.jid.*;
 import org.jxmpp.jid.impl.*;
@@ -264,7 +262,6 @@ public class MucClient
      * Initializes this instance (by extracting the necessary fields from its
      * configuration), connects and logs into the XMPP server, and joins all
      * MUCs that the configuration describes.
-     * @throws Exception
      */
     private void initializeConnectAndJoin()
         throws Exception
@@ -325,7 +322,7 @@ public class MucClient
 
         ReconnectionManager.getInstanceFor(xmppConnection).addReconnectionListener(reconnectionListener);
 
-        mucClientManager.getRegisteredIqs().entrySet().forEach(e -> registerIQ(e.getKey(), e.getValue()));
+        mucClientManager.getRegisteredIqs().forEach(this::registerIQ);
         setIQListener(mucClientManager.getIqListener());
 
         logger.info("Dispatching a thread to connect and login.");
@@ -370,7 +367,6 @@ public class MucClient
 
     /**
      * The number of MUCs that have been joined.
-     * @return
      */
     int getMucsJoinedCount()
     {
@@ -534,7 +530,7 @@ public class MucClient
             }
             catch (Exception e)
             {
-                logger.warn("Exception processing IQ, returning internal server error. Request: " + iq.toString(), e);
+                logger.warn("Exception processing IQ, returning internal server error. Request: " + iq, e);
                 responseIq = IQUtils.createError(iq, StanzaError.Condition.internal_server_error, e.getMessage());
             }
         }
@@ -542,7 +538,7 @@ public class MucClient
         if (requireResponse && responseIq == null)
         {
             logger.info(
-                    "Failed to produce a response for IQ, returning internal server error. Request: " +iq.toString());
+                    "Failed to produce a response for IQ, returning internal server error. Request: " + iq);
             responseIq = IQUtils.createError(iq, StanzaError.Condition.internal_server_error, "Unknown error");
         }
 
@@ -673,7 +669,7 @@ public class MucClient
         /**
          * Stores our last MUC presence packet for future update.
          */
-        private Presence lastPresenceSent;
+        private PresenceBuilder lastPresenceSent;
 
         /**
          * Intercepts presence packets sent by smack and saves the last one.
@@ -686,7 +682,7 @@ public class MucClient
          */
         private void presenceSent(Presence presence)
         {
-            lastPresenceSent = presence;
+            lastPresenceSent = presence.asBuilder((String) null);
         }
 
         /**
@@ -762,8 +758,6 @@ public class MucClient
                 return;
             }
 
-            lastPresenceSent = lastPresenceSent.cloneWithNewId();
-
             // The initial presence sent by smack contains an empty "x"
             // extension. If this extension is included in a subsequent stanza,
             // it indicates that the client lost its synchronization and causes
@@ -776,7 +770,7 @@ public class MucClient
 
             try
             {
-                xmppConnection.sendStanza(lastPresenceSent);
+                xmppConnection.sendStanza(lastPresenceSent.build());
             }
             catch (Exception e)
             {
@@ -796,7 +790,7 @@ public class MucClient
             {
                 try
                 {
-                    xmppConnection.sendStanza(lastPresenceSent);
+                    xmppConnection.sendStanza(lastPresenceSent.build());
                 }
                 catch (Exception e)
                 {

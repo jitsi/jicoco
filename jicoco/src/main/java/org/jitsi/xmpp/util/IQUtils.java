@@ -18,7 +18,6 @@ package org.jitsi.xmpp.util;
 import org.jetbrains.annotations.*;
 import org.jivesoftware.smack.packet.*;
 import org.jivesoftware.smack.provider.*;
-import org.jivesoftware.smack.util.*;
 import org.jivesoftware.smack.xml.*;
 import org.jxmpp.jid.impl.*;
 
@@ -82,7 +81,7 @@ public final class IQUtils
      */
     public static <T extends org.jivesoftware.smack.packet.IQ> T parse(
             @NotNull String iqStr,
-            @NotNull IQProvider<T> iqProvider)
+            @NotNull IqProvider<T> iqProvider)
         throws Exception
     {
         T smackIQ;
@@ -105,7 +104,7 @@ public final class IQUtils
                 eventType = parser.next();
                 if (XmlPullParser.Event.START_ELEMENT == eventType)
                 {
-                    smackIQ = iqProvider.parse(parser);
+                    smackIQ = iqProvider.parse(parser, null);
 
                     if (smackIQ != null)
                     {

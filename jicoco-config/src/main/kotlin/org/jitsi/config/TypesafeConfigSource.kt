@@ -45,7 +45,7 @@ class TypesafeConfigSource(
         return when (type) {
             typeOf<Boolean>() -> wrap { key ->
                 // Typesafe is case-sensitive and does not accept "True" or "False" as valid boolean values.
-                when (config.getString(key).toLowerCase()) {
+                when (config.getString(key).lowercase()) {
                     "true" -> true
                     "false" -> false
                     else -> config.getBoolean(key)
