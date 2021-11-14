@@ -32,22 +32,6 @@ public class HealthTest extends JerseyTest
     protected HealthCheckService healthCheckService;
     protected static final String BASE_URL = "/about/health";
 
-    // See: https://github.com/eclipse-ee4j/jersey/issues/3662
-    // do not name this setup()
-    @BeforeEach
-    void beforeEach() throws Exception
-    {
-        super.setUp();
-    }
-
-    // See: https://github.com/eclipse-ee4j/jersey/issues/3662
-    // do not name this tearDown()
-    @AfterEach
-    void afterEach() throws Exception
-    {
-        super.tearDown();
-    }
-
     @Override
     protected Application configure()
     {
