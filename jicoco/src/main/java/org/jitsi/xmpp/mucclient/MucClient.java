@@ -24,13 +24,11 @@ import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
 import org.jivesoftware.smack.packet.*;
-import org.jivesoftware.smack.packet.id.*;
 import org.jivesoftware.smack.tcp.*;
 import org.jivesoftware.smackx.disco.*;
 import org.jivesoftware.smackx.muc.*;
 import org.jivesoftware.smackx.muc.packet.*;
 import org.jivesoftware.smackx.ping.*;
-import org.jivesoftware.smackx.xdata.*;
 import org.jivesoftware.smackx.xdata.form.*;
 import org.jxmpp.jid.*;
 import org.jxmpp.jid.impl.*;
@@ -264,7 +262,6 @@ public class MucClient
      * Initializes this instance (by extracting the necessary fields from its
      * configuration), connects and logs into the XMPP server, and joins all
      * MUCs that the configuration describes.
-     * @throws Exception
      */
     private void initializeConnectAndJoin()
         throws Exception
@@ -325,7 +322,7 @@ public class MucClient
 
         ReconnectionManager.getInstanceFor(xmppConnection).addReconnectionListener(reconnectionListener);
 
-        mucClientManager.getRegisteredIqs().entrySet().forEach(e -> registerIQ(e.getKey(), e.getValue()));
+        mucClientManager.getRegisteredIqs().forEach(this::registerIQ);
         setIQListener(mucClientManager.getIqListener());
 
         logger.info("Dispatching a thread to connect and login.");
@@ -370,7 +367,6 @@ public class MucClient
 
     /**
      * The number of MUCs that have been joined.
-     * @return
      */
     int getMucsJoinedCount()
     {
@@ -449,7 +445,7 @@ public class MucClient
             logger.warn("Cannot set presence extension: not connected.");
             return;
         }
-        mucs.values().forEach(ms->ms.setPresenceExtensions(extensions));
+        mucs.values().forEach(ms -> ms.setPresenceExtensions(extensions));
     }
 
     /**
@@ -534,7 +530,7 @@ public class MucClient
             }
             catch (Exception e)
             {
-                logger.warn("Exception processing IQ, returning internal server error. Request: " + iq.toString(), e);
+                logger.warn("Exception processing IQ, returning internal server error. Request: " + iq, e);
                 responseIq = IQUtils.createError(iq, StanzaError.Condition.internal_server_error, e.getMessage());
             }
         }
@@ -542,7 +538,7 @@ public class MucClient
         if (requireResponse && responseIq == null)
         {
             logger.info(
-                    "Failed to produce a response for IQ, returning internal server error. Request: " +iq.toString());
+                    "Failed to produce a response for IQ, returning internal server error. Request: " + iq);
             responseIq = IQUtils.createError(iq, StanzaError.Condition.internal_server_error, "Unknown error");
         }
 
@@ -673,21 +669,25 @@ public class MucClient
         /**
          * Stores our last MUC presence packet for future update.
          */
-        private Presence lastPresenceSent;
+        private PresenceBuilder lastPresenceSent;
 
         /**
          * Intercepts presence packets sent by smack and saves the last one.
          */
-        private final PresenceListener presenceInterceptor = this::presenceSent;
-
-        /**
-         * Notifies this instance that Smack sent presence in the MUC on our behalf.
-         * @param presence the presence which was sent.
-         */
-        private void presenceSent(Presence presence)
+        private final PresenceListener presenceInterceptor = presence ->
         {
-            lastPresenceSent = presence;
-        }
+            // The initial presence sent by smack contains an empty "x"
+            // extension. If this extension is included in a subsequent stanza,
+            // it indicates that the client lost its synchronization and causes
+            // the MUC service to re-send the presence of each occupant in the
+            // room.
+            PresenceBuilder nextLastPresence = presence.asBuilder((String) null)
+                .removeExtension(MUCInitialPresence.ELEMENT, MUCInitialPresence.NAMESPACE);
+            synchronized (this)
+            {
+                lastPresenceSent = nextLastPresence;
+            }
+        };
 
         /**
          * Leaves the MUC.
@@ -756,27 +756,23 @@ public class MucClient
          */
         void setPresenceExtensions(Collection<ExtensionElement> extensions)
         {
-            if (lastPresenceSent == null)
+            Presence updatedPresence;
+            synchronized (this)
             {
-                logger.warn(() -> "Cannot set presence extensions: no previous presence available.");
-                return;
+                if (lastPresenceSent == null)
+                {
+                    logger.warn("Cannot set presence extensions: no previous presence available.");
+                    return;
+                }
+
+                // Remove the old extensions if present and override
+                extensions.forEach(lastPresenceSent::overrideExtension);
+                updatedPresence = lastPresenceSent.build();
             }
-
-            lastPresenceSent = lastPresenceSent.cloneWithNewId();
-
-            // The initial presence sent by smack contains an empty "x"
-            // extension. If this extension is included in a subsequent stanza,
-            // it indicates that the client lost its synchronization and causes
-            // the MUC service to re-send the presence of each occupant in the
-            // room.
-            lastPresenceSent.removeExtension(MUCInitialPresence.ELEMENT, MUCInitialPresence.NAMESPACE);
-
-            // Remove the old extensions if present and override
-            extensions.forEach(lastPresenceSent::overrideExtension);
 
             try
             {
-                xmppConnection.sendStanza(lastPresenceSent);
+                xmppConnection.sendStanza(updatedPresence);
             }
             catch (Exception e)
             {
@@ -792,11 +788,25 @@ public class MucClient
          */
         private void removePresenceExtension(String elementName, String namespace)
         {
-            if (lastPresenceSent != null && lastPresenceSent.removeExtension(elementName, namespace) != null)
+            Presence updatedPresence = null;
+            synchronized (this)
+            {
+                if (lastPresenceSent == null)
+                {
+                    return;
+                }
+                
+                if (lastPresenceSent.removeExtension(elementName, namespace) != null)
+                {
+                    updatedPresence = lastPresenceSent.build();
+                }
+            }
+
+            if (updatedPresence != null)
             {
                 try
                 {
-                    xmppConnection.sendStanza(lastPresenceSent);
+                    xmppConnection.sendStanza(updatedPresence);
                 }
                 catch (Exception e)
                 {
@@ -809,7 +819,7 @@ public class MucClient
          * Resets the field which stores the last presence Smack sent on our
          * behalf.
          */
-        private void resetLastPresenceSent()
+        private synchronized void resetLastPresenceSent()
         {
             logger.debug("Resetting lastPresenceSent");
             lastPresenceSent = null;

@@ -16,27 +16,27 @@
 
 package org.jitsi.rest;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import javax.ws.rs.core.*;
 import org.eclipse.jetty.http.*;
 import org.glassfish.jersey.server.*;
 import org.glassfish.jersey.test.*;
 import org.jitsi.utils.version.*;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-import javax.ws.rs.core.*;
-
-import static junit.framework.TestCase.assertEquals;
-
-public class VersionTest extends JerseyTest
+public class VersionTest
+    extends JerseyTest
 {
     protected static final String BASE_URL = "/about/version";
 
     @Override
     protected Application configure()
     {
-
         enable(TestProperties.LOG_TRAFFIC);
         enable(TestProperties.DUMP_ENTITY);
-        return new ResourceConfig() {
+        return new ResourceConfig()
+        {
             {
                 register(new Version(new VersionImpl("appName", 2, 0)));
             }
@@ -48,7 +48,8 @@ public class VersionTest extends JerseyTest
     {
         Response resp = target(BASE_URL).request().get();
         assertEquals(HttpStatus.OK_200, resp.getStatus());
-        Version.VersionInfo versionInfo = resp.readEntity(Version.VersionInfo.class);
+        Version.VersionInfo versionInfo =
+            resp.readEntity(Version.VersionInfo.class);
         assertEquals("appName", versionInfo.name);
         assertEquals("2.0", versionInfo.version);
     }
