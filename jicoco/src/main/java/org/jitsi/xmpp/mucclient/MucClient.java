@@ -406,7 +406,7 @@ public class MucClient
         }
         catch (Exception e)
         {
-            logger.warn("Failed to send stanza: " + e);
+            logger.warn("Failed to send stanza: ", e);
             return false;
         }
     }
