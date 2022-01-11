@@ -90,7 +90,7 @@ public class MucClient
         }
         catch (XmppStringprepException xse)
         {
-            classLogger.error("Failed to parse domain: " + domain);
+            classLogger.error("Failed to parse domain: " + domain, xse);
             return null;
         }
 
@@ -406,7 +406,7 @@ public class MucClient
         }
         catch (Exception e)
         {
-            logger.warn("Failed to send stanza: " + e);
+            logger.warn("Failed to send stanza: ", e);
             return false;
         }
     }
@@ -635,7 +635,7 @@ public class MucClient
                     // We've observed the XMPPTCPConnection get in a broken state where it is connected, but unable to
                     // login (because the locally cached SASL mechanisms supported by the server are empty). We
                     // disconnect in order to trigger a re-connect and clear that state on the next attempt.
-                    logger.warn("Failed to login. Disconnecting to trigger a re-connect.");
+                    logger.warn("Failed to login. Disconnecting to trigger a re-connect.", e);
                     xmppConnection.disconnect();
                     return true;
                 }
