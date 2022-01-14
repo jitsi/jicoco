@@ -874,7 +874,7 @@ public class MucClient
         extends PeriodicRunnable
     {
         public HalfOpenConnectionPeriodicCheck() {
-            super(2*DEFAULT_PING_INTERVAL_SECONDS);
+            super(2*1000*DEFAULT_PING_INTERVAL_SECONDS);
         }
 
         /**
