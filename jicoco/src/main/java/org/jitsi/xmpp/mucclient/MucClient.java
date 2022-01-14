@@ -883,13 +883,15 @@ public class MucClient
         @Override
         public void run() {
             super.run();
-            if (xmppConnection.isConnected() && xmppConnection.isAuthenticated())
+
+            AbstractXMPPConnection con = xmppConnection;
+            if (con != null && con.isConnected() && con.isAuthenticated())
             {
-                long lastStanzaReceivedMs =  xmppConnection.getLastStanzaReceived();
+                long lastStanzaReceivedMs =  con.getLastStanzaReceived();
                 long nowMs = System.currentTimeMillis();
                 if (nowMs - lastStanzaReceivedMs > 2*1000*DEFAULT_PING_INTERVAL_SECONDS)
                     logger.warn("XMPP connection still half-connected, will trigger a disconnect.");
-                xmppConnection.disconnect();
+                con.disconnect();
             }
         }
     }
