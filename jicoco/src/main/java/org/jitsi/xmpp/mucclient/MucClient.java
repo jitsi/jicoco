@@ -890,8 +890,10 @@ public class MucClient
                 long lastStanzaReceivedMs =  con.getLastStanzaReceived();
                 long nowMs = System.currentTimeMillis();
                 if (nowMs - lastStanzaReceivedMs > 2*1000*DEFAULT_PING_INTERVAL_SECONDS)
-                    logger.warn("XMPP connection still half-connected, will trigger a disconnect.");
-                con.disconnect();
+                {
+                    logger.warn("Half-connected XMPP connection detected, will trigger a disconnect.");
+                    con.disconnect();
+                }
             }
         }
     }
