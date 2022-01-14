@@ -887,13 +887,13 @@ public class MucClient
             AbstractXMPPConnection con = xmppConnection;
             if (con != null && con.isConnected() && con.isAuthenticated())
             {
-                long lastStanzaReceivedMs =  con.getLastStanzaReceived();
+                long lastStanzaReceivedMs = con.getLastStanzaReceived();
                 if (lastStanzaReceivedMs > 0)
                 {
                     long nowMs = System.currentTimeMillis();
                     if (nowMs - lastStanzaReceivedMs > 2 * 1000 * DEFAULT_PING_INTERVAL_SECONDS)
                     {
-                        logger.warn("Half-connected XMPP connection detected, will trigger a disconnect.");
+                        logger.warn("Half-open XMPP connection detected, will trigger a disconnect.");
                         con.disconnect();
                     }
                 }
