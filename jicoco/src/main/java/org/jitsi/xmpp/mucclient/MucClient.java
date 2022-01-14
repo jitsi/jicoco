@@ -48,11 +48,13 @@ import java.util.concurrent.*;
  */
 public class MucClient
 {
+    private static final int DEFAULT_PING_INTERVAL_SECONDS = 30;
+
     static
     {
         XMPPTCPConnection.setUseStreamManagementDefault(false);
         XMPPTCPConnection.setUseStreamManagementResumptionDefault(false);
-        PingManager.setDefaultPingInterval(30);
+        PingManager.setDefaultPingInterval(DEFAULT_PING_INTERVAL_SECONDS);
     }
 
     /**
@@ -795,7 +797,7 @@ public class MucClient
                 {
                     return;
                 }
-                
+
                 if (lastPresenceSent.removeExtension(elementName, namespace) != null)
                 {
                     updatedPresence = lastPresenceSent.build();
@@ -849,6 +851,44 @@ public class MucClient
                 // This is a weird situation that we have seen in the past when using VPN.
                 // Everything stays like this forever as the socket remains open on the OS level
                 // and it is never dropped. We will trigger reconnect just in case.
+                xmppConnection.disconnect();
+            }
+        }
+    }
+
+    private final PeriodicRunnable halfOpenConnectionPeriodicCheck = new HalfOpenConnectionPeriodicCheck();
+
+    /**
+     * @return the {@link PeriodicRunnable} that checks the XMPP connection state and triggers a disconnect if a
+     * half-open connection is detected.
+     */
+    public PeriodicRunnable getHalfOpenConnectionPeriodicCheck()
+    {
+        return halfOpenConnectionPeriodicCheck;
+    }
+
+    /**
+     * Periodically checks the connection state and triggers a disconnect if a half-open connection is detected.
+     */
+    class HalfOpenConnectionPeriodicCheck
+        extends PeriodicRunnable
+    {
+        public HalfOpenConnectionPeriodicCheck() {
+            super(2*DEFAULT_PING_INTERVAL_SECONDS);
+        }
+
+        /**
+         * Triggers a disconnect if a half-open connection is detected.
+         */
+        @Override
+        public void run() {
+            super.run();
+            if (xmppConnection.isConnected() && xmppConnection.isAuthenticated())
+            {
+                long lastStanzaReceivedMs =  xmppConnection.getLastStanzaReceived();
+                long nowMs = System.currentTimeMillis();
+                if (nowMs - lastStanzaReceivedMs > 2*1000*DEFAULT_PING_INTERVAL_SECONDS)
+                    logger.warn("XMPP connection still half-connected, will trigger a disconnect.");
                 xmppConnection.disconnect();
             }
         }
