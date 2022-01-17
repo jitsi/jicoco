@@ -17,6 +17,7 @@
 package org.jitsi.xmpp.mucclient;
 
 import org.jitsi.service.configuration.*;
+import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
 import org.jitsi.utils.logging2.Logger;
 import org.jivesoftware.smack.*;
@@ -80,6 +81,11 @@ public class MucClientManager
     private final Object syncRoot = new Object();
 
     /**
+     * The {@link RecurringRunnableExecutor} to be utilized by the {@link MucClientManager} class and its instances.
+     */
+    private final RecurringRunnableExecutor recurringRunnableExecutor = new RecurringRunnableExecutor();
+
+    /**
      * Initializes a new {@link MucClientManager} instance.
      *
      */
@@ -126,6 +132,7 @@ public class MucClientManager
 
             mucClient = new MucClient(config, MucClientManager.this);
             mucClients.put(config.getId(), mucClient);
+            recurringRunnableExecutor.registerRecurringRunnable(mucClient.getHalfOpenConnectionPeriodicCheck());
         }
 
         mucClient.start();
@@ -325,7 +332,8 @@ public class MucClientManager
            logger.info("Can not find MucClient to remove.");
            return false;
        }
-       mucClient.stop();
+        recurringRunnableExecutor.deRegisterRecurringRunnable(mucClient.getHalfOpenConnectionPeriodicCheck());
+        mucClient.stop();
        return true;
     }
 
