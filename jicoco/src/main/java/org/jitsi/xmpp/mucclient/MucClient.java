@@ -50,6 +50,8 @@ public class MucClient
 {
     private static final int DEFAULT_PING_INTERVAL_SECONDS = 30;
 
+    private static final long HALF_OPEN_CONNECTION_CHECK_PERIOD_MS = 2 * 1000 * DEFAULT_PING_INTERVAL_SECONDS;
+
     static
     {
         XMPPTCPConnection.setUseStreamManagementDefault(false);
@@ -873,15 +875,17 @@ public class MucClient
     class HalfOpenConnectionPeriodicCheck
         extends PeriodicRunnable
     {
-        public HalfOpenConnectionPeriodicCheck() {
-            super(2*1000*DEFAULT_PING_INTERVAL_SECONDS);
+        public HalfOpenConnectionPeriodicCheck()
+        {
+            super(HALF_OPEN_CONNECTION_CHECK_PERIOD_MS);
         }
 
         /**
          * Triggers a disconnect if a half-open connection is detected.
          */
         @Override
-        public void run() {
+        public void run()
+        {
             super.run();
 
             AbstractXMPPConnection con = xmppConnection;
@@ -891,7 +895,7 @@ public class MucClient
                 if (lastStanzaReceivedMs > 0)
                 {
                     long nowMs = System.currentTimeMillis();
-                    if (nowMs - lastStanzaReceivedMs > 2 * 1000 * DEFAULT_PING_INTERVAL_SECONDS)
+                    if (nowMs - lastStanzaReceivedMs > HALF_OPEN_CONNECTION_CHECK_PERIOD_MS)
                     {
                         logger.warn("Half-open XMPP connection detected, will trigger a disconnect.");
                         con.disconnect();
