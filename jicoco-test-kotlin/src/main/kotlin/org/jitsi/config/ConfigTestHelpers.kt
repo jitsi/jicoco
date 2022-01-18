@@ -22,18 +22,10 @@ import java.util.Properties
 
 /**
  * Execute the given [block] using the props defined by [props] as a legacy
- * [org.jitsi.metaconfig.ConfigSource] with name "legacy".  Resets the legacy
- * config to empty after [block] is executed.
- */
-inline fun useLegacyConfig(props: String, block: () -> Unit) =
-    useLegacyConfig("legacy", props, block)
-
-/**
- * Execute the given [block] using the props defined by [props] as a legacy
  * [org.jitsi.metaconfig.ConfigSource] with name [name].  Resets the legacy
  * config to empty after [block] is executed.
  */
-inline fun useLegacyConfig(name: String, props: String, block: () -> Unit) {
+inline fun withLegacyConfig(props: String, name: String = "legacy", block: () -> Unit) {
     setLegacyConfig(props = props, name = name)
     block()
     setLegacyConfig("")
@@ -42,26 +34,14 @@ inline fun useLegacyConfig(name: String, props: String, block: () -> Unit) {
 /**
  * Execute the given [block] using the config defined by [config] as a new
  * [org.jitsi.metaconfig.ConfigSource], falling back to the defaults if
- * [loadDefaults] is true, with name "new".  Resets the new config to empty
- * after [block] is executed.
- */
-inline fun useNewConfig(config: String, loadDefaults: Boolean, block: () -> Unit) =
-    useNewConfig("new", config, loadDefaults, block)
-
-/**
- * Execute the given [block] using the config defined by [config] as a new
- * [org.jitsi.metaconfig.ConfigSource], falling back to the defaults if
  * [loadDefaults] is true, with name [name].  Resets the new config to empty
  * after [block] is executed.
  */
-inline fun useNewConfig(name: String, config: String, loadDefaults: Boolean, block: () -> Unit) {
+inline fun withNewConfig(config: String, name: String = "new", loadDefaults: Boolean = true, block: () -> Unit) {
     setNewConfig(config, loadDefaults, name)
     block()
     setNewConfig("", true)
 }
-
-inline fun useNewConfig(config: String, block: () -> Unit) =
-    useNewConfig(config, false, block)
 
 /**
  * Creates a [TypesafeConfigSource] using the parsed value of [config] and
