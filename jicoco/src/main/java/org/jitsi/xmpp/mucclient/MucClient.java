@@ -50,8 +50,6 @@ public class MucClient
 {
     private static final int DEFAULT_PING_INTERVAL_SECONDS = 30;
 
-    private static final long HALF_OPEN_CONNECTION_CHECK_PERIOD_MS = 2 * 1000 * DEFAULT_PING_INTERVAL_SECONDS;
-
     static
     {
         XMPPTCPConnection.setUseStreamManagementDefault(false);
@@ -871,10 +869,21 @@ public class MucClient
 
     /**
      * Periodically checks the connection state and triggers a disconnect if a half-open connection is detected.
+     *
+     * This is a hack to work around a bug observed in Smack 4.4.4 in which the network connection is lost, but the
+     * XMPPConnection remain connected and authenticated, and the ping failed listener is never called. It is meant as
+     * a last resort to prevent leaks.
      */
     class HalfOpenConnectionPeriodicCheck
         extends PeriodicRunnable
     {
+        /**
+         * We set the ping interval at 30 seconds, and the ping timeout in Smack 4.4.4 is at least 2 minutes.
+         * This is only intended to catch cases which don't recover otherwise, so we use a larger interval to give time
+         * to other measures (e.g. ping timeouts) to take effect first.
+         */
+        private static final long HALF_OPEN_CONNECTION_CHECK_PERIOD_MS = 3 * 60 * 1000;
+
         public HalfOpenConnectionPeriodicCheck()
         {
             super(HALF_OPEN_CONNECTION_CHECK_PERIOD_MS);
