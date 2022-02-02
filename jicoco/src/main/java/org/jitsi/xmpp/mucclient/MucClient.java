@@ -214,12 +214,17 @@ public class MucClient
         @Override
         public void reconnectingIn(int i)
         {
+            if (i == 0)
+            {
+                mucClientManager.reconnecting(MucClient.this);
+            }
             logger.info("Reconnecting in " + i);
         }
 
         @Override
         public void reconnectionFailed(Exception e)
         {
+            mucClientManager.reconnectionFailed(MucClient.this);
             logger.warn("Reconnection failed: ", e);
         }
     };
@@ -302,6 +307,7 @@ public class MucClient
             @Override
             public void connected(XMPPConnection xmppConnection)
             {
+                mucClientManager.connected(MucClient.this);
                 logger.info("Connected.");
             }
 
@@ -314,12 +320,14 @@ public class MucClient
             @Override
             public void connectionClosed()
             {
+                mucClientManager.closed(MucClient.this);
                 logger.info("Closed.");
             }
 
             @Override
             public void connectionClosedOnError(Exception e)
             {
+                mucClientManager.closedOnError(MucClient.this);
                 logger.warn("Closed on error:", e);
             }
         });
@@ -845,6 +853,7 @@ public class MucClient
         public void pingFailed()
         {
             logger.warn("Ping failed, the XMPP connection needs to reconnect.");
+            mucClientManager.pingFailed(MucClient.this);
 
             if (xmppConnection.isConnected() && xmppConnection.isAuthenticated())
             {
@@ -895,6 +904,7 @@ public class MucClient
 
         private void actOnFailure(@NotNull AbstractXMPPConnection xmppConnection)
         {
+            mucClientManager.halfOpenDetected(MucClient.this);
             if (hasFailedOnce)
             {
                 // Reset the state for the next re-connect
@@ -915,6 +925,7 @@ public class MucClient
             if (hasFailedOnce)
             {
                 hasFailedOnce = false;
+                mucClientManager.halfOpenRecovered(MucClient.this);
                 logger.warn("Recovered from a half-open state.");
             }
         }
