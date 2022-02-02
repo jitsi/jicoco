@@ -16,6 +16,7 @@
  */
 package org.jitsi.xmpp.mucclient;
 
+import org.jetbrains.annotations.*;
 import org.jitsi.utils.collections.*;
 import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
@@ -36,6 +37,7 @@ import org.jxmpp.jid.parts.*;
 import org.jitsi.xmpp.*;
 import org.jxmpp.stringprep.*;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -884,9 +886,69 @@ public class MucClient
          */
         private static final long HALF_OPEN_CONNECTION_CHECK_PERIOD_MS = 3 * 60 * 1000;
 
+        private boolean hasFailedOnce = false;
+
         public HalfOpenConnectionPeriodicCheck()
         {
             super(HALF_OPEN_CONNECTION_CHECK_PERIOD_MS);
+        }
+
+        private void actOnFailure(@NotNull AbstractXMPPConnection xmppConnection)
+        {
+            if (hasFailedOnce)
+            {
+                // Reset the state for the next re-connect
+                hasFailedOnce = false;
+                logger.warn("Half-open XMPP connection detected, will trigger a disconnect.");
+                xmppConnection.disconnect();
+            }
+            else
+            {
+                // After the first failure, try to resolve the problem with an ugly hack instead of a re-connect.
+                hasFailedOnce = true;
+                tryToUnblockSmackReactor();
+            }
+        }
+
+        private void actOnSuccess()
+        {
+            if (hasFailedOnce)
+            {
+                hasFailedOnce = false;
+                logger.warn("Recovered from a half-open state.");
+            }
+        }
+
+        /**
+         * We've observed a case in which the SmackReactor in 4.4.4 is stuck in select() with overdue items on its
+         * queue. In such a case scheduling a new item should wakeup() the selector.
+         */
+        private void tryToUnblockSmackReactor()
+        {
+            try
+            {
+                Method getInstance = SmackReactor.class.getDeclaredMethod("getInstance");
+                getInstance.setAccessible(true);
+                Object smackReactor = getInstance.invoke(null);
+
+                Class<?> scheduledActionKindClass = Class.forName("org.jivesoftware.smack.ScheduledAction$Kind");
+                Object kindInstance = scheduledActionKindClass.getEnumConstants()[0];
+
+                Method schedule
+                        = SmackReactor.class.getDeclaredMethod(
+                                "schedule", Runnable.class, long.class, TimeUnit.class, scheduledActionKindClass);
+                schedule.setAccessible(true);
+                schedule.invoke(
+                        smackReactor,
+                        (Runnable) () -> logger.warn("Running inside SmackReactor."),
+                        0,
+                        TimeUnit.NANOSECONDS,
+                        kindInstance);
+            }
+            catch (Exception e)
+            {
+                logger.warn("Failed to unblock SmackReactor", e);
+            }
         }
 
         /**
@@ -906,8 +968,11 @@ public class MucClient
                     long nowMs = System.currentTimeMillis();
                     if (nowMs - lastStanzaReceivedMs > HALF_OPEN_CONNECTION_CHECK_PERIOD_MS)
                     {
-                        logger.warn("Half-open XMPP connection detected, will trigger a disconnect.");
-                        con.disconnect();
+                        actOnFailure(con);
+                    }
+                    else
+                    {
+                        actOnSuccess();
                     }
                 }
             }
