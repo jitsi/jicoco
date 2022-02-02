@@ -627,7 +627,7 @@ public class MucClient
             }
             catch(Exception t)
             {
-                logger.warn(MucClient.this + " error connecting", t);
+                logger.warn(" error connecting", t);
                 return true;
             }
 
@@ -916,6 +916,7 @@ public class MucClient
             {
                 // After the first failure, try to resolve the problem with an ugly hack instead of a re-connect.
                 hasFailedOnce = true;
+                logger.warn("Half-open XMPP connection detected, will try to unblock SmackReactor.");
                 tryToUnblockSmackReactor();
             }
         }
