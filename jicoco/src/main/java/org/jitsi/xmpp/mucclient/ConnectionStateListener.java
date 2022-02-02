@@ -18,7 +18,7 @@ package org.jitsi.xmpp.mucclient;
 
 import org.jetbrains.annotations.*;
 
-interface ConnectionStateListener
+public interface ConnectionStateListener
 {
     void connected(@NotNull MucClient mucClient);
 
