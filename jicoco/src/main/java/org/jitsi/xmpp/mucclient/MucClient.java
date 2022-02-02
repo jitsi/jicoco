@@ -627,7 +627,7 @@ public class MucClient
             }
             catch(Exception t)
             {
-                logger.warn(" error connecting", t);
+                logger.warn("Error connecting:", t);
                 return true;
             }
 
