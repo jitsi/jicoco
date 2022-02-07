@@ -16,6 +16,7 @@
  */
 package org.jitsi.xmpp.mucclient;
 
+import org.jetbrains.annotations.*;
 import org.jitsi.utils.collections.*;
 import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
@@ -36,6 +37,7 @@ import org.jxmpp.jid.parts.*;
 import org.jitsi.xmpp.*;
 import org.jxmpp.stringprep.*;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -49,8 +51,6 @@ import java.util.concurrent.*;
 public class MucClient
 {
     private static final int DEFAULT_PING_INTERVAL_SECONDS = 30;
-
-    private static final long HALF_OPEN_CONNECTION_CHECK_PERIOD_MS = 2 * 1000 * DEFAULT_PING_INTERVAL_SECONDS;
 
     static
     {
@@ -214,12 +214,17 @@ public class MucClient
         @Override
         public void reconnectingIn(int i)
         {
+            if (i == 0)
+            {
+                mucClientManager.reconnecting(MucClient.this);
+            }
             logger.info("Reconnecting in " + i);
         }
 
         @Override
         public void reconnectionFailed(Exception e)
         {
+            mucClientManager.reconnectionFailed(MucClient.this);
             logger.warn("Reconnection failed: ", e);
         }
     };
@@ -302,6 +307,7 @@ public class MucClient
             @Override
             public void connected(XMPPConnection xmppConnection)
             {
+                mucClientManager.connected(MucClient.this);
                 logger.info("Connected.");
             }
 
@@ -314,12 +320,14 @@ public class MucClient
             @Override
             public void connectionClosed()
             {
+                mucClientManager.closed(MucClient.this);
                 logger.info("Closed.");
             }
 
             @Override
             public void connectionClosedOnError(Exception e)
             {
+                mucClientManager.closedOnError(MucClient.this);
                 logger.warn("Closed on error:", e);
             }
         });
@@ -619,7 +627,7 @@ public class MucClient
             }
             catch(Exception t)
             {
-                logger.warn(MucClient.this + " error connecting", t);
+                logger.warn("Error connecting:", t);
                 return true;
             }
 
@@ -845,6 +853,7 @@ public class MucClient
         public void pingFailed()
         {
             logger.warn("Ping failed, the XMPP connection needs to reconnect.");
+            mucClientManager.pingFailed(MucClient.this);
 
             if (xmppConnection.isConnected() && xmppConnection.isAuthenticated())
             {
@@ -871,13 +880,90 @@ public class MucClient
 
     /**
      * Periodically checks the connection state and triggers a disconnect if a half-open connection is detected.
+     *
+     * This is a hack to work around a bug observed in Smack 4.4.4 in which the network connection is lost, but the
+     * XMPPConnection remain connected and authenticated, and the ping failed listener is never called. It is meant as
+     * a last resort to prevent leaks.
+     *
+     * TODO: remove this when Smack is updated to include this fix:
+     * https://github.com/igniterealtime/Smack/pull/512
      */
     class HalfOpenConnectionPeriodicCheck
         extends PeriodicRunnable
     {
+        /**
+         * We set the ping interval at 30 seconds, and the ping timeout in Smack 4.4.4 is at least 2 minutes.
+         * This is only intended to catch cases which don't recover otherwise, so we use a larger interval to give time
+         * to other measures (e.g. ping timeouts) to take effect first.
+         */
+        private static final long HALF_OPEN_CONNECTION_CHECK_PERIOD_MS = 3 * 60 * 1000;
+
+        private boolean hasFailedOnce = false;
+
         public HalfOpenConnectionPeriodicCheck()
         {
             super(HALF_OPEN_CONNECTION_CHECK_PERIOD_MS);
+        }
+
+        private void actOnFailure(@NotNull AbstractXMPPConnection xmppConnection)
+        {
+            mucClientManager.halfOpenDetected(MucClient.this);
+            if (hasFailedOnce)
+            {
+                // Reset the state for the next re-connect
+                hasFailedOnce = false;
+                logger.warn("Half-open XMPP connection detected, will trigger a disconnect.");
+                xmppConnection.disconnect();
+            }
+            else
+            {
+                // After the first failure, try to resolve the problem with an ugly hack instead of a re-connect.
+                hasFailedOnce = true;
+                logger.warn("Half-open XMPP connection detected, will try to unblock SmackReactor.");
+                tryToUnblockSmackReactor();
+            }
+        }
+
+        private void actOnSuccess()
+        {
+            if (hasFailedOnce)
+            {
+                hasFailedOnce = false;
+                mucClientManager.halfOpenRecovered(MucClient.this);
+                logger.warn("Recovered from a half-open state.");
+            }
+        }
+
+        /**
+         * We've observed a case in which the SmackReactor in 4.4.4 is stuck in select() with overdue items on its
+         * queue. In such a case scheduling a new item should wakeup() the selector.
+         */
+        private void tryToUnblockSmackReactor()
+        {
+            try
+            {
+                Method getInstance = SmackReactor.class.getDeclaredMethod("getInstance");
+                getInstance.setAccessible(true);
+                Object smackReactor = getInstance.invoke(null);
+
+                Class<?> scheduledActionKindClass = Class.forName("org.jivesoftware.smack.ScheduledAction$Kind");
+                Object kindInstance = scheduledActionKindClass.getEnumConstants()[0];
+
+                Method schedule
+                        = SmackReactor.class.getDeclaredMethod(
+                                "schedule", Runnable.class, long.class, TimeUnit.class, scheduledActionKindClass);
+                schedule.setAccessible(true);
+                schedule.invoke(
+                        smackReactor,
+                        (Runnable) () -> logger.warn("Running inside SmackReactor."),
+                        0,
+                        TimeUnit.NANOSECONDS,
+                        kindInstance);
+            }
+            catch (Exception e)
+            {
+                logger.warn("Failed to unblock SmackReactor", e);
+            }
         }
 
         /**
@@ -897,8 +983,11 @@ public class MucClient
                     long nowMs = System.currentTimeMillis();
                     if (nowMs - lastStanzaReceivedMs > HALF_OPEN_CONNECTION_CHECK_PERIOD_MS)
                     {
-                        logger.warn("Half-open XMPP connection detected, will trigger a disconnect.");
-                        con.disconnect();
+                        actOnFailure(con);
+                    }
+                    else
+                    {
+                        actOnSuccess();
                     }
                 }
             }

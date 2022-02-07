@@ -16,6 +16,7 @@
  */
 package org.jitsi.xmpp.mucclient;
 
+import org.jetbrains.annotations.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
@@ -36,7 +37,7 @@ import java.util.concurrent.*;
  *
  * @author Boris Grozev
  */
-public class MucClientManager
+public class MucClientManager implements ConnectionStateListener
 {
     /**
      * The {@link Logger} used by the {@link MucClientManager} class and its
@@ -85,6 +86,8 @@ public class MucClientManager
      */
     private final RecurringRunnableExecutor recurringRunnableExecutor = new RecurringRunnableExecutor();
 
+    List<ConnectionStateListener> connectionStateListeners = new CopyOnWriteArrayList<>();
+
     /**
      * Initializes a new {@link MucClientManager} instance.
      *
@@ -109,6 +112,16 @@ public class MucClientManager
         {
             this.features.addAll(Arrays.asList(features));
         }
+    }
+
+    public void addConnectionStateListener(ConnectionStateListener listener)
+    {
+        connectionStateListeners.add(listener);
+    }
+
+    public void removeConnectionStateListener(ConnectionStateListener listener)
+    {
+        connectionStateListeners.remove(listener);
     }
 
     /**
@@ -392,5 +405,77 @@ public class MucClientManager
                 .map(MucClient::getMucsJoinedCount)
                 .mapToInt(Integer::intValue)
                 .sum();
+    }
+
+    @Override
+    public void connected(@NotNull MucClient mucClient)
+    {
+        for (ConnectionStateListener listener : connectionStateListeners)
+        {
+            listener.connected(mucClient);
+        }
+    }
+
+    @Override
+    public void closed(@NotNull MucClient mucClient)
+    {
+        for (ConnectionStateListener listener : connectionStateListeners)
+        {
+            listener.closed(mucClient);
+        }
+    }
+
+    @Override
+    public void closedOnError(@NotNull MucClient mucClient)
+    {
+        for (ConnectionStateListener listener : connectionStateListeners)
+        {
+            listener.closedOnError(mucClient);
+        }
+    }
+
+    @Override
+    public void reconnecting(@NotNull MucClient mucClient)
+    {
+        for (ConnectionStateListener listener : connectionStateListeners)
+        {
+            listener.reconnecting(mucClient);
+        }
+    }
+
+    @Override
+    public void reconnectionFailed(@NotNull MucClient mucClient)
+    {
+        for (ConnectionStateListener listener : connectionStateListeners)
+        {
+            listener.reconnectionFailed(mucClient);
+        }
+    }
+
+    @Override
+    public void pingFailed(@NotNull MucClient mucClient)
+    {
+        for (ConnectionStateListener listener : connectionStateListeners)
+        {
+            listener.pingFailed(mucClient);
+        }
+    }
+
+    @Override
+    public void halfOpenDetected(@NotNull MucClient mucClient)
+    {
+        for (ConnectionStateListener listener : connectionStateListeners)
+        {
+            listener.halfOpenDetected(mucClient);
+        }
+    }
+
+    @Override
+    public void halfOpenRecovered(@NotNull MucClient mucClient)
+    {
+        for (ConnectionStateListener listener : connectionStateListeners)
+        {
+            listener.halfOpenRecovered(mucClient);
+        }
     }
 }
