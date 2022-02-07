@@ -884,6 +884,9 @@ public class MucClient
      * This is a hack to work around a bug observed in Smack 4.4.4 in which the network connection is lost, but the
      * XMPPConnection remain connected and authenticated, and the ping failed listener is never called. It is meant as
      * a last resort to prevent leaks.
+     *
+     * TODO: remove this when Smack is updated to include this fix:
+     * https://github.com/igniterealtime/Smack/pull/512
      */
     class HalfOpenConnectionPeriodicCheck
         extends PeriodicRunnable
