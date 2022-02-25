@@ -31,8 +31,4 @@ public interface ConnectionStateListener
     void reconnectionFailed(@NotNull MucClient mucClient);
 
     void pingFailed(@NotNull MucClient mucClient);
-
-    void halfOpenDetected(@NotNull MucClient mucClient);
-
-    void halfOpenRecovered(@NotNull MucClient mucClient);
 }
