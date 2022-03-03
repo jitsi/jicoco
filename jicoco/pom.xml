@@ -34,7 +34,7 @@
     <properties>
         <jetty.version>9.4.44.v20210927</jetty.version>
         <jersey.version>2.35</jersey.version>
-        <smack.version>4.4.4</smack.version>
+        <smack.version>4.4.5</smack.version>
     </properties>
 
     <dependencies>

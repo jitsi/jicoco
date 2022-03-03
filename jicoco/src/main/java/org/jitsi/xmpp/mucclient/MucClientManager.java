@@ -18,7 +18,6 @@ package org.jitsi.xmpp.mucclient;
 
 import org.jetbrains.annotations.*;
 import org.jitsi.service.configuration.*;
-import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
 import org.jitsi.utils.logging2.Logger;
 import org.jivesoftware.smack.*;
@@ -81,11 +80,6 @@ public class MucClientManager implements ConnectionStateListener
      */
     private final Object syncRoot = new Object();
 
-    /**
-     * The {@link RecurringRunnableExecutor} to be utilized by the {@link MucClientManager} class and its instances.
-     */
-    private final RecurringRunnableExecutor recurringRunnableExecutor = new RecurringRunnableExecutor();
-
     List<ConnectionStateListener> connectionStateListeners = new CopyOnWriteArrayList<>();
 
     /**
@@ -145,7 +139,6 @@ public class MucClientManager implements ConnectionStateListener
 
             mucClient = new MucClient(config, MucClientManager.this);
             mucClients.put(config.getId(), mucClient);
-            recurringRunnableExecutor.registerRecurringRunnable(mucClient.getHalfOpenConnectionPeriodicCheck());
         }
 
         mucClient.start();
@@ -345,7 +338,6 @@ public class MucClientManager implements ConnectionStateListener
            logger.info("Can not find MucClient to remove.");
            return false;
        }
-        recurringRunnableExecutor.deRegisterRecurringRunnable(mucClient.getHalfOpenConnectionPeriodicCheck());
         mucClient.stop();
        return true;
     }
@@ -458,24 +450,6 @@ public class MucClientManager implements ConnectionStateListener
         for (ConnectionStateListener listener : connectionStateListeners)
         {
             listener.pingFailed(mucClient);
-        }
-    }
-
-    @Override
-    public void halfOpenDetected(@NotNull MucClient mucClient)
-    {
-        for (ConnectionStateListener listener : connectionStateListeners)
-        {
-            listener.halfOpenDetected(mucClient);
-        }
-    }
-
-    @Override
-    public void halfOpenRecovered(@NotNull MucClient mucClient)
-    {
-        for (ConnectionStateListener listener : connectionStateListeners)
-        {
-            listener.halfOpenRecovered(mucClient);
         }
     }
 }
