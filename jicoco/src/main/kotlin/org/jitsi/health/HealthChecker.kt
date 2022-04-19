@@ -168,7 +168,7 @@ class HealthChecker(
         }
 
         if (exception == null) {
-            logger.info(
+            logger.debug(
                 "Performed a successful health check in $checkDuration. Sticky failure: ${stickyFailures && hasFailed}"
             )
         } else {
@@ -177,6 +177,6 @@ class HealthChecker(
     }
 
     companion object {
-        val stickyFailuresGracePeriodDefault = Duration.ofMinutes(5)
+        val stickyFailuresGracePeriodDefault: Duration = Duration.ofMinutes(5)
     }
 }
