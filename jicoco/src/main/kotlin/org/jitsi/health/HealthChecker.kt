@@ -159,6 +159,7 @@ class HealthChecker(
             exception = Exception("Performing a health check took too long: $checkDuration")
         }
 
+        val previousResult = lastResult
         lastResult = if (stickyFailures && hasFailed && exception == null) {
             // We didn't fail this last test, but we've failed before and
             // sticky failures are enabled.
@@ -168,9 +169,9 @@ class HealthChecker(
         }
 
         if (exception == null) {
-            logger.debug(
+            val message =
                 "Performed a successful health check in $checkDuration. Sticky failure: ${stickyFailures && hasFailed}"
-            )
+            if (previousResult == null) logger.debug(message) else logger.info(message)
         } else {
             logger.error("Health check failed in $checkDuration:", exception)
         }
