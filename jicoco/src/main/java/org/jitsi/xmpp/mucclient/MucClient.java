@@ -239,6 +239,7 @@ public class MucClient
     MucClient(MucClientConfiguration config, MucClientManager mucClientManager)
     {
         this.mucClientManager = mucClientManager;
+        // TODO: use the simpler Map.of() when updated to java 11+
         logger = classLogger.createChildLogger(
                 MucClient.class.getName(),
                 Stream.of(new String[][] {
