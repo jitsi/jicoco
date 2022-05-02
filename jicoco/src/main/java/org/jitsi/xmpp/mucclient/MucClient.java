@@ -40,6 +40,7 @@ import org.jxmpp.stringprep.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.*;
 
 /**
  * The {@link MucClient} is responsible for handling a single XMPP connection
@@ -240,9 +241,10 @@ public class MucClient
         this.mucClientManager = mucClientManager;
         logger = classLogger.createChildLogger(
                 MucClient.class.getName(),
-                JMap.of(
-                    "id", config.getId(),
-                    "hostname", config.getHostname()));
+                Stream.of(new String[][] {
+                    { "id", config.getId() },
+                    { "hostname", config.getHostname() }
+                }).collect(Collectors.toMap(data -> data[0], data -> data[1])));
         this.config = config;
     }
 
