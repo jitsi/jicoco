@@ -76,7 +76,7 @@ class HealthChecker(
     /**
      * The time the last health check finished being performed.
      */
-    private var lastResultTime = Instant.MIN
+    private var lastResultTime = clock.instant()
 
     /**
      * The time when this service was started.
@@ -98,7 +98,7 @@ class HealthChecker(
 
     /**
      * Returns the result of the last performed health check, or a new exception
-     * if no health check has been perform recently.
+     * if no health check has been performed recently.
      * @return
      */
     override fun getResult(): Exception? {
