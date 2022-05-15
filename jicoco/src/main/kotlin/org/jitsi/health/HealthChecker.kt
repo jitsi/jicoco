@@ -91,8 +91,7 @@ class HealthChecker(
     /**
      * The interval at which health checks will be performed.
      */
-    var interval: Duration by Delegates.observable(interval) {
-        _, _, newValue ->
+    var interval: Duration by Delegates.observable(interval) { _, _, newValue ->
         period = newValue.toMillis()
     }
 
