@@ -33,7 +33,7 @@
 
     <properties>
         <jetty.version>9.4.46.v20220331</jetty.version>
-        <jersey.version>2.35</jersey.version>
+        <jersey.version>3.0.4</jersey.version>
         <smack.version>4.4.5</smack.version>
     </properties>
 

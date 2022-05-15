@@ -17,10 +17,9 @@
 package org.jitsi.rest;
 
 import com.fasterxml.jackson.annotation.*;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
 import org.jetbrains.annotations.*;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
 
 /**
  * A generic version REST endpoint.
