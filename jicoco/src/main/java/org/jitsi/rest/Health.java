@@ -21,7 +21,7 @@ import jakarta.ws.rs.core.*;
 import org.jetbrains.annotations.*;
 import org.jitsi.health.*;
 
-import javax.servlet.http.*;
+import jakarta.servlet.http.*;
 
 /**
  * A generic health check REST endpoint which checks the health using a

@@ -17,6 +17,7 @@
 
 package org.jitsi.rest
 
+import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.HttpConfiguration
 import org.eclipse.jetty.server.HttpConnectionFactory
 import org.eclipse.jetty.server.SecureRequestCustomizer
@@ -30,7 +31,6 @@ import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.jitsi.utils.getJavaVersion
 import java.nio.file.Paths
 import java.util.EnumSet
-import javax.servlet.DispatcherType
 
 /**
  * Create a non-secure Jetty server instance listening on the given [port] and [host] address.
