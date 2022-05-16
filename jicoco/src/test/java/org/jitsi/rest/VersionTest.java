@@ -18,7 +18,7 @@ package org.jitsi.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import javax.ws.rs.core.*;
+import jakarta.ws.rs.core.*;
 import org.eclipse.jetty.http.*;
 import org.glassfish.jersey.server.*;
 import org.glassfish.jersey.test.*;

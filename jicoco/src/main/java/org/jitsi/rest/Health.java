@@ -16,12 +16,12 @@
 
 package org.jitsi.rest;
 
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
 import org.jetbrains.annotations.*;
 import org.jitsi.health.*;
 
-import javax.servlet.http.*;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import jakarta.servlet.http.*;
 
 /**
  * A generic health check REST endpoint which checks the health using a

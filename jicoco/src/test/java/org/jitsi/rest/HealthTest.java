@@ -16,12 +16,12 @@
 
 package org.jitsi.rest;
 
+import jakarta.ws.rs.core.*;
 import org.eclipse.jetty.http.*;
 import org.glassfish.jersey.server.*;
 import org.glassfish.jersey.test.*;
 import org.jitsi.health.*;
 
-import javax.ws.rs.core.*;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
