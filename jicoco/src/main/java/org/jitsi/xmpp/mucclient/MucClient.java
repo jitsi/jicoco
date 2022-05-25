@@ -16,12 +16,9 @@
  */
 package org.jitsi.xmpp.mucclient;
 
-import org.jetbrains.annotations.*;
-import org.jitsi.utils.collections.*;
 import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
 import org.jitsi.retry.*;
-import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
 import org.jivesoftware.smack.packet.*;
@@ -37,10 +34,11 @@ import org.jxmpp.jid.parts.*;
 import org.jitsi.xmpp.*;
 import org.jxmpp.stringprep.*;
 
-import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.*;
+
+import static org.jitsi.xmpp.util.ErrorUtilKt.createError;
 
 /**
  * The {@link MucClient} is responsible for handling a single XMPP connection
@@ -529,7 +527,7 @@ public class MucClient
                 .noneMatch(mucJid -> mucJid.toLowerCase().equals(fromJidStr)))
         {
             logger.warn("Received an IQ from a non-MUC member: " + fromJid);
-            return IQUtils.createError(iq, StanzaError.Condition.forbidden);
+            return createError(iq, StanzaError.Condition.forbidden);
         }
 
         IQListener iqListener = this.iqListener;
@@ -546,7 +544,7 @@ public class MucClient
             catch (Exception e)
             {
                 logger.warn("Exception processing IQ, returning internal server error. Request: " + iq, e);
-                responseIq = IQUtils.createError(iq, StanzaError.Condition.internal_server_error, e.getMessage());
+                responseIq = createError(iq, StanzaError.Condition.internal_server_error, e.getMessage());
             }
         }
 
@@ -554,7 +552,7 @@ public class MucClient
         {
             logger.info(
                     "Failed to produce a response for IQ, returning internal server error. Request: " + iq);
-            responseIq = IQUtils.createError(iq, StanzaError.Condition.internal_server_error, "Unknown error");
+            responseIq = createError(iq, StanzaError.Condition.internal_server_error, "Unknown error");
         }
 
         return responseIq;
