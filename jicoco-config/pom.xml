@@ -87,7 +87,7 @@
                         </goals>
                         <configuration>
                             <args>
-                                <arg>-Xopt-in=kotlin.ExperimentalStdlibApi</arg>
+                                <arg>-opt-in=kotlin.ExperimentalStdlibApi</arg>
                             </args>
                         </configuration>
                     </execution>
@@ -99,7 +99,7 @@
                         </goals>
                         <configuration>
                             <args>
-                                <arg>-Xopt-in=kotlin.ExperimentalStdlibApi</arg>
+                                <arg>-opt-in=kotlin.ExperimentalStdlibApi</arg>
                             </args>
                         </configuration>
                     </execution>
