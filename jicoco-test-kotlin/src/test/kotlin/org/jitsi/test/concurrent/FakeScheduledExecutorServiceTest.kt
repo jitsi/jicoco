@@ -19,7 +19,6 @@ package org.jitsi.test.concurrent
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.spyk
 import org.jitsi.utils.secs
 import java.util.concurrent.TimeUnit
 
@@ -27,7 +26,7 @@ class FakeScheduledExecutorServiceTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
-        val executor: FakeScheduledExecutorService = spyk()
+        val executor = FakeScheduledExecutorService()
 
         context("Scheduling a recurring job") {
             var numJobRuns = 0

@@ -21,20 +21,14 @@ import org.jitsi.test.concurrent.*;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 public class RetryStrategyTest
 {
     @Test
     public void testRetryCount()
     {
-        FakeScheduledExecutorService mockedExecutor = mock(
-            FakeScheduledExecutorService.class,
-            withSettings()
-                .useConstructor()
-                .defaultAnswer(CALLS_REAL_METHODS)
-        );
-        RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
+        FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
+        RetryStrategy retryStrategy = new RetryStrategy(fakeExecutor);
 
         long initialDelay = 150L;
         long retryDelay = 50L;
@@ -45,40 +39,35 @@ public class RetryStrategyTest
                     initialDelay, retryDelay, false, targetRetryCount);
 
         retryStrategy.runRetryingTask(retryTask);
-        mockedExecutor.run();
+        fakeExecutor.run();
 
         // Check if the task has not been executed before initial delay
         assertEquals(0, retryTask.counter);
 
-        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
-        mockedExecutor.run();
+        fakeExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        fakeExecutor.run();
 
         // Should be 1 after 1st pass
         assertEquals(1, retryTask.counter);
 
         // Now sleep two time retry delay
-        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
-        mockedExecutor.run();
-        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
-        mockedExecutor.run();
+        fakeExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+        fakeExecutor.run();
+        fakeExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+        fakeExecutor.run();
         assertEquals(3, retryTask.counter);
 
         // Sleep a bit more to check if it has stopped
-        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
-        mockedExecutor.run();
+        fakeExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+        fakeExecutor.run();
         assertEquals(3, retryTask.counter);
     }
 
     @Test
     public void testRetryWithException()
     {
-        FakeScheduledExecutorService mockedExecutor = mock(
-            FakeScheduledExecutorService.class,
-            withSettings()
-                .useConstructor()
-                .defaultAnswer(CALLS_REAL_METHODS)
-        );
-        RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
+        FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
+        RetryStrategy retryStrategy = new RetryStrategy(fakeExecutor);
 
         long initialDelay = 30L;
         long retryDelay = 50L;
@@ -93,12 +82,12 @@ public class RetryStrategyTest
 
         retryStrategy.runRetryingTask(retryTask);
 
-        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
-        mockedExecutor.run();
+        fakeExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        fakeExecutor.run();
         for (int i = 0; i < 3; i++)
         {
-            mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
-            mockedExecutor.run();
+            fakeExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+            fakeExecutor.run();
         }
 
         assertEquals(1, retryTask.counter);
@@ -116,12 +105,12 @@ public class RetryStrategyTest
         retryStrategy.runRetryingTask(retryTask);
 
 
-        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
-        mockedExecutor.run();
+        fakeExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        fakeExecutor.run();
         for (int i = 0; i < 4; i++)
         {
-            mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
-            mockedExecutor.run();
+            fakeExecutor.getClock().elapse(Duration.ofMillis(retryDelay + 10L));
+            fakeExecutor.run();
         }
 
         assertEquals(3, retryTask.counter);
@@ -130,13 +119,8 @@ public class RetryStrategyTest
     @Test
     public void testCancel()
     {
-        FakeScheduledExecutorService mockedExecutor = mock(
-            FakeScheduledExecutorService.class,
-            withSettings()
-                .useConstructor()
-                .defaultAnswer(CALLS_REAL_METHODS)
-        );
-        RetryStrategy retryStrategy = new RetryStrategy(mockedExecutor);
+        FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
+        RetryStrategy retryStrategy = new RetryStrategy(fakeExecutor);
 
         long initialDelay = 30L;
         long retryDelay = 50L;
@@ -148,17 +132,17 @@ public class RetryStrategyTest
 
         retryStrategy.runRetryingTask(retryTask);
 
-        mockedExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
-        mockedExecutor.run();
+        fakeExecutor.getClock().elapse(Duration.ofMillis(initialDelay + 10L));
+        fakeExecutor.run();
 
         retryStrategy.cancel();
 
         assertEquals(1, retryTask.counter);
 
-        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay));
-        mockedExecutor.run();
-        mockedExecutor.getClock().elapse(Duration.ofMillis(retryDelay));
-        mockedExecutor.run();
+        fakeExecutor.getClock().elapse(Duration.ofMillis(retryDelay));
+        fakeExecutor.run();
+        fakeExecutor.getClock().elapse(Duration.ofMillis(retryDelay));
+        fakeExecutor.run();
 
         assertEquals(1, retryTask.counter);
     }
