@@ -19,7 +19,9 @@ package org.jitsi.test.concurrent
 import org.jitsi.test.time.FakeClock
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.Callable
 import java.util.concurrent.Delayed
+import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -28,7 +30,7 @@ import java.util.concurrent.TimeUnit
  * A fake [ScheduledExecutorService] which gives control over when scheduled tasks are run without requiring a
  * separate thread
  */
-abstract class FakeScheduledExecutorService : ScheduledExecutorService {
+class FakeScheduledExecutorService : ScheduledExecutorService {
     private var jobs = JobsTimeline()
     val clock: FakeClock = FakeClock()
 
@@ -124,6 +126,68 @@ abstract class FakeScheduledExecutorService : ScheduledExecutorService {
                 }
             }
         }
+    }
+
+    /* Methods required by ScheduledExecutorService, but not needed by our unit tests. */
+
+    override fun execute(command: Runnable) {
+        TODO("Not yet implemented")
+    }
+
+    override fun shutdown() {
+        TODO("Not yet implemented")
+    }
+
+    override fun shutdownNow(): MutableList<Runnable> {
+        TODO("Not yet implemented")
+    }
+
+    override fun isShutdown(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isTerminated(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun <T : Any?> submit(task: Callable<T>): Future<T> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <T : Any?> submit(task: Runnable, result: T): Future<T> {
+        TODO("Not yet implemented")
+    }
+
+    override fun submit(task: Runnable): Future<*> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <T : Any?> invokeAll(tasks: MutableCollection<out Callable<T>>): MutableList<Future<T>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <T : Any?> invokeAll(
+        tasks: MutableCollection<out Callable<T>>,
+        timeout: Long,
+        unit: TimeUnit
+    ): MutableList<Future<T>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>): T {
+        TODO("Not yet implemented")
+    }
+
+    override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>, timeout: Long, unit: TimeUnit): T {
+        TODO("Not yet implemented")
+    }
+
+    override fun <V : Any?> schedule(callable: Callable<V>, delay: Long, unit: TimeUnit): ScheduledFuture<V> {
+        TODO("Not yet implemented")
     }
 }
 
