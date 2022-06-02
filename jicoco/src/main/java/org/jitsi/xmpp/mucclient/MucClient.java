@@ -829,8 +829,7 @@ public class MucClient
         }
 
         /**
-         * Resets the field which stores the last presence Smack sent on our
-         * behalf.
+         * Resets the field which stores the last presence Smack sent on our behalf.
          */
         private synchronized void resetLastPresenceSent()
         {
@@ -840,15 +839,14 @@ public class MucClient
     }
 
     /**
-     * Detects ping failures and in case of two consecutive failures where the connection is still
-     * connected and authenticated we will close it and let the connectRetry task handle that.
+     * Handle ping failures from {@link PingManager}.
      */
     private class PingFailedListenerImpl
         implements PingFailedListener
     {
         /**
-         * When ping fails the PingManager stops scheduling new pings.
-         * That's why we will send manually another one to check and disconnect if that fails.
+         * Handle a ping failure: disconnect to trigger a re-connect if the XMPP connection still thinks that it is
+         * connected.
          */
         @Override
         public void pingFailed()
