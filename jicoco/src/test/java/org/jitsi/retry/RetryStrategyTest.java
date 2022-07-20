@@ -17,7 +17,7 @@ package org.jitsi.retry;
 
 import java.time.*;
 import java.util.concurrent.*;
-import org.jitsi.test.concurrent.*;
+import org.jitsi.utils.concurrent.*;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
