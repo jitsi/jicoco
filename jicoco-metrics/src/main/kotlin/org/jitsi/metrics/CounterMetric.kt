@@ -15,6 +15,7 @@
  */
 package org.jitsi.metrics
 
+import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Counter
 
 /**
@@ -27,21 +28,20 @@ import io.prometheus.client.Counter
  */
 class CounterMetric @JvmOverloads constructor(
     /** the name of this metric */
-    name: String,
+    override val name: String,
     /** the description of this metric */
     help: String,
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** an optional initial value for this metric */
     initialValue: Long = 0L
-) : Metric<Long> {
+) : Metric<Long>() {
     private val counter =
-        Counter.build(name, help).namespace(namespace).register().apply { inc(initialValue.toDouble()) }
+        Counter.build(name, help).namespace(namespace).create().apply { inc(initialValue.toDouble()) }
 
-    /**
-     * Returns the value of this metric.
-     */
     override fun get() = counter.get().toLong()
+
+    override fun register(registry: CollectorRegistry) = this.also { registry.register(counter) }
 
     /**
      * Atomically adds the given value to this counter, returning the updated value.

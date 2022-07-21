@@ -15,6 +15,7 @@
  */
 package org.jitsi.metrics
 
+import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 
 /**
@@ -25,20 +26,19 @@ import io.prometheus.client.Gauge
  */
 class DoubleGaugeMetric @JvmOverloads constructor(
     /** the name of this metric */
-    name: String,
+    override val name: String,
     /** the description of this metric */
     help: String,
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** an optional initial value for this metric */
     initialValue: Double = 0.0
-) : Metric<Double> {
-    private val gauge = Gauge.build(name, help).namespace(namespace).register().apply { set(initialValue) }
+) : Metric<Double>() {
+    private val gauge = Gauge.build(name, help).namespace(namespace).create().apply { set(initialValue) }
 
-    /**
-     * Returns the value of this metric.
-     */
     override fun get() = gauge.get()
+
+    override fun register(registry: CollectorRegistry) = this.also { registry.register(gauge) }
 
     /**
      * Atomically sets the gauge to the given value, returning the updated value.

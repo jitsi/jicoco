@@ -15,6 +15,7 @@
  */
 package org.jitsi.metrics
 
+import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Info
 
 /**
@@ -25,18 +26,17 @@ import io.prometheus.client.Info
  */
 class InfoMetric(
     /** the name of this metric */
-    private val name: String,
+    override val name: String,
     /** the description of this metric */
     help: String,
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** the value of this info metric */
     private val value: String
-) : Metric<String> {
-    private val info = Info.build(name, help).namespace(namespace).register().apply { info(name, value) }
+) : Metric<String>() {
+    private val info = Info.build(name, help).namespace(namespace).create().apply { info(name, value) }
 
-    /**
-     * Returns the value of this info metric.
-     */
     override fun get() = value
+
+    override fun register(registry: CollectorRegistry) = this.also { registry.register(info) }
 }

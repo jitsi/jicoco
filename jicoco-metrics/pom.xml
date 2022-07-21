@@ -41,11 +41,6 @@
             <artifactId>jitsi-utils</artifactId>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>jitsi-metaconfig</artifactId>
-            <version>1.0-9-g5e1b624</version>
-        </dependency>
-        <dependency>
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient</artifactId>
             <version>${prometheus.version}</version>
@@ -54,11 +49,6 @@
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient_common</artifactId>
             <version>${prometheus.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-reflect</artifactId>
-            <version>${kotlin.version}</version>
         </dependency>
 
         <dependency>

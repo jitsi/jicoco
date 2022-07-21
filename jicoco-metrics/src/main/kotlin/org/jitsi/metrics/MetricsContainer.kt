@@ -24,7 +24,10 @@ import java.io.StringWriter
 /**
  * `MetricsContainer` gathers and exports metrics from Jitsi components.
  */
-open class MetricsContainer {
+open class MetricsContainer @JvmOverloads constructor(
+    /** the registry used to register metrics */
+    val registry: CollectorRegistry = CollectorRegistry.defaultRegistry
+) {
 
     /**
      * Namespace prefix added to all metrics.
@@ -63,7 +66,7 @@ open class MetricsContainer {
     fun getPrometheusMetrics(contentType: String): String {
         val writer = StringWriter()
         try {
-            TextFormat.writeFormat(contentType, writer, CollectorRegistry.defaultRegistry.metricFamilySamples())
+            TextFormat.writeFormat(contentType, writer, registry.metricFamilySamples())
         } catch (e: IOException) {
             throw RuntimeException(e)
         }
@@ -90,7 +93,7 @@ open class MetricsContainer {
             }
             return metrics[name] as BooleanMetric
         }
-        return BooleanMetric(name, help, namespace, initialValue).also { metrics[name] = it }
+        return BooleanMetric(name, help, namespace, initialValue).apply { metrics[name] = register(registry) }
     }
 
     /**
@@ -113,7 +116,7 @@ open class MetricsContainer {
             }
             return metrics[name] as CounterMetric
         }
-        return CounterMetric(name, help, namespace, initialValue).also { metrics[name] = it }
+        return CounterMetric(name, help, namespace, initialValue).apply { metrics[name] = register(registry) }
     }
 
     /**
@@ -136,7 +139,7 @@ open class MetricsContainer {
             }
             return metrics[name] as LongGaugeMetric
         }
-        return LongGaugeMetric(name, help, namespace, initialValue).also { metrics[name] = it }
+        return LongGaugeMetric(name, help, namespace, initialValue).apply { metrics[name] = register(registry) }
     }
 
     /**
@@ -158,6 +161,6 @@ open class MetricsContainer {
             }
             return metrics[name] as InfoMetric
         }
-        return InfoMetric(name, help, namespace, value).also { metrics[name] = it }
+        return InfoMetric(name, help, namespace, value).apply { metrics[name] = register(registry) }
     }
 }

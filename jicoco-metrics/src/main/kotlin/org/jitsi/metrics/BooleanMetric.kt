@@ -15,6 +15,7 @@
  */
 package org.jitsi.metrics
 
+import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 
 /**
@@ -23,30 +24,20 @@ import io.prometheus.client.Gauge
  */
 class BooleanMetric @JvmOverloads constructor(
     /** the name of this metric */
-    name: String,
+    override val name: String,
     /** the description of this metric */
     help: String,
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** an optional initial value for this metric */
     initialValue: Boolean = false
-) : Metric<Boolean> {
+) : Metric<Boolean>() {
     private val gauge =
-        Gauge.build(name, help).namespace(namespace).register().apply { set(if (initialValue) 1.0 else 0.0) }
+        Gauge.build(name, help).namespace(namespace).create().apply { set(if (initialValue) 1.0 else 0.0) }
 
-    /**
-     * Initializes a new `BooleanMetric` instance,
-     * registering the underlying `Gauge` with the default registry.
-     *
-     * @param name      the name of this gauge
-     * @param help      the description of this gauge
-     * @param namespace the namespace (prefix) of this gauge
-     */
-
-    /**
-     * Returns the value of this metric.
-     */
     override fun get() = gauge.get() != 0.0
+
+    override fun register(registry: CollectorRegistry) = this.also { registry.register(gauge) }
 
     /**
      * Atomically sets the gauge to the given value.

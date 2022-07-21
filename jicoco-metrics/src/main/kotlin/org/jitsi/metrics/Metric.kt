@@ -15,13 +15,28 @@
  */
 package org.jitsi.metrics
 
+import io.prometheus.client.CollectorRegistry
+
 /**
- * Supplies the current value of a metric.
- * Metrics are held in the [MetricsContainer].
+ * `Metric` provides methods common to all Prometheus metric type wrappers.
+ *
+ * A wrapper that extends `Metric<T>` produces and consumes values of type `T`.
+ * Metrics are held in a [MetricsContainer].
  */
-fun interface Metric<T> {
+sealed class Metric<T> {
+
     /**
-     * Supplies the current value of a metric.
+     * The name of this metric.
      */
-    fun get(): T
+    abstract val name: String
+
+    /**
+     * Supplies the current value of this metric.
+     */
+    abstract fun get(): T
+
+    /**
+     * Registers this metric with the given [CollectorRegistry] and returns it.
+     */
+    internal abstract fun register(registry: CollectorRegistry): Metric<T>
 }
