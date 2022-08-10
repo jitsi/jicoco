@@ -50,6 +50,11 @@ class CounterMetric @JvmOverloads constructor(
     override fun register(registry: CollectorRegistry) = this.also { registry.register(counter) }
 
     /**
+     * Atomically adds the given value to this counter.
+     */
+    fun add(delta: Long) = synchronized(counter) { counter.inc(delta.toDouble()) }
+
+    /**
      * Atomically adds the given value to this counter, returning the updated value.
      *
      * @return the updated value

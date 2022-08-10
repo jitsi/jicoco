@@ -66,7 +66,7 @@ class MetricsContainerTest : ShouldSpec() {
             }
             context("and altering their values") {
                 booleanMetric.set(!booleanMetric.get())
-                counter.addAndGet(5)
+                counter.add(5)
                 longGauge.set(5)
                 context("then resetting all metrics in the MetricsContainer") {
                     mc.resetAll()
