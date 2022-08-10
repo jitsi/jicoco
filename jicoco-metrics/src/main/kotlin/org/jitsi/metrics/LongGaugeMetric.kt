@@ -32,11 +32,13 @@ class LongGaugeMetric @JvmOverloads constructor(
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** an optional initial value for this metric */
-    initialValue: Long = 0L
+    internal val initialValue: Long = 0L
 ) : Metric<Long>() {
     private val gauge = Gauge.build(name, help).namespace(namespace).create().apply { set(initialValue.toDouble()) }
 
     override fun get() = gauge.get().toLong()
+
+    override fun reset() = set(initialValue)
 
     override fun register(registry: CollectorRegistry) = this.also { registry.register(gauge) }
 

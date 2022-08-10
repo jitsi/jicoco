@@ -34,12 +34,18 @@ class CounterMetric @JvmOverloads constructor(
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** an optional initial value for this metric */
-    initialValue: Long = 0L
+    internal val initialValue: Long = 0L
 ) : Metric<Long>() {
     private val counter =
         Counter.build(name, help).namespace(namespace).create().apply { inc(initialValue.toDouble()) }
 
     override fun get() = counter.get().toLong()
+
+    override fun reset() {
+        synchronized(counter) {
+            counter.apply { clear() }.inc(initialValue.toDouble())
+        }
+    }
 
     override fun register(registry: CollectorRegistry) = this.also { registry.register(counter) }
 

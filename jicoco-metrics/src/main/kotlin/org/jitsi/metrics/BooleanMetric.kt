@@ -30,12 +30,14 @@ class BooleanMetric @JvmOverloads constructor(
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** an optional initial value for this metric */
-    initialValue: Boolean = false
+    internal val initialValue: Boolean = false
 ) : Metric<Boolean>() {
     private val gauge =
         Gauge.build(name, help).namespace(namespace).create().apply { set(if (initialValue) 1.0 else 0.0) }
 
     override fun get() = gauge.get() != 0.0
+
+    override fun reset() = set(initialValue)
 
     override fun register(registry: CollectorRegistry) = this.also { registry.register(gauge) }
 

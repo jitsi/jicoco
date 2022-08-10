@@ -163,4 +163,11 @@ open class MetricsContainer @JvmOverloads constructor(
         }
         return InfoMetric(name, help, namespace, value).apply { metrics[name] = register(registry) }
     }
+
+    /**
+     * Resets all metrics in this container to their default values.
+     */
+    fun resetAll() {
+        metrics.values.forEach { it.reset() }
+    }
 }
