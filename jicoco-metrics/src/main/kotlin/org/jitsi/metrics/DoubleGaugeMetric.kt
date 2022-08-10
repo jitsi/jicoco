@@ -32,13 +32,20 @@ class DoubleGaugeMetric @JvmOverloads constructor(
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** an optional initial value for this metric */
-    initialValue: Double = 0.0
+    internal val initialValue: Double = 0.0
 ) : Metric<Double>() {
     private val gauge = Gauge.build(name, help).namespace(namespace).create().apply { set(initialValue) }
 
     override fun get() = gauge.get()
 
+    override fun reset() = set(initialValue)
+
     override fun register(registry: CollectorRegistry) = this.also { registry.register(gauge) }
+
+    /**
+     * Sets the value of this gauge to the given value.
+     */
+    fun set(newValue: Double) = gauge.set(newValue)
 
     /**
      * Atomically sets the gauge to the given value, returning the updated value.

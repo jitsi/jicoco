@@ -64,6 +64,19 @@ class MetricsContainerTest : ShouldSpec() {
                     a shouldContainExactly b
                 }
             }
+            context("and altering their values") {
+                booleanMetric.set(!booleanMetric.get())
+                counter.add(5)
+                longGauge.set(5)
+                context("then resetting all metrics in the MetricsContainer") {
+                    mc.resetAll()
+                    should("set all metric values to their initial values") {
+                        booleanMetric.get() shouldBe booleanMetric.initialValue
+                        counter.get() shouldBe counter.initialValue
+                        longGauge.get() shouldBe longGauge.initialValue
+                    }
+                }
+            }
         }
     }
 }

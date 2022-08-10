@@ -32,11 +32,13 @@ class InfoMetric(
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** the value of this info metric */
-    private val value: String
+    internal val value: String
 ) : Metric<String>() {
     private val info = Info.build(name, help).namespace(namespace).create().apply { info(name, value) }
 
     override fun get() = value
+
+    override fun reset() = info.info(name, value)
 
     override fun register(registry: CollectorRegistry) = this.also { registry.register(info) }
 }

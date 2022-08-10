@@ -36,6 +36,11 @@ sealed class Metric<T> {
     abstract fun get(): T
 
     /**
+     * Resets the value of this metric to its initial value.
+     */
+    internal abstract fun reset()
+
+    /**
      * Registers this metric with the given [CollectorRegistry] and returns it.
      */
     internal abstract fun register(registry: CollectorRegistry): Metric<T>
