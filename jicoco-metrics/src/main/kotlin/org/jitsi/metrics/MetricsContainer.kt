@@ -17,6 +17,8 @@ package org.jitsi.metrics
 
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.LoggerImpl
 import org.json.simple.JSONObject
 import java.io.IOException
 import java.io.StringWriter
@@ -28,6 +30,7 @@ open class MetricsContainer @JvmOverloads constructor(
     /** the registry used to register metrics */
     val registry: CollectorRegistry = CollectorRegistry.defaultRegistry
 ) {
+    private val logger: Logger = LoggerImpl(javaClass.name)
 
     /**
      * Namespace prefix added to all metrics.
@@ -110,17 +113,23 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the optional initial value of the metric */
         initialValue: Long = 0
     ): CounterMetric {
-        if (metrics.containsKey(name)) {
-            if (checkForNameConflicts) {
-                throw RuntimeException("Could not register metric '$name'. A metric with that name already exists.")
+        val newName = when (name.endsWith("_total")) {
+            true -> name
+            false -> "${name}_total".also {
+                logger.warn("Counter '$name' was renamed to '$it' to ensure consistent metric naming.")
             }
-            return metrics[name] as CounterMetric
         }
-        return CounterMetric(name, help, namespace, initialValue).apply { metrics[name] = register(registry) }
+        if (metrics.containsKey(newName)) {
+            if (checkForNameConflicts) {
+                throw RuntimeException("Could not register metric '$newName'. A metric with that name already exists.")
+            }
+            return metrics[newName] as CounterMetric
+        }
+        return CounterMetric(newName, help, namespace, initialValue).apply { metrics[newName] = register(registry) }
     }
 
     /**
-     * Creates and registers a [CounterMetric] with the given [name], [help] string and optional [initialValue].
+     * Creates and registers a [LongGaugeMetric] with the given [name], [help] string and optional [initialValue].
      *
      * Throws an exception if a metric with the same name but a different type exists.
      */
