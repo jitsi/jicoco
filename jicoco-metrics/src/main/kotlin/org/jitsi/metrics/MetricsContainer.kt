@@ -116,7 +116,7 @@ open class MetricsContainer @JvmOverloads constructor(
         val newName = if (name.endsWith("_total")) name else "${name}_total".also {
             logger.debug("Counter '$name' was renamed to '$it' to ensure consistent metric naming.")
         }
-        if (metrics.containsKey(newName)) {
+        if (metrics.containsKey(newName) or metrics.containsKey(name)) {
             if (checkForNameConflicts) {
                 throw RuntimeException("Could not register metric '$newName'. A metric with that name already exists.")
             }

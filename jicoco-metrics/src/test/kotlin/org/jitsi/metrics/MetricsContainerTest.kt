@@ -41,6 +41,8 @@ class MetricsContainerTest : ShouldSpec() {
                         // "counter" is renamed to "counter_total" so both should throw an exception
                         shouldThrow<RuntimeException> { mc.registerCounter("counter", "A counter metric") }
                         shouldThrow<RuntimeException> { mc.registerCounter("counter_total", "A counter metric") }
+                        // we test this because the Prometheus JVM library stores Counters without the "_total" suffix
+                        shouldThrow<RuntimeException> { mc.registerCounter("boolean_total", "A counter metric") }
                     }
                 }
                 context("without checking for name conflicts") {
