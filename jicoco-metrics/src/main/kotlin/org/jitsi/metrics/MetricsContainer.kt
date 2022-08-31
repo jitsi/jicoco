@@ -17,8 +17,7 @@ package org.jitsi.metrics
 
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
-import org.jitsi.utils.logging2.Logger
-import org.jitsi.utils.logging2.LoggerImpl
+import org.jitsi.utils.logging2.createLogger
 import org.json.simple.JSONObject
 import java.io.IOException
 import java.io.StringWriter
@@ -30,7 +29,7 @@ open class MetricsContainer @JvmOverloads constructor(
     /** the registry used to register metrics */
     val registry: CollectorRegistry = CollectorRegistry.defaultRegistry
 ) {
-    private val logger: Logger = LoggerImpl(javaClass.name)
+    private val logger = createLogger()
 
     /**
      * Namespace prefix added to all metrics.
@@ -101,6 +100,7 @@ open class MetricsContainer @JvmOverloads constructor(
 
     /**
      * Creates and registers a [CounterMetric] with the given [name], [help] string and optional [initialValue].
+     * If omitted, a "_total" suffix is added to the metric name to ensure consistent (Counter) metric naming.
      *
      * Throws an exception if a metric with the same name but a different type exists.
      */
@@ -113,11 +113,8 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the optional initial value of the metric */
         initialValue: Long = 0
     ): CounterMetric {
-        val newName = when (name.endsWith("_total")) {
-            true -> name
-            false -> "${name}_total".also {
-                logger.warn("Counter '$name' was renamed to '$it' to ensure consistent metric naming.")
-            }
+        val newName = if (name.endsWith("_total")) name else "${name}_total".also {
+            logger.debug("Counter '$name' was renamed to '$it' to ensure consistent metric naming.")
         }
         if (metrics.containsKey(newName)) {
             if (checkForNameConflicts) {
