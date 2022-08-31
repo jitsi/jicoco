@@ -38,13 +38,18 @@ class MetricsContainerTest : ShouldSpec() {
                 context("while checking for name conflicts") {
                     should("throw a RuntimeException") {
                         shouldThrow<RuntimeException> { mc.registerBooleanMetric("boolean", "A boolean metric") }
+                        // "counter" is renamed to "counter_total" so both should throw an exception
+                        shouldThrow<RuntimeException> { mc.registerCounter("counter", "A counter metric") }
+                        shouldThrow<RuntimeException> { mc.registerCounter("counter_total", "A counter metric") }
                     }
                 }
                 context("without checking for name conflicts") {
                     mc.checkForNameConflicts = false
                     should("return an existing metric") {
                         booleanMetric shouldBe mc.registerBooleanMetric("boolean", "A boolean metric")
+                        // "counter" is renamed to "counter_total" so both should return the same metric
                         counter shouldBe mc.registerCounter("counter", "A counter metric")
+                        counter shouldBe mc.registerCounter("counter_total", "A counter metric")
                         info shouldBe mc.registerInfo("info", "An info metric", "value")
                         longGauge shouldBe mc.registerLongGauge("gauge", "A gauge metric")
                     }
