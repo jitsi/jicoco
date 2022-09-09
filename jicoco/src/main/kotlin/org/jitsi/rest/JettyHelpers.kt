@@ -18,6 +18,7 @@
 package org.jitsi.rest
 
 import jakarta.servlet.DispatcherType
+import org.eclipse.jetty.http.HttpStatus
 import org.eclipse.jetty.server.HttpConfiguration
 import org.eclipse.jetty.server.HttpConnectionFactory
 import org.eclipse.jetty.server.SecureRequestCustomizer
@@ -43,6 +44,12 @@ fun createJettyServer(
 ): Server {
     val config = HttpConfiguration().apply {
         this.sendServerVersion = sendServerVersion
+        addCustomizer { _, _, request ->
+            if (request.method.equals("TRACE", ignoreCase = true)) {
+                request.isHandled = true
+                request.response.status = HttpStatus.METHOD_NOT_ALLOWED_405
+            }
+        }
     }
     val server = Server().apply {
         handler = ServletContextHandler()
