@@ -58,7 +58,7 @@ public class Prometheus
     }
 
     @GET
-    @Produces({MediaType.APPLICATION_JSON, "*/*;q=0"})
+    @Produces(MediaType.APPLICATION_JSON)
     public String getJsonString()
     {
         return metricsContainer.getJsonString();
