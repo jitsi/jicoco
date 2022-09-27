@@ -23,6 +23,7 @@ import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
 import org.jivesoftware.smack.packet.*;
 import org.jivesoftware.smack.tcp.*;
+import org.jivesoftware.smack.util.*;
 import org.jivesoftware.smackx.disco.*;
 import org.jivesoftware.smackx.muc.*;
 import org.jivesoftware.smackx.muc.packet.*;
@@ -687,14 +688,15 @@ public class MucClient
         /**
          * Intercepts presence packets sent by smack and saves the last one.
          */
-        private final PresenceListener presenceInterceptor = presence ->
+        private final Consumer<PresenceBuilder> presenceInterceptor = presence ->
         {
             // The initial presence sent by smack contains an empty "x"
             // extension. If this extension is included in a subsequent stanza,
             // it indicates that the client lost its synchronization and causes
             // the MUC service to re-send the presence of each occupant in the
             // room.
-            PresenceBuilder nextLastPresence = presence.asBuilder((String) null)
+            // Make a copy to make sure we don't remove the extension from the actual initial presence.
+            PresenceBuilder nextLastPresence = presence.build().asBuilder((String) null)
                 .removeExtension(MUCInitialPresence.ELEMENT, MUCInitialPresence.NAMESPACE);
             synchronized (this)
             {
