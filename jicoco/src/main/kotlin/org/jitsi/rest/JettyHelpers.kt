@@ -37,13 +37,9 @@ import java.util.EnumSet
  * Create a non-secure Jetty server instance listening on the given [port] and [host] address.
  * [sendServerVersion] controls whether Jetty should send its server version in the error responses or not.
  */
-fun createJettyServer(
-    port: Int,
-    host: String? = null,
-    sendServerVersion: Boolean = true
-): Server {
-    val config = HttpConfiguration().apply {
-        this.sendServerVersion = sendServerVersion
+fun createJettyServer(config: JettyBundleActivatorConfig): Server {
+    val httpConfig = HttpConfiguration().apply {
+        sendServerVersion = config.sendServerVersion
         addCustomizer { _, _, request ->
             if (request.method.equals("TRACE", ignoreCase = true)) {
                 request.isHandled = true
@@ -54,9 +50,9 @@ fun createJettyServer(
     val server = Server().apply {
         handler = ServletContextHandler()
     }
-    val connector = ServerConnector(server, HttpConnectionFactory(config)).apply {
-        this.port = port
-        this.host = host
+    val connector = ServerConnector(server, HttpConnectionFactory(httpConfig)).apply {
+        port = config.port
+        host = config.host
     }
     server.addConnector(connector)
     return server
@@ -68,43 +64,29 @@ fun createJettyServer(
  * client auth is needed for SSL (see [SslContextFactory.setNeedClientAuth]).
  * [sendServerVersion] controls whether Jetty should send its server version in the error responses or not.
  */
-fun createSecureJettyServer(
-    port: Int,
-    keyStorePath: String,
-    host: String? = null,
-    keyStorePassword: String? = null,
-    needClientAuth: Boolean = false,
-    sendServerVersion: Boolean = true
-): Server {
-    val sslContextFactoryKeyStoreFile = Paths.get(keyStorePath).toFile()
+fun createSecureJettyServer(config: JettyBundleActivatorConfig): Server {
+    val sslContextFactoryKeyStoreFile = Paths.get(config.keyStorePath!!).toFile()
     val sslContextFactory = SslContextFactory.Server().apply {
-        if (supportsTls13()) {
-            setIncludeProtocols("TLSv1.2", "TLSv1.3")
+        val tlsProtocols = if (supportsTls13()) {
+            config.tlsProtocols
         } else {
-            setIncludeProtocols("TLSv1.2")
+            config.tlsProtocols.filterNot { it == JettyBundleActivatorConfig.TLS_1_3 }
         }
-        setIncludeCipherSuites(
-            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
-            "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
-        )
+        setIncludeProtocols(*tlsProtocols.toTypedArray())
+        setIncludeCipherSuites(*config.tlsCipherSuites.toTypedArray())
+
         isRenegotiationAllowed = false
-        if (keyStorePassword != null) {
-            setKeyStorePassword(keyStorePassword)
+        if (config.keyStorePassword != null) {
+            keyStorePassword = config.keyStorePassword
         }
-        this.keyStorePath = sslContextFactoryKeyStoreFile.path
-        this.needClientAuth = needClientAuth
+        keyStorePath = sslContextFactoryKeyStoreFile.path
+        needClientAuth = config.needClientAuth
     }
-    val config = HttpConfiguration().apply {
-        securePort = port
+    val httpConfig = HttpConfiguration().apply {
+        securePort = config.tlsPort
         secureScheme = "https"
         addCustomizer(SecureRequestCustomizer())
-        this.sendServerVersion = sendServerVersion
+        sendServerVersion = config.sendServerVersion
     }
     val server = Server().apply {
         handler = ServletContextHandler()
@@ -116,10 +98,10 @@ fun createSecureJettyServer(
             sslContextFactory,
             "http/1.1"
         ),
-        HttpConnectionFactory(config)
+        HttpConnectionFactory(httpConfig)
     ).apply {
-        this.host = host
-        this.port = port
+        host = config.host
+        port = config.tlsPort
     }
     server.addConnector(connector)
     return server
@@ -130,20 +112,9 @@ fun createSecureJettyServer(
  */
 fun createServer(config: JettyBundleActivatorConfig): Server {
     return if (config.isTls) {
-        createSecureJettyServer(
-            config.tlsPort,
-            config.keyStorePath!!,
-            config.host,
-            config.keyStorePassword,
-            config.needClientAuth,
-            config.sendServerVersion
-        )
+        createSecureJettyServer(config)
     } else {
-        createJettyServer(
-            config.port,
-            config.host,
-            config.sendServerVersion
-        )
+        createJettyServer(config)
     }
 }
 
