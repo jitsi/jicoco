@@ -95,6 +95,32 @@ class JettyBundleActivatorConfig(
         "default" { true }
     }
 
+    val tlsProtocols: List<String> by config {
+        "$newPropertyPrefix.tls-protocols".from(JitsiConfig.newConfig)
+        "default" { DEFAULT_TLS_PROTOCOLS }
+    }
+
+    val tlsCipherSuites: List<String> by config {
+        "$newPropertyPrefix.tls-cipher-suites".from(JitsiConfig.newConfig)
+        "default" { DEFAULT_TLS_CIPHER_SUITES }
+    }
+
     override fun toString() = "host=$host, port=$port, tlsPort=$tlsPort, isTls=$isTls, keyStorePath=$keyStorePath, " +
-        "sendServerVersion=$sendServerVersion"
+        "sendServerVersion=$sendServerVersion, $tlsProtocols=$tlsProtocols, tlsCipherSuites=$tlsCipherSuites"
+
+    companion object {
+        val TLS_1_2 = "TLSv1.2"
+        val TLS_1_3 = "TLSv1.3"
+        val DEFAULT_TLS_PROTOCOLS = listOf(TLS_1_2, TLS_1_3)
+        val DEFAULT_TLS_CIPHER_SUITES = listOf(
+            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
+        )
+    }
 }
