@@ -71,11 +71,6 @@
                 <artifactId>jitsi-utils</artifactId>
                 <version>1.0-119-ga7b23ff</version>
             </dependency>
-            <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-stdlib-jdk8</artifactId>
-                <version>${kotlin.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
