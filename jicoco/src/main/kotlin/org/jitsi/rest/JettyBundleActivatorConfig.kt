@@ -106,7 +106,7 @@ class JettyBundleActivatorConfig(
     }
 
     override fun toString() = "host=$host, port=$port, tlsPort=$tlsPort, isTls=$isTls, keyStorePath=$keyStorePath, " +
-        "sendServerVersion=$sendServerVersion"
+        "sendServerVersion=$sendServerVersion, $tlsProtocols=$tlsProtocols, tlsCipherSuites=$tlsCipherSuites"
 
     companion object {
         val TLS_1_2 = "TLSv1.2"
