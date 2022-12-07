@@ -29,7 +29,6 @@ import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.eclipse.jetty.util.ssl.SslContextFactory
-import org.jitsi.utils.getJavaVersion
 import java.nio.file.Paths
 import java.util.EnumSet
 
@@ -67,12 +66,7 @@ fun createJettyServer(config: JettyBundleActivatorConfig): Server {
 fun createSecureJettyServer(config: JettyBundleActivatorConfig): Server {
     val sslContextFactoryKeyStoreFile = Paths.get(config.keyStorePath!!).toFile()
     val sslContextFactory = SslContextFactory.Server().apply {
-        val tlsProtocols = if (supportsTls13()) {
-            config.tlsProtocols
-        } else {
-            config.tlsProtocols.filterNot { it == JettyBundleActivatorConfig.TLS_1_3 }
-        }
-        setIncludeProtocols(*tlsProtocols.toTypedArray())
+        setIncludeProtocols(*config.tlsProtocols.toTypedArray())
         setIncludeCipherSuites(*config.tlsCipherSuites.toTypedArray())
 
         isRenegotiationAllowed = false
@@ -137,12 +131,3 @@ fun ServletContextHandler.enableCors(pathSpec: String = "/*") {
 
 fun Server.addServlet(servlet: ServletHolder, pathSpec: String) =
     this.servletContextHandler.addServlet(servlet, pathSpec)
-
-// TLS 1.3 requires Java 11 or later.
-private fun supportsTls13(): Boolean {
-    return try {
-        getJavaVersion() >= 11
-    } catch (t: Throwable) {
-        false
-    }
-}
