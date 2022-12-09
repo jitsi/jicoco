@@ -342,6 +342,12 @@ public class MucClientManager implements ConnectionStateListener
        return true;
     }
 
+    @Nullable
+    public MucClient getMucClient(@NotNull String id)
+    {
+        return mucClients.get(id);
+    }
+
     /**
      * Stops and removed all MucClients.
      */

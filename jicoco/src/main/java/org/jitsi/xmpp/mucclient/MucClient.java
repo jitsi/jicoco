@@ -16,6 +16,7 @@
  */
 package org.jitsi.xmpp.mucclient;
 
+import org.jetbrains.annotations.*;
 import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.*;
 import org.jitsi.retry.*;
@@ -187,6 +188,7 @@ public class MucClient
     /**
      * This {@link MucClient}'s configuration.
      */
+    @NotNull
     private final MucClientConfiguration config;
 
     /**
@@ -235,7 +237,7 @@ public class MucClient
      *
      * @param config xmpp connection details
      */
-    MucClient(MucClientConfiguration config, MucClientManager mucClientManager)
+    MucClient(@NotNull MucClientConfiguration config, MucClientManager mucClientManager)
     {
         this.mucClientManager = mucClientManager;
         // TODO: use the simpler Map.of() when updated to java 11+
@@ -246,6 +248,12 @@ public class MucClient
                     { "hostname", config.getHostname() }
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1])));
         this.config = config;
+    }
+
+    @NotNull
+    public MucClientConfiguration getConfig()
+    {
+        return config;
     }
 
     /**
