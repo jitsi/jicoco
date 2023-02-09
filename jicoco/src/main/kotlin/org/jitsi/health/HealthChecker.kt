@@ -100,13 +100,14 @@ class HealthChecker(
      * if no health check has been performed recently.
      * @return
      */
-    override fun getResult(): Exception? {
-        val timeSinceLastResult: Duration = Duration.between(lastResultTime, clock.instant())
-        if (timeSinceLastResult > timeout) {
-            return Exception("No health checks performed recently, the last result was $timeSinceLastResult ago.")
+    override val result: Exception?
+        get() {
+            val timeSinceLastResult: Duration = Duration.between(lastResultTime, clock.instant())
+            if (timeSinceLastResult > timeout) {
+                return Exception("No health checks performed recently, the last result was $timeSinceLastResult ago.")
+            }
+            return lastResult
         }
-        return lastResult
-    }
 
     fun start() {
         if (executor == null) {
@@ -179,4 +180,12 @@ class HealthChecker(
     companion object {
         val stickyFailuresGracePeriodDefault: Duration = Duration.ofMinutes(5)
     }
+}
+interface HealthCheckService {
+    /**
+     * Returns the result of a health check: either {@code null} indicating
+     * the service is healthy, or the exception which caused the health
+     * check failure otherwise.
+     */
+    val result: Exception?
 }
