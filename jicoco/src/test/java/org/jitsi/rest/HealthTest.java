@@ -49,7 +49,7 @@ public class HealthTest extends JerseyTest
     @Test
     public void testSuccessfulHealthCheck()
     {
-        when(healthCheckService.getResult()).thenReturn(null);
+        when(healthCheckService.getResult()).thenReturn(new Result());
 
         Response resp = target(BASE_URL).request().get();
         assertEquals(HttpStatus.OK_200, resp.getStatus());
@@ -57,6 +57,22 @@ public class HealthTest extends JerseyTest
 
     @Test
     public void testFailingHealthCheck()
+    {
+        when(healthCheckService.getResult()).thenReturn(new Result(false, true, null, false, null));
+        Response resp = target(BASE_URL).request().get();
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, resp.getStatus());
+    }
+
+    @Test
+    public void testFailingHealthCheckWithCustomResponseCode()
+    {
+        when(healthCheckService.getResult()).thenReturn(new Result(false, false, 502, false, null));
+        Response resp = target(BASE_URL).request().get();
+        assertEquals(HttpStatus.BAD_GATEWAY_502, resp.getStatus());
+    }
+
+    @Test
+    public void testExceptionDuringHealthCheck()
     {
         when(healthCheckService.getResult()).thenThrow(new RuntimeException("Health check failed"));
         Response resp = target(BASE_URL).request().get();

@@ -21,8 +21,6 @@ import jakarta.ws.rs.core.*;
 import org.jetbrains.annotations.*;
 import org.jitsi.health.*;
 
-import jakarta.servlet.http.*;
-
 /**
  * A generic health check REST endpoint which checks the health using a
  * a {@link HealthCheckService}, if one is present.
@@ -43,13 +41,18 @@ public class Health
     @Produces(MediaType.APPLICATION_JSON)
     public Response getHealth()
     {
-        Exception status = healthCheckService.getResult();
-        if (status != null)
+        Result result = healthCheckService.getResult();
+        if (!result.getSuccess())
         {
-            return Response
-                    .status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-                    .entity(status.getMessage())
-                    .build();
+            int status
+                = result.getResponseCode() != null ? result.getResponseCode() : result.getHardFailure() ? 500 : 503;
+            Response.ResponseBuilder response = Response.status(status);
+            if (result.getMessage() != null)
+            {
+                response.entity(result.getMessage());
+            }
+
+            return response.build();
         }
 
         return Response.ok().build();
