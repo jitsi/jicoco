@@ -57,7 +57,7 @@ class HealthChecker(
      * Failures in this period (since the start of the service) are not sticky.
      */
     var stickyFailuresGracePeriod: Duration = stickyFailuresGracePeriodDefault,
-    private val healthCheckFunc: () -> Unit,
+    private val healthCheckFunc: () -> Result,
     private val clock: Clock = Clock.systemUTC()
 ) : HealthCheckService, PeriodicRunnable(interval.toMillis()) {
     private val logger: Logger = LoggerImpl(javaClass.name)
@@ -71,7 +71,7 @@ class HealthChecker(
      * The exception resulting from the last health check. When the health
      * check is successful, this is {@code null}.
      */
-    private var lastResult: Exception? = null
+    private var lastResult: Result = Result()
 
     /**
      * The time the last health check finished being performed.
@@ -100,13 +100,18 @@ class HealthChecker(
      * if no health check has been performed recently.
      * @return
      */
-    override fun getResult(): Exception? {
-        val timeSinceLastResult: Duration = Duration.between(lastResultTime, clock.instant())
-        if (timeSinceLastResult > timeout) {
-            return Exception("No health checks performed recently, the last result was $timeSinceLastResult ago.")
+    override val result: Result
+        get() {
+            val timeSinceLastResult: Duration = Duration.between(lastResultTime, clock.instant())
+            if (timeSinceLastResult > timeout) {
+                return Result(
+                    success = false,
+                    hardFailure = true,
+                    message = "No health checks performed recently, the last result was $timeSinceLastResult ago."
+                )
+            }
+            return lastResult
         }
-        return lastResult
-    }
 
     fun start() {
         if (executor == null) {
@@ -138,45 +143,67 @@ class HealthChecker(
         super.run()
 
         val checkStart = clock.instant()
-        var exception: Exception? = null
-
-        try {
+        var newResult: Result = try {
             healthCheckFunc()
         } catch (e: Exception) {
-            exception = e
-
             val now = clock.instant()
             val timeSinceStart = Duration.between(serviceStartTime, now)
             if (timeSinceStart > stickyFailuresGracePeriod) {
                 hasFailed = true
             }
+            Result(
+                success = false,
+                hardFailure = true,
+                message = "Failed to run health check: ${e.message}"
+            )
         }
 
         lastResultTime = clock.instant()
         val checkDuration = Duration.between(checkStart, lastResultTime)
         if (checkDuration > maxCheckDuration) {
-            exception = Exception("Performing a health check took too long: $checkDuration")
+            newResult = Result(success = false, message = "Performing a health check took too long: $checkDuration")
         }
 
         val previousResult = lastResult
-        lastResult = if (stickyFailures && hasFailed && exception == null) {
+        lastResult = if (stickyFailures && hasFailed && newResult.success) {
             // We didn't fail this last test, but we've failed before and
             // sticky failures are enabled.
-            Exception("Sticky failure.")
+            Result(success = false, sticky = true, message = "Sticky failure.")
         } else {
-            exception
+            newResult
         }
 
-        if (exception == null) {
+        if (newResult.success) {
             val message =
                 "Performed a successful health check in $checkDuration. Sticky failure: ${stickyFailures && hasFailed}"
-            if (previousResult == null) logger.debug(message) else logger.info(message)
+            if (previousResult.success) logger.debug(message) else logger.info(message)
         } else {
-            logger.error("Health check failed in $checkDuration:", exception)
+            logger.error("Health check failed in $checkDuration: $newResult")
         }
     }
 
     companion object {
         val stickyFailuresGracePeriodDefault: Duration = Duration.ofMinutes(5)
     }
+}
+
+data class Result(
+    /** Whether the health check was successful or now. */
+    val success: Boolean = true,
+    /** If the fail check failed (success=false) whether it was a hard or soft failure. */
+    val hardFailure: Boolean = true,
+    /**
+     * Optional HTTP response code to use in HTTP responses. When set to `null` it is chosen automatically based on
+     * [#success] and [#hardFailure]
+     */
+    val responseCode: Int? = null,
+    /** Whether the failure is reported only because an earlier failure occurred and the "sticky" mode is enabled. */
+    val sticky: Boolean = false,
+    /** Optional error message. */
+    val message: String? = null
+)
+
+interface HealthCheckService {
+    /** The result of a health check. */
+    val result: Result
 }
