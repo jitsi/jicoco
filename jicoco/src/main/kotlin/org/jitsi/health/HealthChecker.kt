@@ -204,10 +204,6 @@ data class Result(
 )
 
 interface HealthCheckService {
-    /**
-     * Returns the result of a health check: either {@code null} indicating
-     * the service is healthy, or the exception which caused the health
-     * check failure otherwise.
-     */
+    /** The result of a health check. */
     val result: Result
 }
