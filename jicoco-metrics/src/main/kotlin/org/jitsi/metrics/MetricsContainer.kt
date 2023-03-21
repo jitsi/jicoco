@@ -27,14 +27,11 @@ import java.io.StringWriter
  */
 open class MetricsContainer @JvmOverloads constructor(
     /** the registry used to register metrics */
-    val registry: CollectorRegistry = CollectorRegistry.defaultRegistry
+    val registry: CollectorRegistry = CollectorRegistry.defaultRegistry,
+    /** Namespace prefix added to all metrics. */
+    val namespace: String = "jitsi"
 ) {
     private val logger = createLogger()
-
-    /**
-     * Namespace prefix added to all metrics.
-     */
-    private val namespace = "jitsi"
 
     /**
      * Defines the behavior when registering a metric with a name in use by an existing metric.
