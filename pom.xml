@@ -62,6 +62,9 @@
         <kotlin.version>1.6.21</kotlin.version>
         <kotest.version>5.3.0</kotest.version>
         <prometheus.version>0.16.0</prometheus.version>
+        <jetty.version>11.0.14</jetty.version>
+        <jersey.version>3.0.10</jersey.version>
+        <smack.version>4.4.6</smack.version>
     </properties>
 
     <dependencyManagement>

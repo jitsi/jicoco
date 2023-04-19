@@ -31,12 +31,6 @@
     <name>jicoco</name>
     <description>Jitsi Common Components</description>
 
-    <properties>
-        <jetty.version>11.0.14</jetty.version>
-        <jersey.version>3.0.4</jersey.version>
-        <smack.version>4.4.6</smack.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
