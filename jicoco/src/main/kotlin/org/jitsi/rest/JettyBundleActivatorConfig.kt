@@ -92,7 +92,7 @@ class JettyBundleActivatorConfig(
      */
     val sendServerVersion: Boolean by config {
         "$newPropertyPrefix.send-server-version".from(JitsiConfig.newConfig)
-        "default" { true }
+        "default" { false }
     }
 
     val tlsProtocols: List<String> by config {
