@@ -110,8 +110,12 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the optional initial value of the metric */
         initialValue: Long = 0
     ): CounterMetric {
-        val newName = if (name.endsWith("_total")) name else "${name}_total".also {
-            logger.debug("Counter '$name' was renamed to '$it' to ensure consistent metric naming.")
+        val newName = if (name.endsWith("_total")) {
+            name
+        } else {
+            "${name}_total".also {
+                logger.debug("Counter '$name' was renamed to '$it' to ensure consistent metric naming.")
+            }
         }
         if (metrics.containsKey(newName) or metrics.containsKey(name)) {
             if (checkForNameConflicts) {
