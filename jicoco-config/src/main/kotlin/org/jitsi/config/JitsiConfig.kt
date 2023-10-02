@@ -35,7 +35,7 @@ class JitsiConfig {
         /**
          * A [ConfigSource] loaded via [ConfigFactory].
          */
-        var TypesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", loadNewConfig())
+        var typesafeConfig: ConfigSource = TypesafeConfigSource("typesafe config", loadNewConfig())
             private set
 
         private var numTypesafeReloads = 0
@@ -43,8 +43,8 @@ class JitsiConfig {
         /**
          * The 'new' [ConfigSource] that should be used by configuration properties.  Able to be changed for testing.
          */
-        private val _newConfig: ConfigSourceWrapper = ConfigSourceWrapper(TypesafeConfig).also {
-            logger.info("Initialized newConfig: ${TypesafeConfig.description}")
+        private val _newConfig: ConfigSourceWrapper = ConfigSourceWrapper(typesafeConfig).also {
+            logger.info("Initialized newConfig: ${typesafeConfig.description}")
         }
         val newConfig: ConfigSource
             get() = _newConfig
@@ -94,11 +94,11 @@ class JitsiConfig {
             logger.info("Reloading the Typesafe config source (previously reloaded $numTypesafeReloads times).")
             ConfigFactory.invalidateCaches()
             numTypesafeReloads++
-            TypesafeConfig = TypesafeConfigSource(
+            typesafeConfig = TypesafeConfigSource(
                 "typesafe config (reloaded $numTypesafeReloads times)",
                 loadNewConfig()
             )
-            _newConfig.innerSource = TypesafeConfig
+            _newConfig.innerSource = typesafeConfig
         }
     }
 }
