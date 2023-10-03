@@ -35,8 +35,7 @@ abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
     protected val logger = LoggerImpl(this::class.qualifiedName)
     protected abstract val properties: Properties
 
-    override fun getString(propertyName: String): String? =
-        getProperty(propertyName)?.toString()?.trim()
+    override fun getString(propertyName: String): String? = getProperty(propertyName)?.toString()?.trim()
 
     override fun getString(propertyName: String, defaultValue: String?): String? =
         getString(propertyName) ?: defaultValue
@@ -47,17 +46,14 @@ abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
     override fun getDouble(propertyName: String, defaultValue: Double): Double =
         getString(propertyName)?.toDouble() ?: defaultValue
 
-    override fun getInt(propertyName: String, defaultValue: Int): Int =
-        getString(propertyName)?.toInt() ?: defaultValue
+    override fun getInt(propertyName: String, defaultValue: Int): Int = getString(propertyName)?.toInt() ?: defaultValue
 
     override fun getLong(propertyName: String, defaultValue: Long): Long =
         getString(propertyName)?.toLong() ?: defaultValue
 
-    override fun getAllPropertyNames(): MutableList<String> =
-        properties.keys.map { it as String }.toMutableList()
+    override fun getAllPropertyNames(): MutableList<String> = properties.keys.map { it as String }.toMutableList()
 
-    override fun getProperty(propertyName: String): Any? =
-        properties[propertyName] ?: System.getProperty(propertyName)
+    override fun getProperty(propertyName: String): Any? = properties[propertyName] ?: System.getProperty(propertyName)
 
     override fun getPropertyNamesByPrefix(prefix: String, exactPrefixMatch: Boolean): MutableList<String> {
         val matchingPropNames = mutableListOf<String>()
@@ -86,57 +82,43 @@ abstract class AbstractReadOnlyConfigurationService : ConfigurationService {
         }
     }
 
-    override fun getConfigurationFilename(): String =
-        throw Exception("Unsupported")
+    override fun getConfigurationFilename(): String = throw Exception("Unsupported")
 
-    override fun getScHomeDirLocation(): String =
-        throw Exception("Unsupported")
+    override fun getScHomeDirLocation(): String = throw Exception("Unsupported")
 
-    override fun getScHomeDirName(): String =
-        throw Exception("Unsupported")
+    override fun getScHomeDirName(): String = throw Exception("Unsupported")
 
-    override fun addPropertyChangeListener(listener: PropertyChangeListener?) =
-        throw Exception("Unsupported")
+    override fun addPropertyChangeListener(listener: PropertyChangeListener?) = throw Exception("Unsupported")
 
     override fun addPropertyChangeListener(propertyName: String?, listener: PropertyChangeListener?) =
         throw Exception("Unsupported")
 
-    override fun addVetoableChangeListener(listener: ConfigVetoableChangeListener?) =
-        throw Exception("Unsupported")
+    override fun addVetoableChangeListener(listener: ConfigVetoableChangeListener?) = throw Exception("Unsupported")
 
     override fun addVetoableChangeListener(propertyName: String?, listener: ConfigVetoableChangeListener?) =
         throw Exception("Unsupported")
 
-    override fun removePropertyChangeListener(listener: PropertyChangeListener?) =
-        throw Exception("Unsupported")
+    override fun removePropertyChangeListener(listener: PropertyChangeListener?) = throw Exception("Unsupported")
 
     override fun removePropertyChangeListener(propertyName: String?, listener: PropertyChangeListener?) =
         throw Exception("Unsupported")
 
-    override fun removeVetoableChangeListener(listener: ConfigVetoableChangeListener?) =
-        throw Exception("Unsupported")
+    override fun removeVetoableChangeListener(listener: ConfigVetoableChangeListener?) = throw Exception("Unsupported")
 
     override fun removeVetoableChangeListener(propertyName: String?, listener: ConfigVetoableChangeListener?) =
         throw Exception("Unsupported")
 
-    override fun purgeStoredConfiguration() =
-        throw Exception("Unsupported")
+    override fun purgeStoredConfiguration() = throw Exception("Unsupported")
 
-    override fun storeConfiguration() =
-        throw Exception("Unsupported")
+    override fun storeConfiguration() = throw Exception("Unsupported")
 
-    override fun setProperties(properties: MutableMap<String, Any>?) =
-        throw Exception("Unsupported")
+    override fun setProperties(properties: MutableMap<String, Any>?) = throw Exception("Unsupported")
 
-    override fun setProperty(propertyName: String?, property: Any?) =
-        throw Exception("Unsupported")
+    override fun setProperty(propertyName: String?, property: Any?) = throw Exception("Unsupported")
 
-    override fun setProperty(propertyName: String?, property: Any?, isSystem: Boolean) =
-        throw Exception("Unsupported")
+    override fun setProperty(propertyName: String?, property: Any?, isSystem: Boolean) = throw Exception("Unsupported")
 
-    override fun removeProperty(propertyName: String?) =
-        throw Exception("Unsupported")
+    override fun removeProperty(propertyName: String?) = throw Exception("Unsupported")
 
-    override fun getPropertyNamesBySuffix(suffix: String?): MutableList<String> =
-        throw Exception("Unsupported")
+    override fun getPropertyNamesBySuffix(suffix: String?): MutableList<String> = throw Exception("Unsupported")
 }

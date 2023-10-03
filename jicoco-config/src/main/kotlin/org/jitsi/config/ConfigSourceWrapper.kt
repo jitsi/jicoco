@@ -31,6 +31,5 @@ class ConfigSourceWrapper(
     override val name: String
         get() = innerSource.name
 
-    override fun getterFor(type: KType): (String) -> Any =
-        innerSource.getterFor(type)
+    override fun getterFor(type: KType): (String) -> Any = innerSource.getterFor(type)
 }
