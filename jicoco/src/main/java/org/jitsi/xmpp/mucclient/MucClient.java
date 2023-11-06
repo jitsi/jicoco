@@ -658,7 +658,7 @@ public class MucClient
                     // login (because the locally cached SASL mechanisms supported by the server are empty). We
                     // disconnect in order to trigger a re-connect and clear that state on the next attempt.
                     logger.warn("Failed to login. Disconnecting to trigger a re-connect.", e);
-                    xmppConnection.disconnect();
+                    xmppConnection.disconnect(null);
                     return true;
                 }
 
@@ -871,7 +871,14 @@ public class MucClient
                 // This is a weird situation that we have seen in the past when using VPN.
                 // Everything stays like this forever as the socket remains open on the OS level
                 // and it is never dropped. We will trigger reconnect just in case.
-                xmppConnection.disconnect();
+                try
+                {
+                    xmppConnection.disconnect(null);
+                }
+                catch (Exception e)
+                {
+                    logger.warn("Exception while disconnecting");
+                }
             }
         }
     }
