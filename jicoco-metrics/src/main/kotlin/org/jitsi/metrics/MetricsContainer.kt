@@ -53,7 +53,7 @@ open class MetricsContainer @JvmOverloads constructor(
      * @return a JSON string of the metrics in this instance
      */
     val jsonString: String
-        get() = JSONObject(metrics.mapValues { it.value.get() }).toJSONString()
+        get() = JSONObject(metrics.filter { it.value.supportsJson }.mapValues { it.value.get() }).toJSONString()
 
     /**
      * Returns the metrics in this instance in the Prometheus text-based format.
@@ -169,6 +169,23 @@ open class MetricsContainer @JvmOverloads constructor(
             return metrics[name] as InfoMetric
         }
         return InfoMetric(name, help, namespace, value).apply { metrics[name] = register(registry) }
+    }
+
+    fun registerHistogram(
+        /** the name of the metric */
+        name: String,
+        /** the description of the metric */
+        help: String,
+        vararg buckets: Double
+    ): HistogramMetric {
+        if (metrics.containsKey(name)) {
+            if (checkForNameConflicts) {
+                throw RuntimeException("Could not register metric '$name'. A metric with that name already exists.")
+            }
+            return metrics[name] as HistogramMetric
+        }
+
+        return HistogramMetric(name, help, namespace, *buckets).apply { metrics[name] = register(registry) }
     }
 
     /**

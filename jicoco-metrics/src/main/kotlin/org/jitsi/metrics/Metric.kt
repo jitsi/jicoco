@@ -44,4 +44,6 @@ sealed class Metric<T> {
      * Registers this metric with the given [CollectorRegistry] and returns it.
      */
     internal abstract fun register(registry: CollectorRegistry): Metric<T>
+
+    internal open val supportsJson: Boolean = true
 }
