@@ -17,22 +17,34 @@ package org.jitsi.metrics
 
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Histogram
+import org.json.simple.JSONObject
 
 class HistogramMetric(
     override val name: String,
     /** the description of this metric */
     private val help: String,
     /** the namespace (prefix) of this metric */
-    namespace: String,
+    val namespace: String,
     vararg buckets: Double
-) : Metric<String>() {
+) : Metric<JSONObject>() {
     val histogram: Histogram = Histogram.build(name, help).namespace(namespace).buckets(*buckets).create()
 
-    override fun get(): String = "Histogram for $help. Rendering to JSON not supported, use openmetrics format."
+    override fun get(): JSONObject = JSONObject().apply {
+        histogram.collect().forEach {
+            it.samples.forEach { sample ->
+                if (sample.name.startsWith("${namespace}_${name}_")) {
+                    val shortName = sample.name.substring("${namespace}_${name}_".length)
+                    if (shortName == "bucket" && sample.labelNames.size == 1) {
+                        put("${shortName}_${sample.labelNames[0]}_${sample.labelValues[0]}", sample.value)
+                    } else {
+                        put(shortName, sample.value)
+                    }
+                }
+            }
+        }
+    }
 
     override fun reset() = histogram.clear()
 
-    override fun register(registry: CollectorRegistry): Metric<String> = this.also { registry.register(histogram) }
-
-    override val supportsJson = false
+    override fun register(registry: CollectorRegistry): Metric<JSONObject> = this.also { registry.register(histogram) }
 }
