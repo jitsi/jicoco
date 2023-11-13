@@ -53,7 +53,7 @@ open class MetricsContainer @JvmOverloads constructor(
      * @return a JSON string of the metrics in this instance
      */
     val jsonString: String
-        get() = JSONObject(metrics.filter { it.value.supportsJson }.mapValues { it.value.get() }).toJSONString()
+        get() = JSONObject(metrics.mapValues { it.value.get() }).toJSONString()
 
     /**
      * Returns the metrics in this instance in the Prometheus text-based format.
