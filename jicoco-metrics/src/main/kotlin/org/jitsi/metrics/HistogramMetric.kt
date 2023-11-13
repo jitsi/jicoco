@@ -30,8 +30,7 @@ class HistogramMetric(
 
     override fun get(): String = "Histogram for $help. Rendering to JSON not supported, use openmetrics format."
 
-    // TODO. I don't think Histogram supports a set/reset.
-    override fun reset() {}
+    override fun reset() = histogram.clear()
 
     override fun register(registry: CollectorRegistry): Metric<String> = this.also { registry.register(histogram) }
 

@@ -126,5 +126,45 @@ class MetricTest : ShouldSpec() {
                 }
             }
         }
+        context("HistogramMetric") {
+            val namespace = "namespace"
+            val name = "histogram_test"
+            val fullName = "${namespace}_$name"
+            val histogramMetric = HistogramMetric(name, "h", namespace, 1.0, 10.0)
+            var count = 0
+            var sum = 0.0
+
+            repeat(10) {
+                histogramMetric.histogram.observe(1.5)
+                sum += 1.5
+                count++
+            }
+            repeat(5) {
+                histogramMetric.histogram.observe(25.0)
+                sum += 25.0
+                count++
+            }
+
+            var samples = histogramMetric.histogram.collect()[0].samples
+            samples.filter { it.name == "${fullName}_count" }.apply {
+                size shouldBe 1
+                this[0].value shouldBe count
+            }
+            samples.filter { it.name == "${fullName}_sum" }.apply {
+                size shouldBe 1
+                this[0].value shouldBe sum
+            }
+
+            histogramMetric.reset()
+            samples = histogramMetric.histogram.collect()[0].samples
+            samples.filter { it.name == "${fullName}_count" }.apply {
+                size shouldBe 1
+                this[0].value shouldBe 0
+            }
+            samples.filter { it.name == "${fullName}_sum" }.apply {
+                size shouldBe 1
+                this[0].value shouldBe 0
+            }
+        }
     }
 }
