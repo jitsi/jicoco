@@ -22,15 +22,12 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
-open class UpdatingMetricsContainer(
-    namespace: String,
+class MetricsUpdater(
     private val executor: ScheduledExecutorService,
     private val updateInterval: Duration
-) : MetricsContainer(namespace = namespace) {
+) {
     private val logger = createLogger()
-
     private val subtasks: MutableList<() -> Unit> = CopyOnWriteArrayList()
-
     private var updateTask: ScheduledFuture<*>? = null
 
     // Allow updates to be disabled for tests
