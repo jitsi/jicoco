@@ -150,6 +150,29 @@ open class MetricsContainer @JvmOverloads constructor(
     }
 
     /**
+     * Creates and registers a [DoubleGaugeMetric] with the given [name], [help] string and optional [initialValue].
+     *
+     * Throws an exception if a metric with the same name but a different type exists.
+     */
+    @JvmOverloads
+    fun registerDoubleGauge(
+        /** the name of the metric */
+        name: String,
+        /** the description of the metric */
+        help: String,
+        /** the optional initial value of the metric */
+        initialValue: Double = 0.0
+    ): DoubleGaugeMetric {
+        if (metrics.containsKey(name)) {
+            if (checkForNameConflicts) {
+                throw RuntimeException("Could not register metric '$name'. A metric with that name already exists.")
+            }
+            return metrics[name] as DoubleGaugeMetric
+        }
+        return DoubleGaugeMetric(name, help, namespace, initialValue).apply { metrics[name] = register(registry) }
+    }
+
+    /**
      * Creates and registers an [InfoMetric] with the given [name], [help] string and [value].
      *
      * Throws an exception if a metric with the same name but a different type exists.
