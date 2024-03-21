@@ -52,7 +52,7 @@ open class MetricsContainer @JvmOverloads constructor(
      *
      * @return a JSON string of the metrics in this instance
      */
-    val jsonString: String
+    open val jsonString: String
         get() = JSONObject(metrics.mapValues { it.value.get() }).toJSONString()
 
     /**
@@ -62,7 +62,7 @@ open class MetricsContainer @JvmOverloads constructor(
      * @param contentType the Content-Type header string
      * @return the metrics in this instance in the Prometheus text-based format
      */
-    fun getPrometheusMetrics(contentType: String): String {
+    open fun getPrometheusMetrics(contentType: String): String {
         val writer = StringWriter()
         try {
             TextFormat.writeFormat(contentType, writer, registry.metricFamilySamples())
