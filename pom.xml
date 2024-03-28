@@ -193,6 +193,7 @@
             </activation>
 
             <modules>
+                <module>jicoco</module>
                 <module>jicoco-config</module>
                 <module>jicoco-metrics</module>
                 <module>jicoco-test-kotlin</module>
