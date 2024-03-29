@@ -63,7 +63,6 @@
         <kotest.version>5.7.2</kotest.version>
         <mockk.version>1.13.8</mockk.version>
         <prometheus.version>0.16.0</prometheus.version>
-        <dokka.version>1.9.0</dokka.version>
         <jetty.version>11.0.14</jetty.version>
         <jersey.version>3.0.10</jersey.version>
         <smack.version>4.4.6</smack.version>
@@ -85,24 +84,6 @@
     </dependencyManagement>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.jetbrains.dokka</groupId>
-                    <artifactId>dokka-maven-plugin</artifactId>
-                    <version>${dokka.version}</version>
-                    <executions>
-                        <execution>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>javadocJar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -307,6 +288,15 @@
                             </execution>
                         </executions>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.4.0</version>
+                        <configuration>
+                            <doclint>-missing</doclint>
+                            <source>11</source>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -362,10 +352,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.jetbrains.dokka</groupId>
-                        <artifactId>dokka-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
