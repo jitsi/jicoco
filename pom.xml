@@ -87,10 +87,6 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!--
-                 Dokka is not added as plugin for all projects because it randomly fails
-                 for jicoco, see also https://github.com/Kotlin/dokka/issues/1599
-                -->
                 <plugin>
                     <groupId>org.jetbrains.dokka</groupId>
                     <artifactId>dokka-maven-plugin</artifactId>
@@ -366,6 +362,10 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.jetbrains.dokka</groupId>
+                        <artifactId>dokka-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
