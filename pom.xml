@@ -64,7 +64,7 @@
         <mockk.version>1.13.8</mockk.version>
         <prometheus.version>0.16.0</prometheus.version>
         <dokka.version>1.9.10</dokka.version>
-        <jetty.version>11.0.14</jetty.version>
+        <jetty.version>11.0.20</jetty.version>
         <jersey.version>3.0.10</jersey.version>
         <smack.version>4.4.6</smack.version>
     </properties>
@@ -372,6 +372,7 @@
                     <plugin>
                         <groupId>org.jetbrains.dokka</groupId>
                         <artifactId>dokka-maven-plugin</artifactId>
+                        <version>${dokka.version}</version>
                     </plugin>
                 </plugins>
             </build>
