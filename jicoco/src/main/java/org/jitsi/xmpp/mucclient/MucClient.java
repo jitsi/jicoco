@@ -669,6 +669,7 @@ public class MucClient
                 catch(Exception e)
                 {
                     logger.warn("Failed to join the MUCs.", e);
+                    xmppConnection.disconnect();
                     return true;
                 }
             }
