@@ -16,6 +16,7 @@
 package org.jitsi.metrics
 
 import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.SimpleCollector
 
 /**
  * `Metric` provides methods common to all Prometheus metric type wrappers.
@@ -44,4 +45,18 @@ sealed class Metric<T> {
      * Registers this metric with the given [CollectorRegistry] and returns it.
      */
     internal abstract fun register(registry: CollectorRegistry): Metric<T>
+
+    /**
+     * Sets the OpenMetrics format unit of this metric from its name (suffix delimited by an underscore).
+     *
+     * See: [OpenMetrics](https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#unit)
+     */
+    internal fun SimpleCollector.Builder<*, *>.setUnit() {
+        val suffix = name.substringAfterLast("_", "")
+        if (UNITS.contains(suffix)) {
+            unit(suffix)
+        }
+    }
 }
+
+private val UNITS = setOf("milliseconds", "seconds", "bits", "kilobits", "megabits", "bytes", "kilobytes", "megabytes")
