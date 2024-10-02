@@ -17,10 +17,25 @@ package org.jitsi.mediajson
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.JsonSerializer
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
-private val objectMapper = jacksonObjectMapper()
+private val objectMapper = jacksonObjectMapper().apply {
+    configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+}
 
+/**
+ * This is based on the format used by VoxImplant here, hence the encoding of certain numeric fields as strings:
+ * https://voximplant.com/docs/guides/voxengine/websocket
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "event")
 @JsonSubTypes(
     JsonSubTypes.Type(value = MediaEvent::class, name = "media"),
@@ -35,12 +50,16 @@ sealed class Event(val event: String) {
 }
 
 data class MediaEvent(
-    val sequenceNumber: String,
+    @JsonSerialize(using = Int2StringSerializer::class)
+    @JsonDeserialize(using = String2IntDeserializer::class)
+    val sequenceNumber: Int,
     val media: Media
 ) : Event("media")
 
 data class StartEvent(
-    val sequenceNumber: String,
+    @JsonSerialize(using = Int2StringSerializer::class)
+    @JsonDeserialize(using = String2IntDeserializer::class)
+    val sequenceNumber: Int,
     val start: Start
 ) : Event("start")
 
@@ -56,7 +75,32 @@ data class Start(
 
 data class Media(
     val tag: String,
-    val chunk: String,
-    val timestamp: String,
+    @JsonSerialize(using = Int2StringSerializer::class)
+    @JsonDeserialize(using = String2IntDeserializer::class)
+    val chunk: Int,
+    @JsonSerialize(using = Long2StringSerializer::class)
+    @JsonDeserialize(using = String2LongDeserializer::class)
+    val timestamp: Long,
     val payload: String
 )
+
+class Int2StringSerializer : JsonSerializer<Int>() {
+    override fun serialize(value: Int, gen: JsonGenerator, p: SerializerProvider) {
+        gen.writeString(value.toString())
+    }
+}
+class String2IntDeserializer : JsonDeserializer<Int>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Int {
+        return p.readValueAs(Int::class.java).toInt()
+    }
+}
+class Long2StringSerializer : JsonSerializer<Long>() {
+    override fun serialize(value: Long, gen: JsonGenerator, p: SerializerProvider) {
+        gen.writeString(value.toString())
+    }
+}
+class String2LongDeserializer : JsonDeserializer<Long>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Long {
+        return p.readValueAs(Long::class.java).toLong()
+    }
+}
