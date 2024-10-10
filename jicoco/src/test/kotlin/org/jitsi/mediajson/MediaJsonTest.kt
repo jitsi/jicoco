@@ -36,7 +36,7 @@ class MediaJsonTest : ShouldSpec() {
             val event = StartEvent(seq, Start(tag, MediaFormat(enc, sampleRate, channels)))
 
             context("Serializing") {
-                val parsed = parser.parse(event.toXml())
+                val parsed = parser.parse(event.toJson())
 
                 parsed.shouldBeInstanceOf<JSONObject>()
                 parsed["event"] shouldBe "start"
@@ -52,11 +52,11 @@ class MediaJsonTest : ShouldSpec() {
                 mediaFormat["channels"] shouldBe channels
             }
             context("Parsing") {
-                val parsed = Event.parse(event.toXml())
+                val parsed = Event.parse(event.toJson())
                 (parsed == event) shouldBe true
                 (parsed === event) shouldBe false
 
-                val parsedList = Event.parse(listOf(event.toXml(), event.toXml()))
+                val parsedList = Event.parse(listOf(event.toJson(), event.toJson()))
                 parsedList.shouldBeInstanceOf<List<Event>>()
                 parsedList.size shouldBe 2
                 parsedList[0] shouldBe event
@@ -70,7 +70,7 @@ class MediaJsonTest : ShouldSpec() {
             val event = MediaEvent(seq, Media(tag, chunk, timestamp, payload))
 
             context("Serializing") {
-                val parsed = parser.parse(event.toXml())
+                val parsed = parser.parse(event.toJson())
                 parsed.shouldBeInstanceOf<JSONObject>()
                 parsed["event"] shouldBe "media"
                 // intentionally encoded as a string
@@ -85,7 +85,7 @@ class MediaJsonTest : ShouldSpec() {
                 media["payload"] shouldBe payload
             }
             context("Parsing") {
-                val parsed = Event.parse(event.toXml())
+                val parsed = Event.parse(event.toJson())
                 (parsed == event) shouldBe true
                 (parsed === event) shouldBe false
             }

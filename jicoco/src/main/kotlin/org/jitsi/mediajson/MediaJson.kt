@@ -42,7 +42,7 @@ private val objectMapper = jacksonObjectMapper().apply {
     JsonSubTypes.Type(value = StartEvent::class, name = "start"),
 )
 sealed class Event(val event: String) {
-    fun toXml(): String = objectMapper.writeValueAsString(this)
+    fun toJson(): String = objectMapper.writeValueAsString(this)
     companion object {
         fun parse(s: String): Event = objectMapper.readValue(s, Event::class.java)
         fun parse(s: List<String>): List<Event> = s.map { objectMapper.readValue(it, Event::class.java) }
