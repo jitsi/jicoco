@@ -59,6 +59,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.10.0</junit.version>
+        <json.simple.version>1.1.1</json.simple.version>
         <kotlin.version>1.9.10</kotlin.version>
         <jackson.version>2.17.1</jackson.version>
         <kotest.version>5.7.2</kotest.version>
@@ -198,6 +199,7 @@
             <modules>
                 <module>jicoco</module>
                 <module>jicoco-config</module>
+                <module>jicoco-mediajson</module>
                 <module>jicoco-metrics</module>
                 <module>jicoco-test-kotlin</module>
             </modules>
@@ -232,6 +234,7 @@
             <modules>
                 <module>jicoco</module>
                 <module>jicoco-config</module>
+                <module>jicoco-mediajson</module>
                 <module>jicoco-metrics</module>
                 <module>jicoco-test-kotlin</module>
             </modules>
