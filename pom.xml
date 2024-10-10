@@ -201,6 +201,7 @@
                 <module>jicoco-config</module>
                 <module>jicoco-mediajson</module>
                 <module>jicoco-metrics</module>
+                <module>jicoco-metrics-jetty</module>
                 <module>jicoco-test-kotlin</module>
             </modules>
 
@@ -236,6 +237,7 @@
                 <module>jicoco-config</module>
                 <module>jicoco-mediajson</module>
                 <module>jicoco-metrics</module>
+                <module>jicoco-metrics-jetty</module>
                 <module>jicoco-test-kotlin</module>
             </modules>
 
