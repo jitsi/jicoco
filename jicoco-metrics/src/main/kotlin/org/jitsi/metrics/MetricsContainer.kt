@@ -79,7 +79,7 @@ open class MetricsContainer @JvmOverloads constructor(
     fun getMetrics(accepts: List<String>): Pair<String, String> {
         return when {
 
-            accepts.contains("*/*") or accepts.contains(OPENMETRICS) ->
+            accepts.isEmpty() or accepts.contains("*/*") or accepts.contains(OPENMETRICS) ->
                 getPrometheusMetrics(TextFormat.CONTENT_TYPE_OPENMETRICS_100) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
             accepts.contains(TEXT) ->
                 getPrometheusMetrics(TextFormat.CONTENT_TYPE_004) to TextFormat.CONTENT_TYPE_004
