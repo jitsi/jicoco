@@ -73,6 +73,25 @@ open class MetricsContainer @JvmOverloads constructor(
     }
 
     /**
+     * Gets metrics in a format based on the `Accept` header. Returns the content type as the second element of the
+     * pair. Defaults to OpenMetrics.
+     */
+    fun getMetrics(
+        /** The HTTP `Accept` header, if present. */
+        accept: String?
+    ): Pair<String, String> {
+        return when {
+            accept?.startsWith("application/json") == true -> jsonString to "application/json"
+            accept?.startsWith("text/plain") == true ->
+                getPrometheusMetrics(TextFormat.CONTENT_TYPE_004) to TextFormat.CONTENT_TYPE_004
+            accept?.startsWith("application/openmetrics-text") == true ->
+                getPrometheusMetrics(TextFormat.CONTENT_TYPE_OPENMETRICS_100) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+            else ->
+                getPrometheusMetrics(TextFormat.CONTENT_TYPE_OPENMETRICS_100) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+        }
+    }
+
+    /**
      * Creates and registers a [BooleanMetric] with the given [name], [help] string and optional [initialValue].
      *
      * Throws an exception if a metric with the same name but a different type exists.
