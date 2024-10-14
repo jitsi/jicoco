@@ -76,18 +76,16 @@ open class MetricsContainer @JvmOverloads constructor(
      * Gets metrics in a format based on the `Accept` header. Returns the content type as the second element of the
      * pair. Defaults to OpenMetrics.
      */
-    fun getMetrics(
-        /** The HTTP `Accept` header, if present. */
-        accept: String?
-    ): Pair<String, String> {
+    fun getMetrics(accepts: List<String>): Pair<String, String> {
         return when {
-            accept?.startsWith("application/json") == true -> jsonString to "application/json"
-            accept?.startsWith("text/plain") == true ->
+
+            accepts.contains("*/*") or accepts.contains(OPENMETRICS) ->
+                getPrometheusMetrics(TextFormat.CONTENT_TYPE_OPENMETRICS_100) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+            accepts.contains(TEXT) ->
                 getPrometheusMetrics(TextFormat.CONTENT_TYPE_004) to TextFormat.CONTENT_TYPE_004
-            accept?.startsWith("application/openmetrics-text") == true ->
-                getPrometheusMetrics(TextFormat.CONTENT_TYPE_OPENMETRICS_100) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+            accepts.contains(JSON) -> jsonString to "application/json"
             else ->
-                getPrometheusMetrics(TextFormat.CONTENT_TYPE_OPENMETRICS_100) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                throw NoSupportedMediaTypeException("Supported media types are $OPENMETRICS, $TEXT, and $JSON")
         }
     }
 
@@ -235,5 +233,13 @@ open class MetricsContainer @JvmOverloads constructor(
      */
     fun resetAll() {
         metrics.values.forEach { it.reset() }
+    }
+
+    class NoSupportedMediaTypeException(message: String) : Exception(message)
+
+    companion object {
+        const val OPENMETRICS = "application/openmetrics-text"
+        const val TEXT = "text/plain"
+        const val JSON = "application/json"
     }
 }
