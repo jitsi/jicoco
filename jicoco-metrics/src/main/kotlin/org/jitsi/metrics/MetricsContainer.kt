@@ -81,14 +81,19 @@ open class MetricsContainer @JvmOverloads constructor(
         accepts: List<String>
     ): Pair<String, String> {
         accepts.forEach {
-            when(it) {
+            when (it) {
                 "application/openmetrics-text" -> return getPrometheusMetrics(
-                    TextFormat.CONTENT_TYPE_OPENMETRICS_100) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                    TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                ) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+
                 "text/plain" -> return getPrometheusMetrics(
-                    TextFormat.CONTENT_TYPE_004) to TextFormat.CONTENT_TYPE_004
+                    TextFormat.CONTENT_TYPE_004
+                ) to TextFormat.CONTENT_TYPE_004
+
                 "application/json" -> return jsonString to "application/json"
                 "*/*" -> return getPrometheusMetrics(
-                    TextFormat.CONTENT_TYPE_OPENMETRICS_100) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                    TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                ) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
             }
         }
         throw NoSupportedMediaTypeException(
