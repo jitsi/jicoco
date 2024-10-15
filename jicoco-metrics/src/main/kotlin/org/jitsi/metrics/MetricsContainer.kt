@@ -96,6 +96,7 @@ open class MetricsContainer @JvmOverloads constructor(
                 ) to TextFormat.CONTENT_TYPE_004
 
                 "application/json" -> return jsonString to "application/json"
+
                 "*/*" -> return getPrometheusMetrics(
                     TextFormat.CONTENT_TYPE_OPENMETRICS_100
                 ) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
