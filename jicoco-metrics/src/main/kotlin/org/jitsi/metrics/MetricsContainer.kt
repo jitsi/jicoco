@@ -80,6 +80,11 @@ open class MetricsContainer @JvmOverloads constructor(
         /** List of accepted media types in order of preference */
         accepts: List<String>
     ): Pair<String, String> {
+        if (accepts.isEmpty()) {
+            return getPrometheusMetrics(
+                TextFormat.CONTENT_TYPE_OPENMETRICS_100
+            ) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+        }
         accepts.forEach {
             when (it) {
                 "application/openmetrics-text" -> return getPrometheusMetrics(
