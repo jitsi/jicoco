@@ -21,6 +21,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.exporter.common.TextFormat
 
 class MetricsContainerTest : ShouldSpec() {
 
@@ -82,6 +83,34 @@ class MetricsContainerTest : ShouldSpec() {
                         counter.get() shouldBe counter.initialValue
                         longGauge.get() shouldBe longGauge.initialValue
                     }
+                }
+            }
+        }
+        context("Getting metrics with different accepted content types") {
+            should("return the correct content type") {
+                mc.getMetrics(emptyList()).second shouldBe TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                mc.getMetrics(listOf("text/plain")).second shouldBe TextFormat.CONTENT_TYPE_004
+                mc.getMetrics(listOf("application/json")).second shouldBe "application/json"
+                mc.getMetrics(listOf("application/openmetrics-text")).second shouldBe
+                    TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                mc.getMetrics(listOf("application/openmetrics-text", "application/json")).second shouldBe
+                    TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                mc.getMetrics(listOf("application/json", "application/openmetrics-text")).second shouldBe
+                    "application/json"
+                mc.getMetrics(
+                    listOf(
+                        "application/json",
+                        "application/other",
+                        "application/openmetrics-text"
+                    )
+                ).second shouldBe
+                    "application/json"
+                mc.getMetrics(listOf("application/json", "*/*", "application/openmetrics-text")).second shouldBe
+                    "application/json"
+                mc.getMetrics(listOf("*/*", "application/json", "*/*", "application/openmetrics-text")).second shouldBe
+                    TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                shouldThrow<MetricsContainer.NoSupportedMediaTypeException> {
+                    mc.getMetrics(listOf("application/something", "application/something-else"))
                 }
             }
         }

@@ -73,6 +73,41 @@ open class MetricsContainer @JvmOverloads constructor(
     }
 
     /**
+     * Gets metrics in a format based on the `Accept` header. Returns the content type as the second element of the
+     * pair. Defaults to OpenMetrics.
+     */
+    fun getMetrics(
+        /** List of accepted media types in order of preference */
+        accepts: List<String>
+    ): Pair<String, String> {
+        if (accepts.isEmpty()) {
+            return getPrometheusMetrics(
+                TextFormat.CONTENT_TYPE_OPENMETRICS_100
+            ) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+        }
+        accepts.forEach {
+            when (it) {
+                "application/openmetrics-text" -> return getPrometheusMetrics(
+                    TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                ) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+
+                "text/plain" -> return getPrometheusMetrics(
+                    TextFormat.CONTENT_TYPE_004
+                ) to TextFormat.CONTENT_TYPE_004
+
+                "application/json" -> return jsonString to "application/json"
+
+                "*/*" -> return getPrometheusMetrics(
+                    TextFormat.CONTENT_TYPE_OPENMETRICS_100
+                ) to TextFormat.CONTENT_TYPE_OPENMETRICS_100
+            }
+        }
+        throw NoSupportedMediaTypeException(
+            "Supported media types are application/openmetrics-text, text/plain and application/json"
+        )
+    }
+
+    /**
      * Creates and registers a [BooleanMetric] with the given [name], [help] string and optional [initialValue].
      *
      * Throws an exception if a metric with the same name but a different type exists.
@@ -217,4 +252,6 @@ open class MetricsContainer @JvmOverloads constructor(
     fun resetAll() {
         metrics.values.forEach { it.reset() }
     }
+
+    class NoSupportedMediaTypeException(message: String) : Exception(message)
 }
