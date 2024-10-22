@@ -70,7 +70,12 @@ data class MediaFormat(
 )
 data class Start(
     val tag: String,
-    val mediaFormat: MediaFormat
+    val mediaFormat: MediaFormat,
+    val customParameters: CustomParameters? = null
+)
+
+data class CustomParameters(
+    val endpointId: String?
 )
 
 data class Media(
