@@ -18,6 +18,7 @@ package org.jitsi.mediajson
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.json.simple.JSONObject
@@ -45,6 +46,7 @@ class MediaJsonTest : ShouldSpec() {
                 val start = parsed["start"]
                 start.shouldBeInstanceOf<JSONObject>()
                 start["tag"] shouldBe tag
+                start["customParameters"] shouldBe null
                 val mediaFormat = start["mediaFormat"]
                 mediaFormat.shouldBeInstanceOf<JSONObject>()
                 mediaFormat["encoding"] shouldBe enc
@@ -105,7 +107,8 @@ class MediaJsonTest : ShouldSpec() {
                                 "channels": 1 
                             },
                             "customParameters": {
-                                "text1":"12312"
+                                "text1":"12312",
+                                "endpointId": "abcdabcd"
                             }
                         }
                     }
@@ -119,6 +122,8 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.start.mediaFormat.encoding shouldBe "audio/x-mulaw"
                 parsed.start.mediaFormat.sampleRate shouldBe 8000
                 parsed.start.mediaFormat.channels shouldBe 1
+                parsed.start.customParameters.shouldNotBeNull()
+                parsed.start.customParameters?.endpointId shouldBe "abcdabcd"
             }
             context("Start with sequence number as int") {
                 val parsed = Event.parse(
@@ -134,7 +139,8 @@ class MediaJsonTest : ShouldSpec() {
                                 "channels": 1 
                             },
                             "customParameters": {
-                                "text1":"12312"
+                                "text1":"12312",
+                                "endpointId":"abcdabcd"
                             }
                         }
                     }
@@ -143,6 +149,8 @@ class MediaJsonTest : ShouldSpec() {
 
                 parsed.shouldBeInstanceOf<StartEvent>()
                 parsed.sequenceNumber shouldBe 0
+                parsed.start.customParameters.shouldNotBeNull()
+                parsed.start.customParameters?.endpointId shouldBe "abcdabcd"
             }
             context("Media") {
                 val parsed = Event.parse(
