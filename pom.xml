@@ -68,6 +68,8 @@
         <dokka.version>1.9.10</dokka.version>
         <jetty.version>11.0.21</jetty.version>
         <jersey.version>3.0.10</jersey.version>
+        <jwt.version>0.12.6</jwt.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
         <smack.version>4.4.6</smack.version>
     </properties>
 
@@ -199,6 +201,7 @@
             <modules>
                 <module>jicoco</module>
                 <module>jicoco-config</module>
+                <module>jicoco-jwt</module>
                 <module>jicoco-mediajson</module>
                 <module>jicoco-metrics</module>
                 <module>jicoco-test-kotlin</module>
@@ -234,6 +237,7 @@
             <modules>
                 <module>jicoco</module>
                 <module>jicoco-config</module>
+                <module>jicoco-jwt</module>
                 <module>jicoco-mediajson</module>
                 <module>jicoco-metrics</module>
                 <module>jicoco-test-kotlin</module>
