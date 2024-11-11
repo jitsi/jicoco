@@ -21,9 +21,14 @@ import java.time.Clock
 import java.time.Duration
 import java.util.*
 
-class RefreshingJwt(private val jwtInfo: JwtInfo?, private val clock: Clock = Clock.systemUTC()) {
+class RefreshingJwt(
+    private val jwtInfo: JwtInfo?,
+    private val clock: Clock = Clock.systemUTC()
+) : RefreshingProperty<String?>(
     // We refresh 5 minutes before the expiration
-    val jwt: String? by RefreshingProperty(jwtInfo?.ttl?.minus(Duration.ofMinutes(5)) ?: INFINITE) {
+    jwtInfo?.ttl?.minus(Duration.ofMinutes(5)) ?: Duration.ofSeconds(Long.MAX_VALUE),
+    clock,
+    {
         jwtInfo?.let {
             Jwts.builder()
                 .setHeaderParam("kid", it.kid)
@@ -34,6 +39,4 @@ class RefreshingJwt(private val jwtInfo: JwtInfo?, private val clock: Clock = Cl
                 .compact()
         }
     }
-}
-
-private val INFINITE = Duration.ofSeconds(Long.MAX_VALUE)
+)

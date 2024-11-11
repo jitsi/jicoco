@@ -26,7 +26,7 @@ import kotlin.reflect.KProperty
  * A property delegate which recreates a value when it's accessed after having been
  * 'alive' for more than [timeout] via the given [creationFunc]
  */
-class RefreshingProperty<T>(
+open class RefreshingProperty<T>(
     private val timeout: Duration,
     private val clock: Clock = Clock.systemUTC(),
     private val creationFunc: () -> T?
