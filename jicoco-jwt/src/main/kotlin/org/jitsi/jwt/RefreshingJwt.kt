@@ -16,7 +16,6 @@
 package org.jitsi.jwt
 
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.SignatureAlgorithm
 import java.time.Clock
 import java.time.Duration
 import java.util.*
@@ -30,13 +29,13 @@ class RefreshingJwt(
     clock,
     {
         jwtInfo?.let {
-            Jwts.builder()
-                .setHeaderParam("kid", it.kid)
-                .setIssuer(it.issuer)
-                .setAudience(it.audience)
-                .setExpiration(Date.from(clock.instant().plus(it.ttl)))
-                .signWith(it.privateKey, SignatureAlgorithm.RS256)
-                .compact()
+            Jwts.builder().apply {
+                header().add("kid", it.kid)
+                issuer(it.issuer)
+                audience().add(it.audience)
+                expiration(Date.from(clock.instant().plus(it.ttl)))
+                signWith(it.privateKey, Jwts.SIG.RS256)
+            }.compact()
         }
     }
 )
