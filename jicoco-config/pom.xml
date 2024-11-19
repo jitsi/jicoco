@@ -43,7 +43,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-metaconfig</artifactId>
-            <version>1.0-9-g5e1b624</version>
+            <version>1.0-12-g02d4bd5</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
