@@ -55,8 +55,8 @@ public class MucClient
 
     static
     {
-        XMPPTCPConnection.setUseStreamManagementDefault(false);
-        XMPPTCPConnection.setUseStreamManagementResumptionDefault(false);
+        XMPPTCPConnection.setUseStreamManagementDefault(true);
+        XMPPTCPConnection.setUseStreamManagementResumptionDefault(true);
         PingManager.setDefaultPingInterval(DEFAULT_PING_INTERVAL_SECONDS);
     }
 
@@ -318,13 +318,25 @@ public class MucClient
             public void connected(XMPPConnection xmppConnection)
             {
                 mucClientManager.connected(MucClient.this);
-                logger.info("Connected.");
+
+                if (xmppConnection instanceof XMPPTCPConnection)
+                {
+                    XMPPTCPConnection connection = (XMPPTCPConnection) xmppConnection;
+
+                    logger.info("Connected. isSmEnabled:" + connection.isSmEnabled() +
+                        " isSmAvailable:" + connection.isSmAvailable() +
+                        " isSmResumptionPossible:" + connection.isSmResumptionPossible());
+                }
+                else
+                {
+                    logger.info("Connected.");
+                }
             }
 
             @Override
-            public void authenticated(XMPPConnection xmppConnection, boolean b)
+            public void authenticated(XMPPConnection xmppConnection, boolean resumed)
             {
-                logger.info("Authenticated, b=" + b);
+                logger.info("Authenticated, resumed=" + resumed);
             }
 
             @Override
@@ -664,7 +676,11 @@ public class MucClient
 
                 try
                 {
-                    joinMucs();
+                    if (!(xmppConnection instanceof XMPPTCPConnection
+                            && ((XMPPTCPConnection)xmppConnection).streamWasResumed()))
+                    {
+                        joinMucs();
+                    }
                 }
                 catch(Exception e)
                 {
