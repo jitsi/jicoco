@@ -58,6 +58,8 @@ public class MucClient
         XMPPTCPConnection.setUseStreamManagementDefault(true);
         XMPPTCPConnection.setUseStreamManagementResumptionDefault(true);
         PingManager.setDefaultPingInterval(DEFAULT_PING_INTERVAL_SECONDS);
+        // We want to reconnect as soon as possible.
+        ReconnectionManager.setDefaultFixedDelay(1);
     }
 
     /**
@@ -155,8 +157,7 @@ public class MucClient
     private AbstractXMPPConnection xmppConnection;
 
     /**
-     * The connect loop: we keep this running forever and it re-establishes the
-     * connection in case it's broken.
+     * The retry we do on initial connect. After xmpp is connected the Smack reconnect kick-ins.
      */
     private RetryStrategy connectRetry;
 
@@ -263,7 +264,7 @@ public class MucClient
     void start()
     {
         this.executor = ExecutorUtils.newScheduledThreadPool(1, true, MucClientManager.class.getSimpleName());
-        this.connectRetry = new RetryStrategy(this.executor);
+
         this.executor.execute(() ->
         {
             try
@@ -310,7 +311,7 @@ public class MucClient
         mucClientManager.getFeatures().forEach(sdm::addFeature);
 
         ReconnectionManager reconnectionManager = ReconnectionManager.getInstanceFor(xmppConnection);
-        reconnectionManager.disableAutomaticReconnection();
+        reconnectionManager.enableAutomaticReconnection();
 
         xmppConnection.addConnectionListener(new ConnectionListener()
         {
@@ -337,6 +338,18 @@ public class MucClient
             public void authenticated(XMPPConnection xmppConnection, boolean resumed)
             {
                 logger.info("Authenticated, resumed=" + resumed);
+
+                if (!resumed)
+                {
+                    try
+                    {
+                        joinMucs();
+                    }
+                    catch(Exception e)
+                    {
+                        logger.warn("Failed to join the MUCs.", e);
+                    }
+                }
             }
 
             @Override
@@ -344,6 +357,21 @@ public class MucClient
             {
                 mucClientManager.closed(MucClient.this);
                 logger.info("Closed.");
+
+                if (MucClient.this.connectRetry != null)
+                {
+                    // FIXME this is a workaround for an issue that can happen
+                    // during a short network problem (~20 secs) where requests
+                    // on the client side timeout during it and xmpp server
+                    // tries to close the connection by sending </stream> which
+                    // reaches the client when the network is back. That makes
+                    // smack disconnect the connection and never retries
+                    // if the connection was closed, we want to continue trying
+                    // so we will trigger the reconnection logic again
+                    // till we are connected and will relay on smack's reconnect
+                    MucClient.this.connectRetry.runRetryingTask(
+                            new SimpleRetryTask(0, 1000, true, getConnectAndLoginCallable()));
+                }
             }
 
             @Override
@@ -360,6 +388,7 @@ public class MucClient
         setIQListener(mucClientManager.getIqListener());
 
         logger.info("Dispatching a thread to connect and login.");
+        this.connectRetry = new RetryStrategy(this.executor);
         this.connectRetry.runRetryingTask(new SimpleRetryTask(0, 5000, true, getConnectAndLoginCallable()));
     }
 
@@ -592,7 +621,11 @@ public class MucClient
      */
     void stop()
     {
-        this.connectRetry.cancel();
+        if (this.connectRetry != null)
+        {
+            this.connectRetry.cancel();
+            this.connectRetry = null;
+        }
 
         ReconnectionManager.getInstanceFor(xmppConnection).removeReconnectionListener(reconnectionListener);
 
@@ -674,19 +707,13 @@ public class MucClient
                     return true;
                 }
 
-                try
-                {
-                    if (!(xmppConnection instanceof XMPPTCPConnection
-                            && ((XMPPTCPConnection)xmppConnection).streamWasResumed()))
-                    {
-                        joinMucs();
-                    }
-                }
-                catch(Exception e)
-                {
-                    logger.warn("Failed to join the MUCs.", e);
-                    return true;
-                }
+                // The connection is successfully established, but we need to keep
+                // the executor alive, since it may be re-utilized by {@link #connectRetry}
+                // in case we ever need to restart the retry-connect-login logic.
+                // Essentially we need to keep the executor alive as long as we keep
+                // the {@link #connectRetry} alive.
+
+                return false;
             }
 
             return true;
