@@ -229,6 +229,17 @@ public class MucClient
         {
             mucClientManager.reconnectionFailed(MucClient.this);
             logger.warn("Reconnection failed: ", e);
+
+            // If there was an error reconnecting, do not give up, let's retry (reconnection stops if the connection
+            // is connected, but we have another error after the connection is established). This can happen if we retry
+            // too quickly and prosody is not fully up ('invalid-namespace' error)
+            if (MucClient.this.connectRetry != null && xmppConnection.isConnected())
+            {
+                xmppConnection.instantShutdown();
+
+                MucClient.this.connectRetry.runRetryingTask(
+                        new SimpleRetryTask(0, 2000, true, getConnectAndLoginCallable()));
+            }
         }
     };
 
@@ -675,10 +686,7 @@ public class MucClient
         {
             try
             {
-                if (!xmppConnection.isConnected())
-                {
-                    xmppConnection.connect();
-                }
+                xmppConnection.connect();
             }
             catch(Exception t)
             {
