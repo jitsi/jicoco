@@ -688,6 +688,10 @@ public class MucClient
             {
                 xmppConnection.connect();
             }
+            catch (SmackException.AlreadyConnectedException e)
+            {
+                logger.info("Already connected.");
+            }
             catch(Exception t)
             {
                 logger.warn("Error connecting:", t);
