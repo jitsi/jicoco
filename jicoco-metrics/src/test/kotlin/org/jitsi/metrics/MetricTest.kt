@@ -62,6 +62,68 @@ class MetricTest : ShouldSpec() {
                 }
             }
         }
+        context("Creating a DoubleGaugeMetric") {
+            context("with the default initial value") {
+                with(DoubleGaugeMetric("testDoubleGauge", "Help", namespace)) {
+                    context("and affecting its value repeatedly") {
+                        should("return the correct value") {
+                            get() shouldBe 0.0
+                            incAndGet().also { addAndGet(-1.0) }
+                            get() shouldBe 0.0
+                            decAndGet() shouldBe -1.0
+                            incAndGet() shouldBe 0.0
+                            addAndGet(50.0) shouldBe 50.0
+                            set(42.0).also { get() shouldBe 42.0 }
+                            set(-42.0).also { get() shouldBe -42.0 }
+                        }
+                    }
+                }
+            }
+            context("with a given initial value") {
+                val initialValue: Double = -50.0
+                with(DoubleGaugeMetric("testDoubleGauge", "Help", namespace, initialValue)) {
+                    should("return the initial value") { get() shouldBe initialValue }
+                }
+            }
+            context("with labels") {
+                with(DoubleGaugeMetric("testDoubleGauge", "Help", namespace, labelNames = listOf("l1", "l2"))) {
+                    val labels = listOf("A", "A")
+                    val labels2 = listOf("A", "B")
+                    val labels3 = listOf("B", "B")
+
+                    get(labels) shouldBe 0.0
+                    get(labels2) shouldBe 0.0
+                    get(labels3) shouldBe 0.0
+
+                    addAndGet(3.0, labels) shouldBe 3.0
+                    get(labels) shouldBe 3.0
+                    get(labels2) shouldBe 0.0
+                    get(labels3) shouldBe 0.0
+
+                    incAndGet(labels2)
+                    get(labels) shouldBe 3.0
+                    get(labels2) shouldBe 1.0
+                    get(labels3) shouldBe 0.0
+
+                    incAndGet(labels3) shouldBe 1.0
+
+                    addAndGet(2.0, labels)
+                    get(labels) shouldBe 5.0
+                    get(labels2) shouldBe 1.0
+                    get(labels3) shouldBe 1.0
+
+                    collect()[0].samples.size shouldBe 3
+                    remove(labels2)
+                    // Down to two sets of labels
+                    collect()[0].samples.size shouldBe 2
+                    get(labels) shouldBe 5.0
+                    get(labels2) shouldBe 0.0
+                    get(labels3) shouldBe 1.0
+                    // Even a get() will summon a child
+                    collect()[0].samples.size shouldBe 3
+                }
+            }
+        }
         context("Creating a CounterMetric") {
             context("with the default initial value") {
                 with(CounterMetric("testCounter", "Help", namespace)) {
