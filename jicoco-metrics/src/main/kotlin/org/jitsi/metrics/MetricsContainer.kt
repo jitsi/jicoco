@@ -53,7 +53,7 @@ open class MetricsContainer @JvmOverloads constructor(
      * @return a JSON string of the metrics in this instance
      */
     open val jsonString: String
-        get() = JSONObject(metrics.mapValues { it.value.get() }).toJSONString()
+        get() = JSONObject(metrics.filter { it.value.supportsJson }.mapValues { it.value.get() }).toJSONString()
 
     /**
      * Returns the metrics in this instance in the Prometheus text-based format.
@@ -143,7 +143,10 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the description of the metric */
         help: String,
         /** the optional initial value of the metric */
-        initialValue: Long = 0
+        initialValue: Long = 0,
+        /** Label names for this metric. If non-empty, the initial value must be 0 and all get/update calls MUST
+         * specify values for the labels. Calls to simply get() or inc() will fail with an exception. */
+        labelNames: List<String> = emptyList()
     ): CounterMetric {
         val newName = if (name.endsWith("_total")) {
             name
@@ -158,7 +161,9 @@ open class MetricsContainer @JvmOverloads constructor(
             }
             return metrics[newName] as CounterMetric
         }
-        return CounterMetric(newName, help, namespace, initialValue).apply { metrics[newName] = register(registry) }
+        return CounterMetric(newName, help, namespace, initialValue, labelNames).apply {
+            metrics[newName] = register(registry)
+        }
     }
 
     /**

@@ -71,6 +71,7 @@ class MetricTest : ShouldSpec() {
                             incAndGet() shouldBe 1
                             repeat(20) { inc() }
                             get() shouldBe 21
+                            supportsJson shouldBe true
                         }
                     }
                     context("and decrementing its value") {
@@ -92,6 +93,67 @@ class MetricTest : ShouldSpec() {
                     shouldThrow<IllegalArgumentException> {
                         CounterMetric("testCounter", "Help", namespace, initialValue)
                     }
+                }
+            }
+            context("With labels") {
+                context("With initialValue != 0") {
+                    shouldThrow<Exception> {
+                        CounterMetric("name", "help", namespace, 1, listOf("l1"))
+                    }
+                }
+                with(CounterMetric("testCounter", "Help", namespace, labelNames = listOf("l1", "l2"))) {
+                    supportsJson shouldBe false
+                    listOf(
+                        { get() },
+                        { get(listOf("v1")) },
+                        { get(listOf("v1", "v2", "v3")) },
+                        { inc() },
+                        { inc(listOf("v1")) },
+                        { inc(listOf("v1", "v2", "v3")) },
+                        { add(3) },
+                        { add(3, listOf("v1")) },
+                        { add(3, listOf("v1", "v2", "v3")) },
+                    ).forEach { block ->
+                        shouldThrow<Exception> {
+                            block()
+                        }
+                    }
+
+                    val labels = listOf("A", "A")
+                    val labels2 = listOf("A", "B")
+                    val labels3 = listOf("B", "B")
+
+                    get(labels) shouldBe 0
+                    get(labels2) shouldBe 0
+                    get(labels3) shouldBe 0
+
+                    addAndGet(3, labels) shouldBe 3
+                    get(labels) shouldBe 3
+                    get(labels2) shouldBe 0
+                    get(labels3) shouldBe 0
+
+                    inc(labels2)
+                    get(labels) shouldBe 3
+                    get(labels2) shouldBe 1
+                    get(labels3) shouldBe 0
+
+                    incAndGet(labels3) shouldBe 1
+
+                    add(2, labels)
+                    get(labels) shouldBe 5
+                    get(labels2) shouldBe 1
+                    get(labels3) shouldBe 1
+
+                    // _total and _created for 3 sets of labels
+                    collect()[0].samples.size shouldBe 6
+                    remove(labels2)
+                    // Down to two sets of labels
+                    collect()[0].samples.size shouldBe 4
+                    get(labels) shouldBe 5
+                    get(labels2) shouldBe 0
+                    get(labels3) shouldBe 1
+                    // Even a get() will summon a child
+                    collect()[0].samples.size shouldBe 6
                 }
             }
         }
