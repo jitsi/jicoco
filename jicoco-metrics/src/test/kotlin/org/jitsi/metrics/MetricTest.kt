@@ -241,6 +241,44 @@ class MetricTest : ShouldSpec() {
                     should("return the initial value") { get() shouldBe initialValue }
                 }
             }
+            context("With labels") {
+                with(LongGaugeMetric("testLongGauge", "Help", namespace, labelNames = listOf("l1", "l2"))) {
+                    val labels = listOf("A", "A")
+                    val labels2 = listOf("A", "B")
+                    val labels3 = listOf("B", "B")
+
+                    get(labels) shouldBe 0
+                    get(labels2) shouldBe 0
+                    get(labels3) shouldBe 0
+
+                    addAndGet(3, labels) shouldBe 3
+                    get(labels) shouldBe 3
+                    get(labels2) shouldBe 0
+                    get(labels3) shouldBe 0
+
+                    incAndGet(labels2)
+                    get(labels) shouldBe 3
+                    get(labels2) shouldBe 1
+                    get(labels3) shouldBe 0
+
+                    incAndGet(labels3) shouldBe 1
+
+                    addAndGet(2, labels)
+                    get(labels) shouldBe 5
+                    get(labels2) shouldBe 1
+                    get(labels3) shouldBe 1
+
+                    collect()[0].samples.size shouldBe 3
+                    remove(labels2)
+                    // Down to two sets of labels
+                    collect()[0].samples.size shouldBe 2
+                    get(labels) shouldBe 5
+                    get(labels2) shouldBe 0
+                    get(labels3) shouldBe 1
+                    // Even a get() will summon a child
+                    collect()[0].samples.size shouldBe 3
+                }
+            }
         }
         context("Creating an InfoMetric") {
             context("with a value different from its name") {
