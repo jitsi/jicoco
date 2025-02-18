@@ -24,7 +24,7 @@ import io.prometheus.client.Info
  * In the Prometheus exposition format, these are shown as labels of either a custom metric (OpenMetrics)
  * or a [Gauge][io.prometheus.client.Gauge] (0.0.4 plain text).
  */
-class InfoMetric(
+class InfoMetric @JvmOverloads constructor(
     /** the name of this metric */
     override val name: String,
     /** the description of this metric */
@@ -32,13 +32,41 @@ class InfoMetric(
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** the value of this info metric */
-    internal val value: String
+    internal val value: String = "",
+    /** Label names for this metric */
+    val labelNames: List<String> = emptyList()
 ) : Metric<String>() {
-    private val info = Info.build(name, help).namespace(namespace).create().apply { info(name, value) }
+    private val info = run {
+        val builder = Info.build(name, help).namespace(namespace)
+        if (labelNames.isNotEmpty()) {
+            builder.labelNames(*labelNames.toTypedArray())
+        }
+        builder.create().apply {
+            if (labelNames.isEmpty()) {
+                info(name, value)
+            }
+        }
+    }
 
-    override fun get() = value
+    override fun get() = if (labelNames.isEmpty()) value else throw UnsupportedOperationException()
+    fun get(labels: List<String> = emptyList()) =
+        if (labels.isEmpty()) value else info.labels(*labels.toTypedArray()).get()[name]
 
-    override fun reset() = info.info(name, value)
+    override fun reset() = if (labelNames.isEmpty()) info.info(name, value) else info.clear()
 
     override fun register(registry: CollectorRegistry) = this.also { registry.register(info) }
+
+    /** Remove the child with the given labels (the metric with those labels will stop being emitted) */
+    fun remove(labels: List<String> = emptyList()) = synchronized(info) {
+        if (labels.isNotEmpty()) {
+            info.remove(*labels.toTypedArray())
+        }
+    }
+
+    fun set(labels: List<String>, value: String) {
+        if (labels.isNotEmpty()) {
+            info.labels(*labels.toTypedArray()).info(name, value)
+        }
+    }
+    internal fun collect() = info.collect()
 }

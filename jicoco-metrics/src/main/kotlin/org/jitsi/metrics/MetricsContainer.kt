@@ -238,7 +238,10 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the description of the metric */
         help: String,
         /** the value of the metric */
-        value: String
+        value: String,
+        /** Label names for this metric. If non-empty, the initial value must be 0 and all get/update calls MUST
+         * specify values for the labels. Calls to simply get() or inc() will fail with an exception. */
+        labelNames: List<String> = emptyList()
     ): InfoMetric {
         if (metrics.containsKey(name)) {
             if (checkForNameConflicts) {
@@ -246,7 +249,7 @@ open class MetricsContainer @JvmOverloads constructor(
             }
             return metrics[name] as InfoMetric
         }
-        return InfoMetric(name, help, namespace, value).apply { metrics[name] = register(registry) }
+        return InfoMetric(name, help, namespace, value, labelNames).apply { metrics[name] = register(registry) }
     }
 
     fun registerHistogram(

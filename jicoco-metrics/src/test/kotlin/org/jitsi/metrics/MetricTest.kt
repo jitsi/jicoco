@@ -325,6 +325,34 @@ class MetricTest : ShouldSpec() {
                     should("return the correct value") { get() shouldBe value }
                 }
             }
+            context("With labels") {
+                with(InfoMetric("testInfo", "Help", namespace, labelNames = listOf("l1", "l2"))) {
+                    val labels = listOf("A", "A")
+                    val labels2 = listOf("A", "B")
+                    val labels3 = listOf("B", "B")
+
+                    shouldThrow<Exception> { get() }
+
+                    get(labels) shouldBe null
+                    get(labels2) shouldBe null
+
+                    set(labels, "AA")
+                    get(labels) shouldBe "AA"
+                    get(labels2) shouldBe null
+
+                    set(labels3, "BB")
+                    get(labels) shouldBe "AA"
+                    get(labels3) shouldBe "BB"
+
+                    collect()[0].samples.size shouldBe 3
+                    remove(labels2)
+                    // Down to two sets of labels
+                    collect()[0].samples.size shouldBe 2
+                    get(labels) shouldBe "AA"
+                    get(labels2) shouldBe null
+                    get(labels3) shouldBe "BB"
+                }
+            }
         }
         context("HistogramMetric") {
             val namespace = "namespace"
