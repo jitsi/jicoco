@@ -119,7 +119,10 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the description of the metric */
         help: String,
         /** the optional initial value of the metric */
-        initialValue: Boolean = false
+        initialValue: Boolean = false,
+        /** Label names for this metric. If non-empty, the initial value must be 0 and all get/update calls MUST
+         * specify values for the labels. Calls to simply get() or set() will fail with an exception. */
+        labelNames: List<String> = emptyList()
     ): BooleanMetric {
         if (metrics.containsKey(name)) {
             if (checkForNameConflicts) {
@@ -127,7 +130,9 @@ open class MetricsContainer @JvmOverloads constructor(
             }
             return metrics[name] as BooleanMetric
         }
-        return BooleanMetric(name, help, namespace, initialValue).apply { metrics[name] = register(registry) }
+        return BooleanMetric(name, help, namespace, initialValue, labelNames).apply {
+            metrics[name] = register(registry)
+        }
     }
 
     /**

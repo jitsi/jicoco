@@ -30,29 +30,65 @@ class BooleanMetric @JvmOverloads constructor(
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** an optional initial value for this metric */
-    internal val initialValue: Boolean = false
+    internal val initialValue: Boolean = false,
+    /** Label names for this metric. If non-empty, the initial value must be false and all get/update calls MUST
+     * specify values for the labels. Calls to simply get() or set() will fail with an exception. */
+    val labelNames: List<String> = emptyList()
 ) : Metric<Boolean>() {
-    private val gauge =
-        Gauge.build(name, help).namespace(namespace).create().apply { set(if (initialValue) 1.0 else 0.0) }
+    private val gauge = run {
+        val builder = Gauge.build(name, help).namespace(namespace)
+        if (labelNames.isNotEmpty()) {
+            builder.labelNames(*labelNames.toTypedArray())
+            if (initialValue) {
+                throw IllegalArgumentException("Cannot set an initial value for a labeled gauge")
+            }
+        }
+        builder.create().apply {
+            if (initialValue) {
+                set(1.0)
+            }
+        }
+    }
 
+    override val supportsJson: Boolean = labelNames.isEmpty()
     override fun get() = gauge.get() != 0.0
+    fun get(labels: List<String>) = gauge.labels(*labels.toTypedArray()).get() != 0.0
 
-    override fun reset() = set(initialValue)
+    override fun reset() = synchronized(gauge) {
+        gauge.clear()
+        if (initialValue) {
+            gauge.set(1.0)
+        }
+    }
 
     override fun register(registry: CollectorRegistry) = this.also { registry.register(gauge) }
 
     /**
      * Atomically sets the gauge to the given value.
      */
-    fun set(newValue: Boolean): Unit = synchronized(gauge) { gauge.set(if (newValue) 1.0 else 0.0) }
+    fun set(newValue: Boolean, labels: List<String> = emptyList()): Unit = synchronized(gauge) {
+        if (labels.isEmpty()) {
+            gauge.set(if (newValue) 1.0 else 0.0)
+        } else {
+            gauge.labels(*labels.toTypedArray()).set(if (newValue) 1.0 else 0.0)
+        }
+    }
 
     /**
      * Atomically sets the gauge to the given value, returning the updated value.
      *
      * @return the updated value
      */
-    fun setAndGet(newValue: Boolean): Boolean = synchronized(gauge) {
-        gauge.set(if (newValue) 1.0 else 0.0)
+    fun setAndGet(newValue: Boolean, labels: List<String> = emptyList()): Boolean = synchronized(gauge) {
+        set(newValue, labels)
         return newValue
     }
+
+    /** Remove the child with the given labels (the metric with those labels will stop being emitted) */
+    fun remove(labels: List<String> = emptyList()) = synchronized(gauge) {
+        if (labels.isNotEmpty()) {
+            gauge.remove(*labels.toTypedArray())
+        }
+    }
+    internal fun collect() = gauge.collect()
 }

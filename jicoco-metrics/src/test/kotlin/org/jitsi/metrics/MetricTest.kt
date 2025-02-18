@@ -61,6 +61,44 @@ class MetricTest : ShouldSpec() {
                     should("return true") { get() shouldBe true }
                 }
             }
+            context("With labels") {
+                with(BooleanMetric("testBoolean", "Help", namespace, labelNames = listOf("l1", "l2"))) {
+                    val labels = listOf("A", "A")
+                    val labels2 = listOf("A", "B")
+                    val labels3 = listOf("B", "B")
+
+                    get(labels) shouldBe false
+                    get(labels2) shouldBe false
+                    get(labels3) shouldBe false
+
+                    set(true, labels)
+                    get(labels) shouldBe true
+                    get(labels2) shouldBe false
+                    get(labels3) shouldBe false
+
+                    set(true, labels2)
+                    get(labels) shouldBe true
+                    get(labels2) shouldBe true
+                    get(labels3) shouldBe false
+
+                    setAndGet(true, labels3) shouldBe true
+
+                    set(false, labels)
+                    get(labels) shouldBe false
+                    get(labels2) shouldBe true
+                    get(labels3) shouldBe true
+
+                    collect()[0].samples.size shouldBe 3
+                    remove(labels2)
+                    // Down to two sets of labels
+                    collect()[0].samples.size shouldBe 2
+                    get(labels) shouldBe false
+                    get(labels2) shouldBe false
+                    get(labels3) shouldBe true
+                    // Even a get() will summon a child
+                    collect()[0].samples.size shouldBe 3
+                }
+            }
         }
         context("Creating a DoubleGaugeMetric") {
             context("with the default initial value") {
