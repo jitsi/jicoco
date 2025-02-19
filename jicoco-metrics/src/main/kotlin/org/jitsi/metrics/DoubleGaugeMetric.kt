@@ -70,6 +70,7 @@ class DoubleGaugeMetric @JvmOverloads constructor(
     /**
      * Sets the value of this gauge to the given value.
      */
+    @JvmOverloads
     fun set(newValue: Double, labels: List<String> = emptyList()) {
         if (labels.isEmpty()) {
             gauge.set(newValue)
@@ -83,6 +84,7 @@ class DoubleGaugeMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun setAndGet(newValue: Double, labels: List<String> = emptyList()): Double = synchronized(gauge) {
         return if (labels.isEmpty()) {
             gauge.set(newValue)
@@ -100,6 +102,7 @@ class DoubleGaugeMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun addAndGet(delta: Double, labels: List<String> = emptyList()): Double = synchronized(gauge) {
         return if (labels.isEmpty()) {
             gauge.inc(delta)
@@ -117,6 +120,7 @@ class DoubleGaugeMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun incAndGet(labels: List<String> = emptyList()) = addAndGet(1.0, labels)
 
     /**
@@ -124,6 +128,7 @@ class DoubleGaugeMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun decAndGet(labels: List<String> = emptyList()) = addAndGet(-1.0, labels)
 
     /** Remove the child with the given labels (the metric with those labels will stop being emitted) */

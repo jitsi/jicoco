@@ -76,6 +76,7 @@ class CounterMetric @JvmOverloads constructor(
     /**
      * Atomically adds the given value to this counter.
      */
+    @JvmOverloads
     fun add(delta: Long, labels: List<String> = emptyList()) = synchronized(counter) {
         if (labels.isEmpty()) {
             counter.inc(delta.toDouble())
@@ -89,6 +90,7 @@ class CounterMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun addAndGet(delta: Long, labels: List<String> = emptyList()): Long = synchronized(counter) {
         return if (labels.isEmpty()) {
             counter.inc(delta.toDouble())
@@ -104,11 +106,13 @@ class CounterMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun incAndGet(labels: List<String> = emptyList()) = addAndGet(1, labels)
 
     /**
      * Atomically increments the value of this counter by one.
      */
+    @JvmOverloads
     fun inc(labels: List<String> = emptyList()) = synchronized(counter) {
         if (labels.isEmpty()) {
             counter.inc()

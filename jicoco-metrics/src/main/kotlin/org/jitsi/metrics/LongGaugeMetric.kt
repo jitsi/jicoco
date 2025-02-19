@@ -69,6 +69,7 @@ class LongGaugeMetric @JvmOverloads constructor(
     /**
      * Atomically sets the gauge to the given value.
      */
+    @JvmOverloads
     fun set(newValue: Long, labels: List<String> = emptyList()): Unit = synchronized(gauge) {
         if (labels.isEmpty()) {
             gauge.set(newValue.toDouble())
@@ -80,6 +81,7 @@ class LongGaugeMetric @JvmOverloads constructor(
     /**
      * Atomically increments the value of this gauge by one.
      */
+    @JvmOverloads
     fun inc(labels: List<String> = emptyList()) = synchronized(gauge) {
         if (labels.isEmpty()) {
             gauge.inc()
@@ -91,6 +93,7 @@ class LongGaugeMetric @JvmOverloads constructor(
     /**
      * Atomically decrements the value of this gauge by one.
      */
+    @JvmOverloads
     fun dec(labels: List<String> = emptyList()) = synchronized(gauge) {
         if (labels.isEmpty()) {
             gauge.dec()
@@ -104,6 +107,7 @@ class LongGaugeMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun addAndGet(delta: Long, labels: List<String> = emptyList()): Long = synchronized(gauge) {
         return if (labels.isEmpty()) {
             gauge.inc(delta.toDouble())
@@ -121,6 +125,7 @@ class LongGaugeMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun incAndGet(labels: List<String> = emptyList()) = addAndGet(1, labels)
 
     /**
@@ -128,6 +133,7 @@ class LongGaugeMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun decAndGet(labels: List<String> = emptyList()) = addAndGet(-1, labels)
 
     /** Remove the child with the given labels (the metric with those labels will stop being emitted) */

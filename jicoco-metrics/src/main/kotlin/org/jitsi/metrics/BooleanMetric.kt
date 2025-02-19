@@ -66,6 +66,7 @@ class BooleanMetric @JvmOverloads constructor(
     /**
      * Atomically sets the gauge to the given value.
      */
+    @JvmOverloads
     fun set(newValue: Boolean, labels: List<String> = emptyList()): Unit = synchronized(gauge) {
         if (labels.isEmpty()) {
             gauge.set(if (newValue) 1.0 else 0.0)
@@ -79,6 +80,7 @@ class BooleanMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
+    @JvmOverloads
     fun setAndGet(newValue: Boolean, labels: List<String> = emptyList()): Boolean = synchronized(gauge) {
         set(newValue, labels)
         return newValue
