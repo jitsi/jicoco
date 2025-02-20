@@ -32,29 +32,69 @@ class DoubleGaugeMetric @JvmOverloads constructor(
     /** the namespace (prefix) of this metric */
     namespace: String,
     /** an optional initial value for this metric */
-    internal val initialValue: Double = 0.0
+    internal val initialValue: Double = 0.0,
+    /** Label names for this metric. If non-empty, the initial value must be 0 and all get/update calls MUST
+     * specify values for the labels. Calls to simply [get()] or [set(Double)] will fail with an exception. */
+    val labelNames: List<String> = emptyList()
 ) : Metric<Double>() {
-    private val gauge = Gauge.build(name, help).namespace(namespace).create().apply { set(initialValue) }
+    private val gauge = run {
+        val builder = Gauge.build(name, help).namespace(namespace)
+        if (labelNames.isNotEmpty()) {
+            builder.labelNames(*labelNames.toTypedArray())
+            if (initialValue != 0.0) {
+                throw IllegalArgumentException("Cannot set an initial value for a labeled gauge")
+            }
+        }
+        builder.create().apply {
+            if (initialValue != 0.0) {
+                set(initialValue)
+            }
+        }
+    }
+
+    /** When we have labels [get()] throws an exception and the JSON format is not supported. */
+    override val supportsJson: Boolean = labelNames.isEmpty()
 
     override fun get() = gauge.get()
+    fun get(labelNames: List<String>) = gauge.labels(*labelNames.toTypedArray()).get()
 
-    override fun reset() = set(initialValue)
+    override fun reset() = synchronized(gauge) {
+        gauge.clear()
+        if (initialValue != 0.0) {
+            gauge.set(initialValue)
+        }
+    }
 
     override fun register(registry: CollectorRegistry) = this.also { registry.register(gauge) }
 
     /**
      * Sets the value of this gauge to the given value.
      */
-    fun set(newValue: Double) = gauge.set(newValue)
+    @JvmOverloads
+    fun set(newValue: Double, labels: List<String> = emptyList()) {
+        if (labels.isEmpty()) {
+            gauge.set(newValue)
+        } else {
+            gauge.labels(*labels.toTypedArray()).set(newValue)
+        }
+    }
 
     /**
      * Atomically sets the gauge to the given value, returning the updated value.
      *
      * @return the updated value
      */
-    fun setAndGet(newValue: Double): Double = synchronized(gauge) {
-        gauge.set(newValue)
-        return gauge.get()
+    @JvmOverloads
+    fun setAndGet(newValue: Double, labels: List<String> = emptyList()): Double = synchronized(gauge) {
+        return if (labels.isEmpty()) {
+            gauge.set(newValue)
+            gauge.get()
+        } else {
+            with(gauge.labels(*labels.toTypedArray())) {
+                set(newValue)
+                get()
+            }
+        }
     }
 
     /**
@@ -62,9 +102,17 @@ class DoubleGaugeMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
-    fun addAndGet(delta: Double): Double = synchronized(gauge) {
-        gauge.inc(delta)
-        return gauge.get()
+    @JvmOverloads
+    fun addAndGet(delta: Double, labels: List<String> = emptyList()): Double = synchronized(gauge) {
+        return if (labels.isEmpty()) {
+            gauge.inc(delta)
+            gauge.get()
+        } else {
+            with(gauge.labels(*labels.toTypedArray())) {
+                inc(delta)
+                get()
+            }
+        }
     }
 
     /**
@@ -72,12 +120,23 @@ class DoubleGaugeMetric @JvmOverloads constructor(
      *
      * @return the updated value
      */
-    fun incAndGet() = addAndGet(1.0)
+    @JvmOverloads
+    fun incAndGet(labels: List<String> = emptyList()) = addAndGet(1.0, labels)
 
     /**
      * Atomically decrements the value of this gauge by one, returning the updated value.
      *
      * @return the updated value
      */
-    fun decAndGet() = addAndGet(-1.0)
+    @JvmOverloads
+    fun decAndGet(labels: List<String> = emptyList()) = addAndGet(-1.0, labels)
+
+    /** Remove the child with the given labels (the metric with those labels will stop being emitted) */
+    fun remove(labels: List<String> = emptyList()) = synchronized(gauge) {
+        if (labels.isNotEmpty()) {
+            gauge.remove(*labels.toTypedArray())
+        }
+    }
+
+    internal fun collect() = gauge.collect()
 }

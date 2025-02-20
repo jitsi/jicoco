@@ -53,7 +53,7 @@ open class MetricsContainer @JvmOverloads constructor(
      * @return a JSON string of the metrics in this instance
      */
     open val jsonString: String
-        get() = JSONObject(metrics.mapValues { it.value.get() }).toJSONString()
+        get() = JSONObject(metrics.filter { it.value.supportsJson }.mapValues { it.value.get() }).toJSONString()
 
     /**
      * Returns the metrics in this instance in the Prometheus text-based format.
@@ -119,7 +119,10 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the description of the metric */
         help: String,
         /** the optional initial value of the metric */
-        initialValue: Boolean = false
+        initialValue: Boolean = false,
+        /** Label names for this metric. If non-empty, the initial value must be 0 and all get/update calls MUST
+         * specify values for the labels. Calls to simply get() or set() will fail with an exception. */
+        labelNames: List<String> = emptyList()
     ): BooleanMetric {
         if (metrics.containsKey(name)) {
             if (checkForNameConflicts) {
@@ -127,7 +130,9 @@ open class MetricsContainer @JvmOverloads constructor(
             }
             return metrics[name] as BooleanMetric
         }
-        return BooleanMetric(name, help, namespace, initialValue).apply { metrics[name] = register(registry) }
+        return BooleanMetric(name, help, namespace, initialValue, labelNames).apply {
+            metrics[name] = register(registry)
+        }
     }
 
     /**
@@ -143,7 +148,10 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the description of the metric */
         help: String,
         /** the optional initial value of the metric */
-        initialValue: Long = 0
+        initialValue: Long = 0,
+        /** Label names for this metric. If non-empty, the initial value must be 0 and all get/update calls MUST
+         * specify values for the labels. Calls to simply get() or inc() will fail with an exception. */
+        labelNames: List<String> = emptyList()
     ): CounterMetric {
         val newName = if (name.endsWith("_total")) {
             name
@@ -158,7 +166,9 @@ open class MetricsContainer @JvmOverloads constructor(
             }
             return metrics[newName] as CounterMetric
         }
-        return CounterMetric(newName, help, namespace, initialValue).apply { metrics[newName] = register(registry) }
+        return CounterMetric(newName, help, namespace, initialValue, labelNames).apply {
+            metrics[newName] = register(registry)
+        }
     }
 
     /**
@@ -173,7 +183,10 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the description of the metric */
         help: String,
         /** the optional initial value of the metric */
-        initialValue: Long = 0
+        initialValue: Long = 0,
+        /** Label names for this metric. If non-empty, the initial value must be 0 and all get/update calls MUST
+         * specify values for the labels. Calls to simply get() or set() will fail with an exception. */
+        labelNames: List<String> = emptyList()
     ): LongGaugeMetric {
         if (metrics.containsKey(name)) {
             if (checkForNameConflicts) {
@@ -181,7 +194,9 @@ open class MetricsContainer @JvmOverloads constructor(
             }
             return metrics[name] as LongGaugeMetric
         }
-        return LongGaugeMetric(name, help, namespace, initialValue).apply { metrics[name] = register(registry) }
+        return LongGaugeMetric(name, help, namespace, initialValue, labelNames).apply {
+            metrics[name] = register(registry)
+        }
     }
 
     /**
@@ -196,7 +211,10 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the description of the metric */
         help: String,
         /** the optional initial value of the metric */
-        initialValue: Double = 0.0
+        initialValue: Double = 0.0,
+        /** Label names for this metric. If non-empty, the initial value must be 0 and all get/update calls MUST
+         * specify values for the labels. Calls to simply get() or set() will fail with an exception. */
+        labelNames: List<String> = emptyList()
     ): DoubleGaugeMetric {
         if (metrics.containsKey(name)) {
             if (checkForNameConflicts) {
@@ -204,7 +222,9 @@ open class MetricsContainer @JvmOverloads constructor(
             }
             return metrics[name] as DoubleGaugeMetric
         }
-        return DoubleGaugeMetric(name, help, namespace, initialValue).apply { metrics[name] = register(registry) }
+        return DoubleGaugeMetric(name, help, namespace, initialValue, labelNames).apply {
+            metrics[name] = register(registry)
+        }
     }
 
     /**
@@ -218,7 +238,10 @@ open class MetricsContainer @JvmOverloads constructor(
         /** the description of the metric */
         help: String,
         /** the value of the metric */
-        value: String
+        value: String,
+        /** Label names for this metric. If non-empty, the initial value must be 0 and all get/update calls MUST
+         * specify values for the labels. Calls to simply get() or inc() will fail with an exception. */
+        labelNames: List<String> = emptyList()
     ): InfoMetric {
         if (metrics.containsKey(name)) {
             if (checkForNameConflicts) {
@@ -226,7 +249,7 @@ open class MetricsContainer @JvmOverloads constructor(
             }
             return metrics[name] as InfoMetric
         }
-        return InfoMetric(name, help, namespace, value).apply { metrics[name] = register(registry) }
+        return InfoMetric(name, help, namespace, value, labelNames).apply { metrics[name] = register(registry) }
     }
 
     fun registerHistogram(
