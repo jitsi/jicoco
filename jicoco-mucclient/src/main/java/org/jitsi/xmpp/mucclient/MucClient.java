@@ -728,7 +728,7 @@ public class MucClient
                 return false;
             }
 
-            return true;
+            return false; // we are connected and logged in, so we don't need to retry
         };
     }
 
