@@ -70,7 +70,7 @@
         <jersey.version>3.0.10</jersey.version>
         <jwt.version>0.12.6</jwt.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
-        <smack.version>4.4.8</smack.version>
+        <smack.version>4.4.8-jitsi-1</smack.version>
     </properties>
 
     <dependencyManagement>
