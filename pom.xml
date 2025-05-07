@@ -236,14 +236,7 @@
             </activation>
 
             <modules>
-                <module>jicoco-config</module>
-                <module>jicoco-health-checker</module>
-                <module>jicoco-jetty</module>
-                <module>jicoco-jwt</module>
-                <module>jicoco-mediajson</module>
-                <module>jicoco-metrics</module>
                 <module>jicoco-mucclient</module>
-                <module>jicoco-test-kotlin</module>
             </modules>
 
             <repositories>
