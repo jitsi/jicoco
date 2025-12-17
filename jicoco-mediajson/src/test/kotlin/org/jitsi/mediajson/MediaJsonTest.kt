@@ -92,6 +92,38 @@ class MediaJsonTest : ShouldSpec() {
                 (parsed === event) shouldBe false
             }
         }
+        context("PingEvent") {
+            val id = 42
+            val event = PingEvent(id)
+
+            context("Serializing") {
+                val parsed = parser.parse(event.toJson())
+                parsed.shouldBeInstanceOf<JSONObject>()
+                parsed["event"] shouldBe "ping"
+                parsed["id"] shouldBe id
+            }
+            context("Parsing") {
+                val parsed = Event.parse(event.toJson())
+                (parsed == event) shouldBe true
+                (parsed === event) shouldBe false
+            }
+        }
+        context("PongEvent") {
+            val id = 123
+            val event = PongEvent(id)
+
+            context("Serializing") {
+                val parsed = parser.parse(event.toJson())
+                parsed.shouldBeInstanceOf<JSONObject>()
+                parsed["event"] shouldBe "pong"
+                parsed["id"] shouldBe id
+            }
+            context("Parsing") {
+                val parsed = Event.parse(event.toJson())
+                (parsed == event) shouldBe true
+                (parsed === event) shouldBe false
+            }
+        }
         context("Parsing valid samples") {
             context("Start") {
                 val parsed = Event.parse(
@@ -179,15 +211,15 @@ class MediaJsonTest : ShouldSpec() {
             context("Media with seq/chunk/timestamp as numbers") {
                 val parsed = Event.parse(
                     """
-                    { 
+                    {
                         "event": "media",
-                        "sequenceNumber": 2, 
-                        "media": { 
-                            "tag": "incoming", 
-                            "chunk": 1,    
+                        "sequenceNumber": 2,
+                        "media": {
+                            "tag": "incoming",
+                            "chunk": 1,
                             "timestamp": 5,
                             "payload": "no+JhoaJjpzSHxAKBgYJ...=="
-                        } 
+                        }
                     }
                     """.trimIndent()
                 )
@@ -199,6 +231,34 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.media.chunk shouldBe 1
                 parsed.media.timestamp shouldBe 5
                 parsed.media.payload shouldBe "no+JhoaJjpzSHxAKBgYJ...=="
+            }
+            context("Ping") {
+                val parsed = Event.parse(
+                    """
+                    {
+                        "event": "ping",
+                        "id": 42
+                    }
+                    """.trimIndent()
+                )
+
+                parsed.shouldBeInstanceOf<PingEvent>()
+                parsed.event shouldBe "ping"
+                parsed.id shouldBe 42
+            }
+            context("Pong") {
+                val parsed = Event.parse(
+                    """
+                    {
+                        "event": "pong",
+                        "id": 123
+                    }
+                    """.trimIndent()
+                )
+
+                parsed.shouldBeInstanceOf<PongEvent>()
+                parsed.event shouldBe "pong"
+                parsed.id shouldBe 123
             }
         }
         context("Parsing invalid samples") {

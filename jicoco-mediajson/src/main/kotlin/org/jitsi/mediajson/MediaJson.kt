@@ -39,6 +39,8 @@ private val objectMapper = jacksonObjectMapper().apply {
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "event")
 @JsonSubTypes(
     JsonSubTypes.Type(value = MediaEvent::class, name = "media"),
+    JsonSubTypes.Type(value = PingEvent::class, name = "ping"),
+    JsonSubTypes.Type(value = PongEvent::class, name = "pong"),
     JsonSubTypes.Type(value = StartEvent::class, name = "start"),
 )
 sealed class Event(val event: String) {
@@ -62,6 +64,14 @@ data class StartEvent(
     val sequenceNumber: Int,
     val start: Start
 ) : Event("start")
+
+data class PingEvent(
+    val id: Int
+) : Event("ping")
+
+data class PongEvent(
+    val id: Int
+) : Event("pong")
 
 data class MediaFormat(
     val encoding: String,
