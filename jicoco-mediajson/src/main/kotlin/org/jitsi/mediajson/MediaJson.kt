@@ -15,6 +15,8 @@
  */
 package org.jitsi.mediajson
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter
+import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.core.JsonGenerator
@@ -39,7 +41,10 @@ private val objectMapper = jacksonObjectMapper().apply {
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "event")
 @JsonSubTypes(
     JsonSubTypes.Type(value = MediaEvent::class, name = "media"),
+    JsonSubTypes.Type(value = PingEvent::class, name = "ping"),
+    JsonSubTypes.Type(value = PongEvent::class, name = "pong"),
     JsonSubTypes.Type(value = StartEvent::class, name = "start"),
+    JsonSubTypes.Type(value = TranscriptionResultEvent::class, name = "transcription-result"),
 )
 sealed class Event(val event: String) {
     fun toJson(): String = objectMapper.writeValueAsString(this)
@@ -62,6 +67,27 @@ data class StartEvent(
     val sequenceNumber: Int,
     val start: Start
 ) : Event("start")
+
+data class PingEvent(
+    val id: Int
+) : Event("ping")
+
+data class PongEvent(
+    val id: Int
+) : Event("pong")
+
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(value = ["event"], allowGetters = false)
+class TranscriptionResultEvent : Event("transcription-result") {
+    private val additionalProperties = mutableMapOf<String, Any?>()
+
+    @JsonAnySetter
+    fun setAdditionalProperty(name: String, value: Any?) {
+        additionalProperties[name] = value
+    }
+
+    @JsonAnyGetter
+    fun getAdditionalProperties(): Map<String, Any?> = additionalProperties
+}
 
 data class MediaFormat(
     val encoding: String,

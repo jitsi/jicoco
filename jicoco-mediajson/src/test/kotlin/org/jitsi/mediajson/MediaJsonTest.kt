@@ -92,6 +92,52 @@ class MediaJsonTest : ShouldSpec() {
                 (parsed === event) shouldBe false
             }
         }
+        context("PingEvent") {
+            val id = 42
+            val event = PingEvent(id)
+
+            context("Serializing") {
+                val parsed = parser.parse(event.toJson())
+                parsed.shouldBeInstanceOf<JSONObject>()
+                parsed["event"] shouldBe "ping"
+                parsed["id"] shouldBe id
+            }
+            context("Parsing") {
+                val parsed = Event.parse(event.toJson())
+                (parsed == event) shouldBe true
+                (parsed === event) shouldBe false
+            }
+        }
+        context("PongEvent") {
+            val id = 123
+            val event = PongEvent(id)
+
+            context("Serializing") {
+                val parsed = parser.parse(event.toJson())
+                parsed.shouldBeInstanceOf<JSONObject>()
+                parsed["event"] shouldBe "pong"
+                parsed["id"] shouldBe id
+            }
+            context("Parsing") {
+                val parsed = Event.parse(event.toJson())
+                (parsed == event) shouldBe true
+                (parsed === event) shouldBe false
+            }
+        }
+        context("TranscriptionResultEvent") {
+            val event = TranscriptionResultEvent()
+
+            context("Serializing") {
+                val parsed = parser.parse(event.toJson())
+                parsed.shouldBeInstanceOf<JSONObject>()
+                parsed["event"] shouldBe "transcription-result"
+            }
+            context("Parsing") {
+                val parsed = Event.parse(event.toJson())
+                parsed.shouldBeInstanceOf<TranscriptionResultEvent>()
+                parsed.event shouldBe "transcription-result"
+            }
+        }
         context("Parsing valid samples") {
             context("Start") {
                 val parsed = Event.parse(
@@ -179,15 +225,15 @@ class MediaJsonTest : ShouldSpec() {
             context("Media with seq/chunk/timestamp as numbers") {
                 val parsed = Event.parse(
                     """
-                    { 
+                    {
                         "event": "media",
-                        "sequenceNumber": 2, 
-                        "media": { 
-                            "tag": "incoming", 
-                            "chunk": 1,    
+                        "sequenceNumber": 2,
+                        "media": {
+                            "tag": "incoming",
+                            "chunk": 1,
                             "timestamp": 5,
                             "payload": "no+JhoaJjpzSHxAKBgYJ...=="
-                        } 
+                        }
                     }
                     """.trimIndent()
                 )
@@ -199,6 +245,81 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.media.chunk shouldBe 1
                 parsed.media.timestamp shouldBe 5
                 parsed.media.payload shouldBe "no+JhoaJjpzSHxAKBgYJ...=="
+            }
+            context("Ping") {
+                val parsed = Event.parse(
+                    """
+                    {
+                        "event": "ping",
+                        "id": 42
+                    }
+                    """.trimIndent()
+                )
+
+                parsed.shouldBeInstanceOf<PingEvent>()
+                parsed.event shouldBe "ping"
+                parsed.id shouldBe 42
+            }
+            context("Pong") {
+                val parsed = Event.parse(
+                    """
+                    {
+                        "event": "pong",
+                        "id": 123
+                    }
+                    """.trimIndent()
+                )
+
+                parsed.shouldBeInstanceOf<PongEvent>()
+                parsed.event shouldBe "pong"
+                parsed.id shouldBe 123
+            }
+            context("TranscriptionResult ") {
+                val originalJson = """
+                    {
+                        "transcript": [
+                            {
+                                "confidence": 0.999666973709317,
+                                "text": "blah blah blah"
+                            }
+                        ],
+                        "is_interim": false,
+                        "message_id": "item_CnopdEudFcwXCkZfCIHrC",
+                        "type": "transcription-result",
+                        "event": "transcription-result",
+                        "participant": {
+                            "id": "08847b00",
+                            "ssrc": "1776301157"
+                        },
+                        "timestamp": 1765989508172
+                    }
+                """.trimIndent()
+
+                val parsed = Event.parse(originalJson)
+                parsed.shouldBeInstanceOf<TranscriptionResultEvent>()
+
+                val serialized = parsed.toJson()
+                val reparsed = parser.parse(serialized)
+                reparsed.shouldBeInstanceOf<JSONObject>()
+
+                reparsed["event"] shouldBe "transcription-result"
+                reparsed["type"] shouldBe "transcription-result"
+                reparsed["message_id"] shouldBe "item_CnopdEudFcwXCkZfCIHrC"
+                reparsed["is_interim"] shouldBe false
+                reparsed["timestamp"] shouldBe 1765989508172L
+
+                val transcript = reparsed["transcript"]
+                transcript.shouldBeInstanceOf<List<*>>()
+                transcript.size shouldBe 1
+                val transcriptItem = transcript[0] as Map<*, *>
+                transcriptItem.shouldBeInstanceOf<Map<*, *>>()
+                transcriptItem["confidence"] shouldBe 0.999666973709317
+                transcriptItem["text"] shouldBe "blah blah blah"
+
+                val participant = reparsed["participant"]
+                participant.shouldBeInstanceOf<Map<*, *>>()
+                participant["id"] shouldBe "08847b00"
+                participant["ssrc"] shouldBe "1776301157"
             }
         }
         context("Parsing invalid samples") {
