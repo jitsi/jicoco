@@ -79,6 +79,8 @@ class TranscriptionResultEvent : Event("transcription-result") {
     fun getAdditionalProperties(): Map<String, Any?> = additionalProperties
 }
 
+class SessionEndEvent : Event("session-end")
+
 data class MediaFormat(
     val encoding: String,
     val sampleRate: Int,
