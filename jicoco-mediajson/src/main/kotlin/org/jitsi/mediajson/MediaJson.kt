@@ -94,7 +94,8 @@ class SessionEndEvent : Event("session-end")
 data class MediaFormat(
     val encoding: String,
     val sampleRate: Int,
-    val channels: Int
+    val channels: Int,
+    var parameters: Map<String, String>? = null
 )
 data class Start(
     val tag: String,

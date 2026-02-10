@@ -34,7 +34,8 @@ class MediaJsonTest : ShouldSpec() {
             val enc = "opus"
             val sampleRate = 48000
             val channels = 2
-            val event = StartEvent(seq, Start(tag, MediaFormat(enc, sampleRate, channels)))
+            val params = mapOf("k1" to "v2", "k2" to "v2")
+            val event = StartEvent(seq, Start(tag, MediaFormat(enc, sampleRate, channels, params)))
 
             context("Serializing") {
                 val parsed = parser.parse(event.toJson())
@@ -52,6 +53,7 @@ class MediaJsonTest : ShouldSpec() {
                 mediaFormat["encoding"] shouldBe enc
                 mediaFormat["sampleRate"] shouldBe sampleRate
                 mediaFormat["channels"] shouldBe channels
+                mediaFormat["parameters"] shouldBe params
             }
             context("Parsing") {
                 val parsed = Event.parse(event.toJson())
