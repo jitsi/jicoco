@@ -377,7 +377,7 @@ public class MucClientConfiguration
     public void setDisableCertificateVerification(
         boolean disableCertificateVerification)
     {
-        props.put(DISABLE_CERTIFICATE_VERIFICATION, Boolean.TRUE.toString());
+        props.put(DISABLE_CERTIFICATE_VERIFICATION, Boolean.toString(disableCertificateVerification));
     }
 
     /**
