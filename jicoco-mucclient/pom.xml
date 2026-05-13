@@ -158,7 +158,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <jvmTarget>11</jvmTarget>
+                    <jvmTarget>17</jvmTarget>
                 </configuration>
             </plugin>
             <plugin>
@@ -190,7 +190,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <release>11</release>
+                    <release>17</release>
                     <compilerArgs>
                         <arg>-Xlint:all,-serial</arg>
                     </compilerArgs>
