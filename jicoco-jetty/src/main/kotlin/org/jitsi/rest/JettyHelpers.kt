@@ -18,16 +18,20 @@
 package org.jitsi.rest
 
 import jakarta.servlet.DispatcherType
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler
+import org.eclipse.jetty.ee10.servlet.ServletHolder
+import org.eclipse.jetty.ee10.servlets.CrossOriginFilter
 import org.eclipse.jetty.http.HttpStatus
+import org.eclipse.jetty.server.Handler
 import org.eclipse.jetty.server.HttpConfiguration
 import org.eclipse.jetty.server.HttpConnectionFactory
+import org.eclipse.jetty.server.Request
+import org.eclipse.jetty.server.Response
 import org.eclipse.jetty.server.SecureRequestCustomizer
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.server.SslConnectionFactory
-import org.eclipse.jetty.servlet.ServletContextHandler
-import org.eclipse.jetty.servlet.ServletHolder
-import org.eclipse.jetty.servlets.CrossOriginFilter
+import org.eclipse.jetty.util.Callback
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import java.nio.file.Paths
 import java.util.EnumSet
@@ -39,15 +43,9 @@ import java.util.EnumSet
 fun createJettyServer(config: JettyBundleActivatorConfig): Server {
     val httpConfig = HttpConfiguration().apply {
         sendServerVersion = config.sendServerVersion
-        addCustomizer { _, _, request ->
-            if (request.method.equals("TRACE", ignoreCase = true)) {
-                request.isHandled = true
-                request.response.status = HttpStatus.METHOD_NOT_ALLOWED_405
-            }
-        }
     }
     val server = Server().apply {
-        handler = ServletContextHandler()
+        handler = TraceBlockingHandler(ServletContextHandler())
     }
     val connector = ServerConnector(server, HttpConnectionFactory(httpConfig)).apply {
         port = config.port
@@ -83,7 +81,7 @@ fun createSecureJettyServer(config: JettyBundleActivatorConfig): Server {
         sendServerVersion = config.sendServerVersion
     }
     val server = Server().apply {
-        handler = ServletContextHandler()
+        handler = TraceBlockingHandler(ServletContextHandler())
     }
 
     val connector = ServerConnector(
@@ -114,11 +112,28 @@ fun createServer(config: JettyBundleActivatorConfig): Server {
 
 fun JettyBundleActivatorConfig.isEnabled(): Boolean = port != -1 || tlsPort != -1
 
-// Note: it's technically possible that this cast fails, but
-// shouldn't happen in practice given that the above methods always install
-// a ServletContextHandler handler.
+/**
+ * A [Handler.Wrapper] that rejects HTTP TRACE requests with 405 Method Not Allowed,
+ * forwarding everything else to the wrapped [ServletContextHandler].
+ */
+private class TraceBlockingHandler(
+    val servletContextHandler: ServletContextHandler
+) : Handler.Wrapper(servletContextHandler) {
+    override fun handle(request: Request, response: Response, callback: Callback): Boolean {
+        if (request.method.equals("TRACE", ignoreCase = true)) {
+            Response.writeError(request, response, callback, HttpStatus.METHOD_NOT_ALLOWED_405)
+            return true
+        }
+        return super.handle(request, response, callback)
+    }
+}
+
 val Server.servletContextHandler: ServletContextHandler
-    get() = handler as ServletContextHandler
+    get() = when (val h = handler) {
+        is TraceBlockingHandler -> h.servletContextHandler
+        is ServletContextHandler -> h
+        else -> error("Unexpected server handler type: ${h?.javaClass?.name}")
+    }
 
 fun ServletContextHandler.enableCors(pathSpec: String = "/*") {
     addFilter(CrossOriginFilter::class.java, pathSpec, EnumSet.of(DispatcherType.REQUEST)).apply {
