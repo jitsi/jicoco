@@ -17,6 +17,7 @@ package org.jitsi.mediajson
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonAnySetter
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.core.JsonGenerator
@@ -32,6 +33,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 private val objectMapper = jacksonObjectMapper().apply {
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
 }
 
 /**
