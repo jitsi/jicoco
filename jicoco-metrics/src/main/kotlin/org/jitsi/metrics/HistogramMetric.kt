@@ -15,9 +15,12 @@
  */
 package org.jitsi.metrics
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Histogram
-import org.json.simple.JSONObject
+
+private val mapper = ObjectMapper()
 
 class HistogramMetric(
     override val name: String,
@@ -26,10 +29,10 @@ class HistogramMetric(
     /** the namespace (prefix) of this metric */
     val namespace: String,
     vararg buckets: Double
-) : Metric<JSONObject>() {
+) : Metric<ObjectNode>() {
     val histogram: Histogram = Histogram.build(name, help).namespace(namespace).buckets(*buckets).create()
 
-    override fun get(): JSONObject = JSONObject().apply {
+    override fun get(): ObjectNode = mapper.createObjectNode().apply {
         histogram.collect().forEach {
             it.samples.forEach { sample ->
                 if (sample.name.startsWith("${namespace}_${name}_")) {
@@ -46,5 +49,5 @@ class HistogramMetric(
 
     override fun reset() = histogram.clear()
 
-    override fun register(registry: CollectorRegistry): Metric<JSONObject> = this.also { registry.register(histogram) }
+    override fun register(registry: CollectorRegistry): Metric<ObjectNode> = this.also { registry.register(histogram) }
 }

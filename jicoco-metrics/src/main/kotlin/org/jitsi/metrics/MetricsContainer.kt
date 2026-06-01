@@ -15,10 +15,10 @@
  */
 package org.jitsi.metrics
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
 import org.jitsi.utils.logging2.createLogger
-import org.json.simple.JSONObject
 import java.io.IOException
 import java.io.StringWriter
 
@@ -32,6 +32,7 @@ open class MetricsContainer @JvmOverloads constructor(
     val namespace: String = "jitsi"
 ) {
     private val logger = createLogger()
+    private val jsonMapper = ObjectMapper()
 
     /**
      * Defines the behavior when registering a metric with a name in use by an existing metric.
@@ -53,7 +54,9 @@ open class MetricsContainer @JvmOverloads constructor(
      * @return a JSON string of the metrics in this instance
      */
     open val jsonString: String
-        get() = JSONObject(metrics.filter { it.value.supportsJson }.mapValues { it.value.get() }).toJSONString()
+        get() = jsonMapper.valueToTree<com.fasterxml.jackson.databind.node.ObjectNode>(
+            metrics.filter { it.value.supportsJson }.mapValues { it.value.get() }
+        ).toString()
 
     /**
      * Returns the metrics in this instance in the Prometheus text-based format.
