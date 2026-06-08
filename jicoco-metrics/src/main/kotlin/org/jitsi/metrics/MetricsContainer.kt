@@ -16,6 +16,7 @@
 package org.jitsi.metrics
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
 import org.jitsi.utils.logging2.createLogger
@@ -54,7 +55,7 @@ open class MetricsContainer @JvmOverloads constructor(
      * @return a JSON string of the metrics in this instance
      */
     open val jsonString: String
-        get() = jsonMapper.valueToTree<com.fasterxml.jackson.databind.node.ObjectNode>(
+        get() = jsonMapper.valueToTree<ObjectNode>(
             metrics.filter { it.value.supportsJson }.mapValues { it.value.get() }
         ).toString()
 
