@@ -16,16 +16,17 @@
 package org.jitsi.mediajson
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import org.json.simple.JSONObject
-import org.json.simple.parser.JSONParser
 
 class MediaJsonTest : ShouldSpec() {
-    val parser = JSONParser()
+    val mapper = jacksonObjectMapper()
 
     init {
         val seq = 123
@@ -38,22 +39,24 @@ class MediaJsonTest : ShouldSpec() {
             val event = StartEvent(seq, Start(tag, MediaFormat(enc, sampleRate, channels, params)))
 
             context("Serializing") {
-                val parsed = parser.parse(event.toJson())
+                val parsed = mapper.readTree(event.toJson())
 
-                parsed.shouldBeInstanceOf<JSONObject>()
-                parsed["event"] shouldBe "start"
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "start"
                 // intentionally encoded as a string
-                parsed["sequenceNumber"] shouldBe seq.toString()
-                val start = parsed["start"]
-                start.shouldBeInstanceOf<JSONObject>()
-                start["tag"] shouldBe tag
-                start["customParameters"] shouldBe null
-                val mediaFormat = start["mediaFormat"]
-                mediaFormat.shouldBeInstanceOf<JSONObject>()
-                mediaFormat["encoding"] shouldBe enc
-                mediaFormat["sampleRate"] shouldBe sampleRate
-                mediaFormat["channels"] shouldBe channels
-                mediaFormat["parameters"] shouldBe params
+                parsed.get("sequenceNumber").asText() shouldBe seq.toString()
+                val start = parsed.get("start")
+                start.shouldBeInstanceOf<ObjectNode>()
+                start.get("tag").asText() shouldBe tag
+                start.get("customParameters") shouldBe null
+                val mediaFormat = start.get("mediaFormat")
+                mediaFormat.shouldBeInstanceOf<ObjectNode>()
+                mediaFormat.get("encoding").asText() shouldBe enc
+                mediaFormat.get("sampleRate").asInt() shouldBe sampleRate
+                mediaFormat.get("channels").asInt() shouldBe channels
+                val parsedParams = mediaFormat.get("parameters")
+                parsedParams.shouldBeInstanceOf<ObjectNode>()
+                params.forEach { (k, v) -> parsedParams.get(k).asText() shouldBe v }
             }
             context("Parsing") {
                 val parsed = Event.parse(event.toJson())
@@ -74,19 +77,19 @@ class MediaJsonTest : ShouldSpec() {
             val event = MediaEvent(seq, Media(tag, chunk, timestamp, payload))
 
             context("Serializing") {
-                val parsed = parser.parse(event.toJson())
-                parsed.shouldBeInstanceOf<JSONObject>()
-                parsed["event"] shouldBe "media"
+                val parsed = mapper.readTree(event.toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "media"
                 // intentionally encoded as a string
-                parsed["sequenceNumber"] shouldBe seq.toString()
-                val media = parsed["media"]
-                media.shouldBeInstanceOf<JSONObject>()
-                media["tag"] shouldBe tag
+                parsed.get("sequenceNumber").asText() shouldBe seq.toString()
+                val media = parsed.get("media")
+                media.shouldBeInstanceOf<ObjectNode>()
+                media.get("tag").asText() shouldBe tag
                 // intentionally encoded as a string
-                media["chunk"] shouldBe chunk.toString()
+                media.get("chunk").asText() shouldBe chunk.toString()
                 // intentionally encoded as a string
-                media["timestamp"] shouldBe timestamp.toString()
-                media["payload"] shouldBe payload
+                media.get("timestamp").asText() shouldBe timestamp.toString()
+                media.get("payload").asText() shouldBe payload
             }
             context("Parsing") {
                 val parsed = Event.parse(event.toJson())
@@ -99,10 +102,10 @@ class MediaJsonTest : ShouldSpec() {
             val event = PingEvent(id)
 
             context("Serializing") {
-                val parsed = parser.parse(event.toJson())
-                parsed.shouldBeInstanceOf<JSONObject>()
-                parsed["event"] shouldBe "ping"
-                parsed["id"] shouldBe id
+                val parsed = mapper.readTree(event.toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "ping"
+                parsed.get("id").asInt() shouldBe id
             }
             context("Parsing") {
                 val parsed = Event.parse(event.toJson())
@@ -115,10 +118,10 @@ class MediaJsonTest : ShouldSpec() {
             val event = PongEvent(id)
 
             context("Serializing") {
-                val parsed = parser.parse(event.toJson())
-                parsed.shouldBeInstanceOf<JSONObject>()
-                parsed["event"] shouldBe "pong"
-                parsed["id"] shouldBe id
+                val parsed = mapper.readTree(event.toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "pong"
+                parsed.get("id").asInt() shouldBe id
             }
             context("Parsing") {
                 val parsed = Event.parse(event.toJson())
@@ -130,9 +133,9 @@ class MediaJsonTest : ShouldSpec() {
             val event = TranscriptionResultEvent()
 
             context("Serializing") {
-                val parsed = parser.parse(event.toJson())
-                parsed.shouldBeInstanceOf<JSONObject>()
-                parsed["event"] shouldBe "transcription-result"
+                val parsed = mapper.readTree(event.toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "transcription-result"
             }
             context("Parsing") {
                 val parsed = Event.parse(event.toJson())
@@ -144,15 +147,15 @@ class MediaJsonTest : ShouldSpec() {
             context("Start") {
                 val parsed = Event.parse(
                     """
-                    { 
+                    {
                         "event": "start",
                         "sequenceNumber": "0",
                         "start": {
                             "tag": "incoming",
-                            "mediaFormat": { 
-                                "encoding": "audio/x-mulaw", 
-                                "sampleRate": 8000, 
-                                "channels": 1 
+                            "mediaFormat": {
+                                "encoding": "audio/x-mulaw",
+                                "sampleRate": 8000,
+                                "channels": 1
                             },
                             "customParameters": {
                                 "text1":"12312",
@@ -176,15 +179,15 @@ class MediaJsonTest : ShouldSpec() {
             context("Start with sequence number as int") {
                 val parsed = Event.parse(
                     """
-                    { 
+                    {
                         "event": "start",
                         "sequenceNumber": 0,
                         "start": {
                             "tag": "incoming",
-                            "mediaFormat": { 
-                                "encoding": "audio/x-mulaw", 
-                                "sampleRate": 8000, 
-                                "channels": 1 
+                            "mediaFormat": {
+                                "encoding": "audio/x-mulaw",
+                                "sampleRate": 8000,
+                                "channels": 1
                             },
                             "customParameters": {
                                 "text1":"12312",
@@ -203,15 +206,15 @@ class MediaJsonTest : ShouldSpec() {
             context("Media") {
                 val parsed = Event.parse(
                     """
-                    { 
+                    {
                         "event": "media",
-                        "sequenceNumber": "2", 
-                        "media": { 
-                            "tag": "incoming", 
-                            "chunk": "1",    
+                        "sequenceNumber": "2",
+                        "media": {
+                            "tag": "incoming",
+                            "chunk": "1",
                             "timestamp": "5",
                             "payload": "no+JhoaJjpzSHxAKBgYJ...=="
-                        } 
+                        }
                     }
                     """.trimIndent()
                 )
@@ -301,27 +304,27 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.shouldBeInstanceOf<TranscriptionResultEvent>()
 
                 val serialized = parsed.toJson()
-                val reparsed = parser.parse(serialized)
-                reparsed.shouldBeInstanceOf<JSONObject>()
+                val reparsed = mapper.readTree(serialized)
+                reparsed.shouldBeInstanceOf<ObjectNode>()
 
-                reparsed["event"] shouldBe "transcription-result"
-                reparsed["type"] shouldBe "transcription-result"
-                reparsed["message_id"] shouldBe "item_CnopdEudFcwXCkZfCIHrC"
-                reparsed["is_interim"] shouldBe false
-                reparsed["timestamp"] shouldBe 1765989508172L
+                reparsed.get("event").asText() shouldBe "transcription-result"
+                reparsed.get("type").asText() shouldBe "transcription-result"
+                reparsed.get("message_id").asText() shouldBe "item_CnopdEudFcwXCkZfCIHrC"
+                reparsed.get("is_interim").asBoolean() shouldBe false
+                reparsed.get("timestamp").asLong() shouldBe 1765989508172L
 
-                val transcript = reparsed["transcript"]
-                transcript.shouldBeInstanceOf<List<*>>()
-                transcript.size shouldBe 1
-                val transcriptItem = transcript[0] as Map<*, *>
-                transcriptItem.shouldBeInstanceOf<Map<*, *>>()
-                transcriptItem["confidence"] shouldBe 0.999666973709317
-                transcriptItem["text"] shouldBe "blah blah blah"
+                val transcript = reparsed.get("transcript")
+                transcript.shouldBeInstanceOf<ArrayNode>()
+                transcript.size() shouldBe 1
+                val transcriptItem = transcript[0]
+                transcriptItem.shouldBeInstanceOf<ObjectNode>()
+                transcriptItem.get("confidence").asDouble() shouldBe 0.999666973709317
+                transcriptItem.get("text").asText() shouldBe "blah blah blah"
 
-                val participant = reparsed["participant"]
-                participant.shouldBeInstanceOf<Map<*, *>>()
-                participant["id"] shouldBe "08847b00"
-                participant["ssrc"] shouldBe "1776301157"
+                val participant = reparsed.get("participant")
+                participant.shouldBeInstanceOf<ObjectNode>()
+                participant.get("id").asText() shouldBe "08847b00"
+                participant.get("ssrc").asText() shouldBe "1776301157"
             }
         }
         context("Parsing invalid samples") {
@@ -329,15 +332,15 @@ class MediaJsonTest : ShouldSpec() {
                 shouldThrow<InvalidFormatException> {
                     Event.parse(
                         """
-                        { 
+                        {
                             "event": "media",
-                            "sequenceNumber": "not a number", 
-                            "media": { 
-                                "tag": "incoming", 
-                                "chunk": "1",    
+                            "sequenceNumber": "not a number",
+                            "media": {
+                                "tag": "incoming",
+                                "chunk": "1",
                                 "timestamp": "5",
                                 "payload": "no+JhoaJjpzSHxAKBgYJ...=="
-                            } 
+                            }
                         }
                         """.trimIndent()
                     )
@@ -347,15 +350,15 @@ class MediaJsonTest : ShouldSpec() {
                 shouldThrow<InvalidFormatException> {
                     Event.parse(
                         """
-                        { 
+                        {
                             "event": "media",
-                            "sequenceNumber": "1", 
-                            "media": { 
-                                "tag": "incoming", 
-                                "chunk": "not a number",    
+                            "sequenceNumber": "1",
+                            "media": {
+                                "tag": "incoming",
+                                "chunk": "not a number",
                                 "timestamp": "5",
                                 "payload": "no+JhoaJjpzSHxAKBgYJ...=="
-                            } 
+                            }
                         }
                         """.trimIndent()
                     )
@@ -365,15 +368,15 @@ class MediaJsonTest : ShouldSpec() {
                 shouldThrow<InvalidFormatException> {
                     Event.parse(
                         """
-                        { 
+                        {
                             "event": "media",
-                            "sequenceNumber": "1", 
-                            "media": { 
-                                "tag": "incoming", 
-                                "chunk": "1",    
+                            "sequenceNumber": "1",
+                            "media": {
+                                "tag": "incoming",
+                                "chunk": "1",
                                 "timestamp": "not a number",
                                 "payload": "no+JhoaJjpzSHxAKBgYJ...=="
-                            } 
+                            }
                         }
                         """.trimIndent()
                     )

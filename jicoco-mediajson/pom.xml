@@ -44,19 +44,6 @@
       <version>${kotest.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.googlecode.json-simple</groupId>
-      <artifactId>json-simple</artifactId>
-      <version>${json.simple.version}</version>
-      <!-- json-simple 1.1.1 incorrectly listed junit as a compile dependency rather than a test dependency.
-    This has been fixed in its github repo but a new release hasn't been pushed to maven. -->
-      <exclusions>
-        <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
