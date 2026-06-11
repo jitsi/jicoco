@@ -143,6 +143,32 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.event shouldBe "transcription-result"
             }
         }
+        context("SourcesEvent") {
+            val event = SourcesEvent(
+                exports = listOf("523834112-a0", "2394a3432-a0"),
+                requests = listOf("523834112-a0.en", "2394a3432-a0.hi")
+            )
+
+            context("Serializing") {
+                val parsed = mapper.readTree(event.toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "sources"
+                val exports = parsed.get("exports")
+                exports.shouldBeInstanceOf<ArrayNode>()
+                exports.map { it.asText() } shouldBe listOf("523834112-a0", "2394a3432-a0")
+                val requests = parsed.get("requests")
+                requests.shouldBeInstanceOf<ArrayNode>()
+                requests.map { it.asText() } shouldBe listOf("523834112-a0.en", "2394a3432-a0.hi")
+            }
+
+            context("With empty lists") {
+                val parsed = mapper.readTree(SourcesEvent(emptyList(), emptyList()).toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "sources"
+                parsed.get("exports").shouldBeInstanceOf<ArrayNode>().size() shouldBe 0
+                parsed.get("requests").shouldBeInstanceOf<ArrayNode>().size() shouldBe 0
+            }
+        }
         context("Parsing valid samples") {
             context("Start") {
                 val parsed = Event.parse(
