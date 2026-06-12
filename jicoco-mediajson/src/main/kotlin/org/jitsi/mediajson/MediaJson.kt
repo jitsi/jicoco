@@ -93,6 +93,16 @@ class TranscriptionResultEvent : Event("transcription-result") {
 
 class SessionEndEvent : Event("session-end")
 
+/**
+ * Declares the set of source names the bridge will export (send out) to the peer, and the set it requests (wants to
+ * receive) from the peer. Only ever sent by the bridge -- like [SessionEndEvent] it is not registered in [Event]'s
+ * subtypes for parsing.
+ */
+data class SourcesEvent(
+    val exports: List<String>,
+    val requests: List<String>
+) : Event("sources")
+
 data class MediaFormat(
     val encoding: String,
     val sampleRate: Int,
