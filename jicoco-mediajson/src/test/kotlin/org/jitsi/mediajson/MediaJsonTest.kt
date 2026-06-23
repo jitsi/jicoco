@@ -169,6 +169,28 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.get("requests").shouldBeInstanceOf<ArrayNode>().size() shouldBe 0
             }
         }
+        context("InfoEvent") {
+            val event = InfoEvent()
+                .put("application", "jitsi-videobridge")
+                .put("version", "2.3-abc")
+                .put("region", "us-east")
+
+            context("Serializing") {
+                val parsed = mapper.readTree(event.toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "info"
+                parsed.get("application").asText() shouldBe "jitsi-videobridge"
+                parsed.get("version").asText() shouldBe "2.3-abc"
+                parsed.get("region").asText() shouldBe "us-east"
+            }
+            context("Parsing") {
+                val parsed = Event.parse(event.toJson())
+                parsed.shouldBeInstanceOf<InfoEvent>()
+                parsed.event shouldBe "info"
+                parsed.getAdditionalProperties()["application"] shouldBe "jitsi-videobridge"
+                parsed.getAdditionalProperties()["region"] shouldBe "us-east"
+            }
+        }
         context("Parsing valid samples") {
             context("Start") {
                 val parsed = Event.parse(
