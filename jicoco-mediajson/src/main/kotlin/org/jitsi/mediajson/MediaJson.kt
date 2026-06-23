@@ -17,6 +17,7 @@ package org.jitsi.mediajson
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonAnySetter
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
@@ -47,6 +48,7 @@ private val objectMapper = jacksonObjectMapper().apply {
     JsonSubTypes.Type(value = PongEvent::class, name = "pong"),
     JsonSubTypes.Type(value = StartEvent::class, name = "start"),
     JsonSubTypes.Type(value = TranscriptionResultEvent::class, name = "transcription-result"),
+    JsonSubTypes.Type(value = InfoEvent::class, name = "info"),
 )
 sealed class Event(val event: String) {
     fun toJson(): String = objectMapper.writeValueAsString(this)
@@ -102,6 +104,31 @@ data class SourcesEvent(
     val exports: List<String>,
     val requests: List<String>
 ) : Event("sources")
+
+/**
+ * An informational message exchanged once when the connection is established, carrying
+ * application/version/deployment/session metadata for runtime observability. It is a free-form
+ * property bag (like [TranscriptionResultEvent]) so either side can add fields without a schema
+ * change; unknown fields are preserved and can be logged by the receiver as-is.
+ */
+@JsonIgnoreProperties(value = ["event"], allowGetters = false)
+class InfoEvent : Event("info") {
+    private val additionalProperties = mutableMapOf<String, Any?>()
+
+    @JsonAnySetter
+    fun setAdditionalProperty(name: String, value: Any?) {
+        additionalProperties[name] = value
+    }
+
+    @JsonAnyGetter
+    fun getAdditionalProperties(): Map<String, Any?> = additionalProperties
+
+    /** Set a property, returning this for chaining when building an event to send. */
+    fun put(name: String, value: Any?): InfoEvent {
+        additionalProperties[name] = value
+        return this
+    }
+}
 
 data class MediaFormat(
     val encoding: String,
