@@ -70,6 +70,7 @@
         <jwt.version>0.12.6</jwt.version>
         <bouncycastle.version>1.83</bouncycastle.version>
         <smack.version>4.4.8-jitsi-4</smack.version>
+        <opentelemetry.version>1.48.0</opentelemetry.version>
     </properties>
 
     <dependencyManagement>
@@ -224,6 +225,7 @@
                 <module>jicoco-jwt</module>
                 <module>jicoco-mediajson</module>
                 <module>jicoco-metrics</module>
+                <module>jicoco-tracing</module>
                 <module>jicoco-test-kotlin</module>
             </modules>
 
