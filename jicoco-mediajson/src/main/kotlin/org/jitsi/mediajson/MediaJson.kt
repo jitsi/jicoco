@@ -154,7 +154,18 @@ data class Media(
     @JsonSerialize(using = Long2StringSerializer::class)
     @JsonDeserialize(using = String2LongDeserializer::class)
     val timestamp: Long,
-    val payload: String
+    val payload: String,
+    /**
+     * The RFC 6464 audio level of this frame (0-127, expressed as -dBov, i.e. 0 is loudest and 127 is silence), as
+     * reported by the sender in the ssrc-audio-level RTP header extension. Null when the sender did not include the
+     * extension. Encoded as a natural JSON number (not a string), unlike the VoxImplant-derived numeric fields above.
+     */
+    val audioLevel: Int? = null,
+    /**
+     * The RFC 6464 Voice Activity Detection flag for this frame, as reported by the sender in the ssrc-audio-level RTP
+     * header extension. Null when the sender did not include the extension.
+     */
+    val vad: Boolean? = null
 )
 
 class Int2StringSerializer : JsonSerializer<Int>() {

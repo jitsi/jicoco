@@ -97,6 +97,34 @@ class MediaJsonTest : ShouldSpec() {
                 (parsed === event) shouldBe false
             }
         }
+        context("MediaEvent with audio level and VAD") {
+            val chunk = 213
+            val timestamp = 0x1_0000_ffff
+            val payload = "p"
+            val event = MediaEvent(seq, Media(tag, chunk, timestamp, payload, audioLevel = 42, vad = true))
+
+            context("Serializing") {
+                val media = mapper.readTree(event.toJson()).get("media")
+                // Natural JSON number/boolean, not string-encoded like chunk/timestamp.
+                media.get("audioLevel").asInt() shouldBe 42
+                media.get("vad").asBoolean() shouldBe true
+            }
+            context("Parsing") {
+                val parsed = Event.parse(event.toJson())
+                (parsed == event) shouldBe true
+                parsed.shouldBeInstanceOf<MediaEvent>()
+                parsed.media.audioLevel shouldBe 42
+                parsed.media.vad shouldBe true
+            }
+            context("Omitted when null") {
+                val bare = MediaEvent(seq, Media(tag, chunk, timestamp, payload))
+                val media = mapper.readTree(bare.toJson()).get("media")
+                media.get("audioLevel") shouldBe null
+                media.get("vad") shouldBe null
+                bare.media.audioLevel shouldBe null
+                bare.media.vad shouldBe null
+            }
+        }
         context("PingEvent") {
             val id = 42
             val event = PingEvent(id)
