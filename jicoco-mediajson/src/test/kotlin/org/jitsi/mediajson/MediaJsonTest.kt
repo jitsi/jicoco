@@ -49,6 +49,8 @@ class MediaJsonTest : ShouldSpec() {
                 start.shouldBeInstanceOf<ObjectNode>()
                 start.get("tag").asText() shouldBe tag
                 start.get("customParameters") shouldBe null
+                // diarize is null and must be omitted from the JSON.
+                start.get("diarize") shouldBe null
                 val mediaFormat = start.get("mediaFormat")
                 mediaFormat.shouldBeInstanceOf<ObjectNode>()
                 mediaFormat.get("encoding").asText() shouldBe enc
@@ -68,6 +70,17 @@ class MediaJsonTest : ShouldSpec() {
                 parsedList.size shouldBe 2
                 parsedList[0] shouldBe event
                 parsedList[1] shouldBe event
+            }
+            context("With diarize set") {
+                val diarizeEvent = StartEvent(
+                    seq,
+                    Start(tag, MediaFormat(enc, sampleRate, channels, params), diarize = true)
+                )
+                val parsed = mapper.readTree(diarizeEvent.toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                val start = parsed.get("start")
+                start.shouldBeInstanceOf<ObjectNode>()
+                start.get("diarize").asBoolean() shouldBe true
             }
         }
         context("MediaEvent") {
@@ -251,6 +264,30 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.start.mediaFormat.channels shouldBe 1
                 parsed.start.customParameters.shouldNotBeNull()
                 parsed.start.customParameters?.endpointId shouldBe "abcdabcd"
+                // diarize is absent from the JSON and must parse as null.
+                parsed.start.diarize shouldBe null
+            }
+            context("Start with diarize") {
+                val parsed = Event.parse(
+                    """
+                    {
+                        "event": "start",
+                        "sequenceNumber": "0",
+                        "start": {
+                            "tag": "incoming",
+                            "mediaFormat": {
+                                "encoding": "audio/x-mulaw",
+                                "sampleRate": 8000,
+                                "channels": 1
+                            },
+                            "diarize": true
+                        }
+                    }
+                    """.trimIndent()
+                )
+
+                parsed.shouldBeInstanceOf<StartEvent>()
+                parsed.start.diarize shouldBe true
             }
             context("Start with sequence number as int") {
                 val parsed = Event.parse(

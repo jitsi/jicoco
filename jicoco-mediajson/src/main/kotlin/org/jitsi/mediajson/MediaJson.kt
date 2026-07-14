@@ -139,7 +139,8 @@ data class MediaFormat(
 data class Start(
     val tag: String,
     val mediaFormat: MediaFormat,
-    val customParameters: CustomParameters? = null
+    val customParameters: CustomParameters? = null,
+    val diarize: Boolean? = null
 )
 
 data class CustomParameters(
