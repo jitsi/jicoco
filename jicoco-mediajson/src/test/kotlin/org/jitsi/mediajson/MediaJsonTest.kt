@@ -82,6 +82,74 @@ class MediaJsonTest : ShouldSpec() {
                 start.shouldBeInstanceOf<ObjectNode>()
                 start.get("diarize").asBoolean() shouldBe true
             }
+            context("timestamp omitted when null") {
+                val start = mapper.readTree(event.toJson()).get("start")
+                start.get("timestamp") shouldBe null
+                event.start.timestamp shouldBe null
+            }
+            context("With timestamp set (talk start)") {
+                val timestamp = 0x1_0000_ffffL
+                val talkStart = StartEvent(
+                    seq,
+                    Start(tag, MediaFormat(enc, sampleRate, channels, params), timestamp = timestamp)
+                )
+                val start = mapper.readTree(talkStart.toJson()).get("start")
+                // a natural JSON number, not string-encoded like Media.timestamp
+                start.get("timestamp").isNumber shouldBe true
+                start.get("timestamp").asLong() shouldBe timestamp
+
+                val parsed = Event.parse(talkStart.toJson())
+                (parsed == talkStart) shouldBe true
+                parsed.shouldBeInstanceOf<StartEvent>()
+                parsed.start.timestamp shouldBe timestamp
+            }
+        }
+        context("StopEvent") {
+            val timestamp = 0x1_0000_ffffL
+            val event = StopEvent(seq, Stop(tag, timestamp = timestamp))
+
+            context("Serializing") {
+                val parsed = mapper.readTree(event.toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "stop"
+                // intentionally encoded as a string
+                parsed.get("sequenceNumber").asText() shouldBe seq.toString()
+                val stop = parsed.get("stop")
+                stop.shouldBeInstanceOf<ObjectNode>()
+                stop.get("tag").asText() shouldBe tag
+                // a natural JSON number, not string-encoded like Media.timestamp
+                stop.get("timestamp").isNumber shouldBe true
+                stop.get("timestamp").asLong() shouldBe timestamp
+                // mediaInfo is null and must be omitted from the JSON.
+                stop.get("mediaInfo") shouldBe null
+            }
+            context("Parsing") {
+                val parsed = Event.parse(event.toJson())
+                (parsed == event) shouldBe true
+                (parsed === event) shouldBe false
+                parsed.shouldBeInstanceOf<StopEvent>()
+                parsed.stop.tag shouldBe tag
+                parsed.stop.timestamp shouldBe timestamp
+                parsed.stop.mediaInfo shouldBe null
+            }
+            context("With mediaInfo") {
+                val withInfo = StopEvent(seq, Stop(tag, MediaInfo(bytesSent = 12345, duration = 678), timestamp))
+                val stop = mapper.readTree(withInfo.toJson()).get("stop")
+                val mediaInfo = stop.get("mediaInfo")
+                mediaInfo.shouldBeInstanceOf<ObjectNode>()
+                // MediaInfo is part of VoxImplant's original stop format, so its fields stay string-encoded
+                // (unlike the new number-encoded Stop.timestamp above).
+                mediaInfo.get("bytesSent").isTextual shouldBe true
+                mediaInfo.get("bytesSent").asText() shouldBe "12345"
+                mediaInfo.get("duration").isTextual shouldBe true
+                mediaInfo.get("duration").asText() shouldBe "678"
+
+                val parsed = Event.parse(withInfo.toJson())
+                (parsed == withInfo) shouldBe true
+                parsed.shouldBeInstanceOf<StopEvent>()
+                parsed.stop.mediaInfo?.bytesSent shouldBe 12345
+                parsed.stop.mediaInfo?.duration shouldBe 678
+            }
         }
         context("MediaEvent") {
             val chunk = 213
@@ -315,6 +383,104 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.sequenceNumber shouldBe 0
                 parsed.start.customParameters.shouldNotBeNull()
                 parsed.start.customParameters?.endpointId shouldBe "abcdabcd"
+            }
+            context("Start with talk timestamp") {
+                val parsed = Event.parse(
+                    """
+                    {
+                        "event": "start",
+                        "sequenceNumber": "0",
+                        "start": {
+                            "tag": "55555555-a0.hi",
+                            "mediaFormat": {
+                                "encoding": "opus",
+                                "sampleRate": 48000,
+                                "channels": 1
+                            },
+                            "timestamp": 384000
+                        }
+                    }
+                    """.trimIndent()
+                )
+
+                parsed.shouldBeInstanceOf<StartEvent>()
+                parsed.start.tag shouldBe "55555555-a0.hi"
+                parsed.start.timestamp shouldBe 384000
+            }
+            context("Stop") {
+                // Canonical wire: timestamp is a JSON number (it is an augmentation, not a VoxImplant field).
+                val parsed = Event.parse(
+                    """
+                    {
+                        "event": "stop",
+                        "sequenceNumber": "3",
+                        "stop": {
+                            "tag": "55555555-a0.hi",
+                            "timestamp": 960000
+                        }
+                    }
+                    """.trimIndent()
+                )
+
+                parsed.shouldBeInstanceOf<StopEvent>()
+                parsed.event shouldBe "stop"
+                parsed.sequenceNumber shouldBe 3
+                parsed.stop.tag shouldBe "55555555-a0.hi"
+                parsed.stop.timestamp shouldBe 960000
+            }
+            context("Stop with timestamp as a string (leniently accepted)") {
+                // Not the canonical encoding, but a string still parses (Jackson coerces it to Long), so an
+                // older/other peer that string-encodes the timestamp is tolerated.
+                val parsed = Event.parse(
+                    """
+                    {
+                        "event": "stop",
+                        "sequenceNumber": 3,
+                        "stop": {
+                            "tag": "55555555-a0.hi",
+                            "timestamp": "960000"
+                        }
+                    }
+                    """.trimIndent()
+                )
+
+                parsed.shouldBeInstanceOf<StopEvent>()
+                parsed.stop.timestamp shouldBe 960000
+            }
+            context("Stop with mediaInfo") {
+                val parsed = Event.parse(
+                    """
+                    {
+                        "event": "stop",
+                        "sequenceNumber": "3",
+                        "stop": {
+                            "tag": "55555555-a0.hi",
+                            "mediaInfo": {
+                                "bytesSent": "48000",
+                                "duration": "20000"
+                            },
+                            "timestamp": 960000
+                        }
+                    }
+                    """.trimIndent()
+                )
+
+                parsed.shouldBeInstanceOf<StopEvent>()
+                parsed.stop.tag shouldBe "55555555-a0.hi"
+                parsed.stop.timestamp shouldBe 960000
+                parsed.stop.mediaInfo?.bytesSent shouldBe 48000
+                parsed.stop.mediaInfo?.duration shouldBe 20000
+            }
+            context("Stop without timestamp (plain stop)") {
+                val plain = StopEvent(seq, Stop(tag, MediaInfo(bytesSent = 100, duration = 200)))
+                // timestamp is null and must be omitted from the JSON.
+                mapper.readTree(plain.toJson()).get("stop").get("timestamp") shouldBe null
+
+                val parsed = Event.parse(plain.toJson())
+                parsed.shouldBeInstanceOf<StopEvent>()
+                parsed.stop.tag shouldBe tag
+                parsed.stop.timestamp shouldBe null
+                parsed.stop.mediaInfo?.bytesSent shouldBe 100
             }
             context("Media") {
                 val parsed = Event.parse(

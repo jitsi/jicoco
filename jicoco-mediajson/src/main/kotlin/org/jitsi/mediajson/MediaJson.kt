@@ -40,6 +40,8 @@ private val objectMapper = jacksonObjectMapper().apply {
 /**
  * This is based on the format used by VoxImplant here, hence the encoding of certain numeric fields as strings:
  * https://voximplant.com/docs/guides/voxengine/websocket
+ * The event/message shapes are documented in VoxImplant's protobuf definition:
+ * https://github.com/voximplant/protobuf/blob/main/websockets.proto
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "event")
 @JsonSubTypes(
@@ -47,6 +49,7 @@ private val objectMapper = jacksonObjectMapper().apply {
     JsonSubTypes.Type(value = PingEvent::class, name = "ping"),
     JsonSubTypes.Type(value = PongEvent::class, name = "pong"),
     JsonSubTypes.Type(value = StartEvent::class, name = "start"),
+    JsonSubTypes.Type(value = StopEvent::class, name = "stop"),
     JsonSubTypes.Type(value = TranscriptionResultEvent::class, name = "transcription-result"),
     JsonSubTypes.Type(value = InfoEvent::class, name = "info"),
 )
@@ -71,6 +74,18 @@ data class StartEvent(
     val sequenceNumber: Int,
     val start: Start
 ) : Event("start")
+
+/**
+ * The `stop` event, mirroring VoxImplant's (see the doc linked above): signals the end of a media stream and pairs
+ * with a [StartEvent]. Its [Stop.timestamp] is an optional augmentation -- present when a peer uses start/stop to
+ * bracket a contiguous run of media (a "talk") on the media timeline, absent for a plain stop.
+ */
+data class StopEvent(
+    @JsonSerialize(using = Int2StringSerializer::class)
+    @JsonDeserialize(using = String2IntDeserializer::class)
+    val sequenceNumber: Int,
+    val stop: Stop
+) : Event("stop")
 
 data class PingEvent(
     val id: Int
@@ -140,11 +155,48 @@ data class Start(
     val tag: String,
     val mediaFormat: MediaFormat,
     val customParameters: CustomParameters? = null,
-    val diarize: Boolean? = null
+    val diarize: Boolean? = null,
+    /**
+     * Optional augmentation (not part of the base VoxImplant format): the RTP timestamp -- on the same media
+     * timeline as the [Media] events' timestamps (e.g. 48000 Hz for Opus) -- of the first packet of a contiguous
+     * run of media (a "talk"), when a peer uses start/stop to bracket one (paired with a [StopEvent]). Null when the
+     * start event only announces the media format. Encoded as a natural JSON number, not a string like the
+     * VoxImplant-derived [Media.timestamp]: string encoding exists only to match VoxImplant's original format, and
+     * this field is a new addition.
+     */
+    val timestamp: Long? = null
 )
 
 data class CustomParameters(
     val endpointId: String?
+)
+
+/**
+ * The payload of a [StopEvent]. [tag] is the source; [mediaInfo] the VoxImplant-defined end-of-stream statistics
+ * (optional). [timestamp] is an optional augmentation (absent in a plain stop): the RTP timestamp -- on the same
+ * media timeline as [Media.timestamp] and [Start.timestamp] -- one past the end of a "talk", i.e. the timestamp the
+ * next contiguous packet would carry (were there no intervening silence). So a talk spans [start, stop).
+ */
+data class Stop(
+    val tag: String,
+    val mediaInfo: MediaInfo? = null,
+    val timestamp: Long? = null
+)
+
+/**
+ * VoxImplant end-of-stream statistics carried by a [Stop] event. [bytesSent] is the encoded size of the media stream
+ * in bytes. [duration] is the stream's length in **milliseconds** -- note the unit differs from [Stop.timestamp] and
+ * [Start.timestamp], which are on the RTP media clock (e.g. 48000 Hz for Opus), not wall-clock milliseconds. Unlike
+ * those timestamp augmentations, [MediaInfo] is part of VoxImplant's original stop format, so its fields stay
+ * string-encoded to match that format, like the other VoxImplant-derived numeric fields.
+ */
+data class MediaInfo(
+    @JsonSerialize(using = Long2StringSerializer::class)
+    @JsonDeserialize(using = String2LongDeserializer::class)
+    val bytesSent: Long,
+    @JsonSerialize(using = Long2StringSerializer::class)
+    @JsonDeserialize(using = String2LongDeserializer::class)
+    val duration: Long
 )
 
 data class Media(
