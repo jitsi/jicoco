@@ -94,8 +94,9 @@ class MediaJsonTest : ShouldSpec() {
                     Start(tag, MediaFormat(enc, sampleRate, channels, params), timestamp = timestamp)
                 )
                 val start = mapper.readTree(talkStart.toJson()).get("start")
-                // intentionally encoded as a string, like Media.timestamp
-                start.get("timestamp").asText() shouldBe timestamp.toString()
+                // a natural JSON number, not string-encoded like Media.timestamp
+                start.get("timestamp").isNumber shouldBe true
+                start.get("timestamp").asLong() shouldBe timestamp
 
                 val parsed = Event.parse(talkStart.toJson())
                 (parsed == talkStart) shouldBe true
@@ -116,8 +117,9 @@ class MediaJsonTest : ShouldSpec() {
                 val stop = parsed.get("stop")
                 stop.shouldBeInstanceOf<ObjectNode>()
                 stop.get("tag").asText() shouldBe tag
-                // intentionally encoded as a string, like Media.timestamp
-                stop.get("timestamp").asText() shouldBe timestamp.toString()
+                // a natural JSON number, not string-encoded like Media.timestamp
+                stop.get("timestamp").isNumber shouldBe true
+                stop.get("timestamp").asLong() shouldBe timestamp
                 // mediaInfo is null and must be omitted from the JSON.
                 stop.get("mediaInfo") shouldBe null
             }
@@ -135,8 +137,11 @@ class MediaJsonTest : ShouldSpec() {
                 val stop = mapper.readTree(withInfo.toJson()).get("stop")
                 val mediaInfo = stop.get("mediaInfo")
                 mediaInfo.shouldBeInstanceOf<ObjectNode>()
-                // VoxImplant numeric fields, string-encoded like timestamp.
+                // MediaInfo is part of VoxImplant's original stop format, so its fields stay string-encoded
+                // (unlike the new number-encoded Stop.timestamp above).
+                mediaInfo.get("bytesSent").isTextual shouldBe true
                 mediaInfo.get("bytesSent").asText() shouldBe "12345"
+                mediaInfo.get("duration").isTextual shouldBe true
                 mediaInfo.get("duration").asText() shouldBe "678"
 
                 val parsed = Event.parse(withInfo.toJson())
@@ -392,7 +397,7 @@ class MediaJsonTest : ShouldSpec() {
                                 "sampleRate": 48000,
                                 "channels": 1
                             },
-                            "timestamp": "384000"
+                            "timestamp": 384000
                         }
                     }
                     """.trimIndent()
@@ -403,6 +408,7 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.start.timestamp shouldBe 384000
             }
             context("Stop") {
+                // Canonical wire: timestamp is a JSON number (it is an augmentation, not a VoxImplant field).
                 val parsed = Event.parse(
                     """
                     {
@@ -410,7 +416,7 @@ class MediaJsonTest : ShouldSpec() {
                         "sequenceNumber": "3",
                         "stop": {
                             "tag": "55555555-a0.hi",
-                            "timestamp": "960000"
+                            "timestamp": 960000
                         }
                     }
                     """.trimIndent()
@@ -422,7 +428,9 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.stop.tag shouldBe "55555555-a0.hi"
                 parsed.stop.timestamp shouldBe 960000
             }
-            context("Stop with timestamp as number") {
+            context("Stop with timestamp as a string (leniently accepted)") {
+                // Not the canonical encoding, but a string still parses (Jackson coerces it to Long), so an
+                // older/other peer that string-encodes the timestamp is tolerated.
                 val parsed = Event.parse(
                     """
                     {
@@ -430,7 +438,7 @@ class MediaJsonTest : ShouldSpec() {
                         "sequenceNumber": 3,
                         "stop": {
                             "tag": "55555555-a0.hi",
-                            "timestamp": 960000
+                            "timestamp": "960000"
                         }
                     }
                     """.trimIndent()
@@ -451,7 +459,7 @@ class MediaJsonTest : ShouldSpec() {
                                 "bytesSent": "48000",
                                 "duration": "20000"
                             },
-                            "timestamp": "960000"
+                            "timestamp": 960000
                         }
                     }
                     """.trimIndent()

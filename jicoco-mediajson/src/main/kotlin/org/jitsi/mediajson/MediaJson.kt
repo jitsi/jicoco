@@ -160,10 +160,10 @@ data class Start(
      * Optional augmentation (not part of the base VoxImplant format): the RTP timestamp -- on the same media
      * timeline as the [Media] events' timestamps (e.g. 48000 Hz for Opus) -- of the first packet of a contiguous
      * run of media (a "talk"), when a peer uses start/stop to bracket one (paired with a [StopEvent]). Null when the
-     * start event only announces the media format. Encoded as a string like [Media.timestamp].
+     * start event only announces the media format. Encoded as a natural JSON number, not a string like the
+     * VoxImplant-derived [Media.timestamp]: string encoding exists only to match VoxImplant's original format, and
+     * this field is a new addition.
      */
-    @JsonSerialize(using = Long2StringSerializer::class)
-    @JsonDeserialize(using = String2LongDeserializer::class)
     val timestamp: Long? = null
 )
 
@@ -180,14 +180,15 @@ data class CustomParameters(
 data class Stop(
     val tag: String,
     val mediaInfo: MediaInfo? = null,
-    @JsonSerialize(using = Long2StringSerializer::class)
-    @JsonDeserialize(using = String2LongDeserializer::class)
     val timestamp: Long? = null
 )
 
 /**
- * VoxImplant end-of-stream statistics carried by a [Stop] event: [bytesSent] is the encoded size of the media
- * stream and [duration] its length in milliseconds. String-encoded like the other VoxImplant numeric fields.
+ * VoxImplant end-of-stream statistics carried by a [Stop] event. [bytesSent] is the encoded size of the media stream
+ * in bytes. [duration] is the stream's length in **milliseconds** -- note the unit differs from [Stop.timestamp] and
+ * [Start.timestamp], which are on the RTP media clock (e.g. 48000 Hz for Opus), not wall-clock milliseconds. Unlike
+ * those timestamp augmentations, [MediaInfo] is part of VoxImplant's original stop format, so its fields stay
+ * string-encoded to match that format, like the other VoxImplant-derived numeric fields.
  */
 data class MediaInfo(
     @JsonSerialize(using = Long2StringSerializer::class)
