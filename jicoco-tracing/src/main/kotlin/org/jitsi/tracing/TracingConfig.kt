@@ -26,13 +26,19 @@ class TracingConfig {
             "default" { false }
         }
         val serviceName: String by config {
-            "tracing.service-name".from(JitsiConfig.newConfig)
+            onlyIf("tracing is enabled", ::enabled) {
+                "tracing.service-name".from(JitsiConfig.newConfig)
+            }
         }
         val otlpEndpoint: String by config {
-            "tracing.otlp-endpoint".from(JitsiConfig.newConfig)
+            onlyIf("tracing is enabled", ::enabled) {
+                "tracing.otlp-endpoint".from(JitsiConfig.newConfig)
+            }
         }
         val otlpProtocol: String by config {
-            "tracing.otlp-protocol".from(JitsiConfig.newConfig)
+            onlyIf("tracing is enabled", ::enabled) {
+                "tracing.otlp-protocol".from(JitsiConfig.newConfig)
+            }
         }
     }
 }
