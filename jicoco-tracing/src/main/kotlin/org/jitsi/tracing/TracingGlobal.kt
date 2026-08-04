@@ -23,6 +23,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor
+import org.jitsi.metaconfig.ConfigException
 
 class TracingGlobal {
     companion object {
@@ -31,7 +32,7 @@ class TracingGlobal {
                 return@lazy OpenTelemetry.noop()
             }
 
-            val exporter = when (TracingConfig.otlpProtocol) {
+            val exporter = when (TracingConfig.otlpProtocol.lowercase()) {
                 "grpc" -> {
                     OtlpGrpcSpanExporter.builder().setEndpoint(TracingConfig.otlpEndpoint).build()
                 }
@@ -41,7 +42,9 @@ class TracingGlobal {
                 }
 
                 else -> {
-                    throw Exception("unknown otlp protocol")
+                    throw ConfigException.UnableToRetrieve.WrongType(
+                        "Unknown tracing.otlp-protocol value: ${TracingConfig.otlpProtocol}"
+                    )
                 }
             }
 
