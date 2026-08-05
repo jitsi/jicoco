@@ -56,16 +56,6 @@
             <artifactId>opentelemetry-exporter-otlp</artifactId>
             <version>${opentelemetry.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.igniterealtime.smack</groupId>
-            <artifactId>smack-core</artifactId>
-            <version>${smack.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>jitsi-xmpp-extensions</artifactId>
-            <version>1.0-117-g60c0446</version>
-        </dependency>
         <!-- testing -->
         <dependency>
             <groupId>io.kotest</groupId>
