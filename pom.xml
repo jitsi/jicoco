@@ -58,13 +58,14 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <junit.version>5.10.0</junit.version>
-        <kotlin.version>1.9.10</kotlin.version>
-        <jackson.version>2.19.0</jackson.version>
-        <kotest.version>5.7.2</kotest.version>
-        <mockk.version>1.13.8</mockk.version>
+        <junit.version>5.14.4</junit.version>
+        <junit.platform.version>1.14.4</junit.platform.version>
+        <kotlin.version>2.4.20</kotlin.version>
+        <jackson.version>2.21.5</jackson.version>
+        <kotest.version>5.9.1</kotest.version>
+        <mockk.version>1.14.11</mockk.version>
         <prometheus.version>0.16.0</prometheus.version>
-        <dokka.version>1.9.10</dokka.version>
+        <dokka.version>2.2.0</dokka.version>
         <jetty.version>12.0.35</jetty.version>
         <jersey.version>3.1.11</jersey.version>
         <jwt.version>0.12.6</jwt.version>
@@ -78,11 +79,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>jitsi-utils</artifactId>
-                <version>1.0-150-g4ab9a3b</version>
+                <version>1.0-153-gd5c0102</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <artifactId>kotlin-stdlib</artifactId>
                 <version>${kotlin.version}</version>
             </dependency>
             <!--
@@ -117,6 +118,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <jersey.config.test.container.port>0</jersey.config.test.container.port>
+                        <kotest.framework.classpath.scanning.autoscan.disable>true</kotest.framework.classpath.scanning.autoscan.disable>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

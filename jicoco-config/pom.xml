@@ -34,7 +34,7 @@
     <dependencies>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <artifactId>kotlin-stdlib</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -43,7 +43,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-metaconfig</artifactId>
-            <version>1.0-12-g02d4bd5</version>
+            <version>1.0-18-ge06bc45</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
