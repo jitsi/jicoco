@@ -331,7 +331,7 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.start.mediaFormat.sampleRate shouldBe 8000
                 parsed.start.mediaFormat.channels shouldBe 1
                 parsed.start.customParameters.shouldNotBeNull()
-                parsed.start.customParameters?.endpointId shouldBe "abcdabcd"
+                parsed.start.customParameters.endpointId shouldBe "abcdabcd"
                 // diarize is absent from the JSON and must parse as null.
                 parsed.start.diarize shouldBe null
             }
@@ -382,7 +382,7 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.shouldBeInstanceOf<StartEvent>()
                 parsed.sequenceNumber shouldBe 0
                 parsed.start.customParameters.shouldNotBeNull()
-                parsed.start.customParameters?.endpointId shouldBe "abcdabcd"
+                parsed.start.customParameters.endpointId shouldBe "abcdabcd"
             }
             context("Start with talk timestamp") {
                 val parsed = Event.parse(
