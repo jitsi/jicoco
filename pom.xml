@@ -118,6 +118,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <jersey.config.test.container.port>0</jersey.config.test.container.port>
+                        <kotest.framework.classpath.scanning.autoscan.disable>true</kotest.framework.classpath.scanning.autoscan.disable>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
