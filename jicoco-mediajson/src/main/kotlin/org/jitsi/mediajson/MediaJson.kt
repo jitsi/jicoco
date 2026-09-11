@@ -227,9 +227,7 @@ class Int2StringSerializer : JsonSerializer<Int>() {
     }
 }
 class String2IntDeserializer : JsonDeserializer<Int>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Int {
-        return p.readValueAs(Int::class.java).toInt()
-    }
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Int = p.readValueAs(Int::class.java).toInt()
 }
 class Long2StringSerializer : JsonSerializer<Long>() {
     override fun serialize(value: Long, gen: JsonGenerator, p: SerializerProvider) {
@@ -237,7 +235,6 @@ class Long2StringSerializer : JsonSerializer<Long>() {
     }
 }
 class String2LongDeserializer : JsonDeserializer<Long>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Long {
-        return p.readValueAs(Long::class.java).toLong()
-    }
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Long =
+        p.readValueAs(Long::class.java).toLong()
 }

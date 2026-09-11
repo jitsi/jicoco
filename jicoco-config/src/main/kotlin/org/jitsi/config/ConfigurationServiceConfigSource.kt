@@ -36,25 +36,29 @@ class ConfigurationServiceConfigSource(
      * to throw [ConfigException.UnableToRetrieve.NotFound] so the calling code can fall back to
      * another property).
      */
-    override fun getterFor(type: KType): (String) -> Any {
-        return when (type) {
-            typeOf<String>() -> { key -> config.getStringOrThrow(key) }
-            typeOf<Boolean>() -> { key -> config.getStringOrThrow(key).toBoolean() }
-            typeOf<Double>() -> { key -> config.getStringOrThrow(key).toDouble() }
-            typeOf<Int>() -> { key -> config.getStringOrThrow(key).toInt() }
-            typeOf<Long>() -> { key -> config.getStringOrThrow(key).toLong() }
-            // Map<String, String> is a special case and we interpret it as:
-            // For the given prefix, return me all the properties which start
-            // with that prefix mapped to their values (retrieved as Strings)
-            typeOf<Map<String, String>>() -> { key ->
-                val props = mutableMapOf<String, String>()
-                for (propName in config.getPropertyNamesByPrefix(key, false)) {
-                    props[propName] = config.getString(propName)
-                }
-                props
+    override fun getterFor(type: KType): (String) -> Any = when (type) {
+        typeOf<String>() -> { key -> config.getStringOrThrow(key) }
+
+        typeOf<Boolean>() -> { key -> config.getStringOrThrow(key).toBoolean() }
+
+        typeOf<Double>() -> { key -> config.getStringOrThrow(key).toDouble() }
+
+        typeOf<Int>() -> { key -> config.getStringOrThrow(key).toInt() }
+
+        typeOf<Long>() -> { key -> config.getStringOrThrow(key).toLong() }
+
+        // Map<String, String> is a special case and we interpret it as:
+        // For the given prefix, return me all the properties which start
+        // with that prefix mapped to their values (retrieved as Strings)
+        typeOf<Map<String, String>>() -> { key ->
+            val props = mutableMapOf<String, String>()
+            for (propName in config.getPropertyNamesByPrefix(key, false)) {
+                props[propName] = config.getString(propName)
             }
-            else -> throw ConfigException.UnsupportedType("Type $type not supported in source '$name'")
+            props
         }
+
+        else -> throw ConfigException.UnsupportedType("Type $type not supported in source '$name'")
     }
 
     private fun ConfigurationService.getStringOrThrow(key: String): String =

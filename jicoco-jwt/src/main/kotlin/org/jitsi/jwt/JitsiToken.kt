@@ -94,8 +94,6 @@ data class JitsiToken(
          * Parse a JSON string into the JitsiToken structure.
          */
         @Throws(JsonProcessingException::class, JsonMappingException::class)
-        fun parseJson(string: String): JitsiToken {
-            return mapper.readValue(string)
-        }
+        fun parseJson(string: String): JitsiToken = mapper.readValue(string)
     }
 }

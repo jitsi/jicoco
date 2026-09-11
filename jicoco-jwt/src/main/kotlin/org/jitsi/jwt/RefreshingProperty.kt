@@ -55,7 +55,6 @@ open class RefreshingProperty<T>(
         return value
     }
 
-    private fun valueExpired(now: Instant): Boolean {
-        return value == null || Duration.between(valueCreationTimestamp, now) >= timeout
-    }
+    private fun valueExpired(now: Instant): Boolean =
+        value == null || Duration.between(valueCreationTimestamp, now) >= timeout
 }
