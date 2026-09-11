@@ -79,7 +79,7 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>jitsi-utils</artifactId>
-                <version>1.0-150-g4ab9a3b</version>
+                <version>1.0-153-gd5c0102</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
