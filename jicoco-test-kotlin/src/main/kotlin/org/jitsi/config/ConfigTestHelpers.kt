@@ -23,24 +23,30 @@ import java.util.Properties
 /**
  * Execute the given [block] using the props defined by [props] as a legacy
  * [org.jitsi.metaconfig.ConfigSource] with name [name].  Resets the legacy
- * config to empty after [block] is executed.
+ * config to empty after [block] is executed, even if it throws.
  */
 inline fun withLegacyConfig(props: String, name: String = "legacy", block: () -> Unit) {
     setLegacyConfig(props = props, name = name)
-    block()
-    setLegacyConfig("")
+    try {
+        block()
+    } finally {
+        setLegacyConfig("")
+    }
 }
 
 /**
  * Execute the given [block] using the config defined by [config] as a new
  * [org.jitsi.metaconfig.ConfigSource], falling back to the defaults if
  * [loadDefaults] is true, with name [name].  Resets the new config to empty
- * after [block] is executed.
+ * after [block] is executed, even if it throws.
  */
 inline fun withNewConfig(config: String, name: String = "new", loadDefaults: Boolean = true, block: () -> Unit) {
     setNewConfig(config, loadDefaults, name)
-    block()
-    setNewConfig("", true)
+    try {
+        block()
+    } finally {
+        setNewConfig("", true)
+    }
 }
 
 /**
