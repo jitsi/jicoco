@@ -51,8 +51,11 @@ class TypesafeConfigSource(
                     else -> config.getBoolean(key)
                 }
             }
+
             typeOf<Int>() -> wrap { key -> config.getInt(key) }
+
             typeOf<Long>() -> wrap { key -> config.getLong(key) }
+
             // Support expressions such as "5%"
             typeOf<Double>() -> wrap { key ->
                 try {
@@ -70,37 +73,43 @@ class TypesafeConfigSource(
                     }
                 }
             }
+
             typeOf<String>() -> wrap { key -> config.getString(key) }
+
             typeOf<List<String>>() -> wrap { key -> config.getStringList(key) }
+
             typeOf<List<Int>>() -> wrap { key -> config.getIntList(key) }
+
             typeOf<Duration>() -> wrap { key -> config.getDuration(key) }
+
             typeOf<ConfigObject>() -> wrap { key -> config.getObject(key) }
+
             typeOf<List<Config>>() -> wrap { key -> config.getConfigList(key) }
+
             typeOf<Pattern>() -> wrap { key -> Pattern.compile(config.getString(key)) }
+
             else -> throw ConfigException.UnsupportedType("Type $type unsupported")
         }
     }
 
-    private fun <T : Enum<T>> getterForEnum(clazz: KClass<T>): (String) -> Any {
-        return wrap { key -> config.getEnum(clazz.java, key) }
+    private fun <T : Enum<T>> getterForEnum(clazz: KClass<T>): (String) -> Any = wrap { key ->
+        config.getEnum(clazz.java, key)
     }
 
     /**
      * Translate [com.typesafe.config.ConfigException]s into [ConfigException]
      */
-    private fun wrap(block: (String) -> Any): (String) -> Any {
-        return { key ->
-            try {
-                block(key)
-            } catch (e: com.typesafe.config.ConfigException.Missing) {
-                throw ConfigException.UnableToRetrieve.NotFound("Key '$key' not found in source '$name'")
-            } catch (e: com.typesafe.config.ConfigException.WrongType) {
-                throw ConfigException.UnableToRetrieve.WrongType("Key '$key' in source '$name': ${e.message}")
-            } catch (e: com.typesafe.config.ConfigException) {
-                throw ConfigException.UnableToRetrieve.NotFound(e.message ?: "typesafe exception: ${e::class}")
-            } catch (t: Throwable) {
-                throw ConfigException.UnableToRetrieve.Error(t)
-            }
+    private fun wrap(block: (String) -> Any): (String) -> Any = { key ->
+        try {
+            block(key)
+        } catch (e: com.typesafe.config.ConfigException.Missing) {
+            throw ConfigException.UnableToRetrieve.NotFound("Key '$key' not found in source '$name'")
+        } catch (e: com.typesafe.config.ConfigException.WrongType) {
+            throw ConfigException.UnableToRetrieve.WrongType("Key '$key' in source '$name': ${e.message}")
+        } catch (e: com.typesafe.config.ConfigException) {
+            throw ConfigException.UnableToRetrieve.NotFound(e.message ?: "typesafe exception: ${e::class}")
+        } catch (t: Throwable) {
+            throw ConfigException.UnableToRetrieve.Error(t)
         }
     }
 }

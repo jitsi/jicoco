@@ -153,6 +153,4 @@ private val prodJson = """
 
 private val header = """{"alg":"RS256","kid":"kid","typ":"JWT"""".trimIndent()
 
-private fun String.base64Encode(): String {
-    return Base64.getUrlEncoder().withoutPadding().encodeToString(this.toByteArray())
-}
+private fun String.base64Encode(): String = Base64.getUrlEncoder().withoutPadding().encodeToString(this.toByteArray())

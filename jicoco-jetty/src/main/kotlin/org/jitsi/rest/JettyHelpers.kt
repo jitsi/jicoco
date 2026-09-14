@@ -102,12 +102,10 @@ fun createSecureJettyServer(config: JettyBundleActivatorConfig): Server {
 /**
  * Create a Jetty [Server] instance based on the given [config].
  */
-fun createServer(config: JettyBundleActivatorConfig): Server {
-    return if (config.isTls) {
-        createSecureJettyServer(config)
-    } else {
-        createJettyServer(config)
-    }
+fun createServer(config: JettyBundleActivatorConfig): Server = if (config.isTls) {
+    createSecureJettyServer(config)
+} else {
+    createJettyServer(config)
 }
 
 fun JettyBundleActivatorConfig.isEnabled(): Boolean = port != -1 || tlsPort != -1
