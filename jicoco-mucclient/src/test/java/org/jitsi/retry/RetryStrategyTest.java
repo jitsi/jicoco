@@ -16,7 +16,9 @@
 package org.jitsi.retry;
 
 import java.time.*;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import org.jitsi.utils.concurrent.*;
 import org.junit.jupiter.api.*;
 
@@ -145,6 +147,118 @@ public class RetryStrategyTest
         fakeExecutor.run();
 
         assertEquals(1, retryTask.counter);
+    }
+
+    @Test
+    public void testRunRetryingTaskReplacesPendingAttempt()
+    {
+        FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
+        RetryStrategy retryStrategy = new RetryStrategy(fakeExecutor);
+
+        long delay = 100L;
+        TestCounterTask first = new TestCounterTask(delay, delay, false, Integer.MAX_VALUE);
+        TestCounterTask second = new TestCounterTask(delay, delay, false, Integer.MAX_VALUE);
+
+        retryStrategy.runRetryingTask(first);
+        fakeExecutor.getClock().elapse(Duration.ofMillis(delay + 10L));
+        fakeExecutor.run();
+        assertEquals(1, first.counter);
+        assertEquals(1, fakeExecutor.numPendingJobs());
+
+        // Starting a new task drops the attempt still pending for the first one.
+        retryStrategy.runRetryingTask(second);
+        assertEquals(1, fakeExecutor.numPendingJobs());
+
+        for (int i = 0; i < 5; i++)
+        {
+            // Advances the clock to the next live job and runs it.
+            fakeExecutor.runOne();
+            assertEquals(1, fakeExecutor.numPendingJobs());
+        }
+
+        assertEquals(1, first.counter);
+        assertEquals(5, second.counter);
+    }
+
+    @Test
+    public void testRunRetryingTaskFromRunningAttempt()
+    {
+        FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
+        RetryStrategy retryStrategy = new RetryStrategy(fakeExecutor);
+
+        long delay = 100L;
+        AtomicInteger outerAttempts = new AtomicInteger();
+        AtomicInteger innerAttempts = new AtomicInteger();
+
+        RetryTask inner = new SimpleRetryTask(0, delay, false, () ->
+        {
+            innerAttempts.incrementAndGet();
+            return true;
+        });
+        // An attempt which starts a new task while it is running, and then asks to be retried itself.
+        RetryTask outer = new SimpleRetryTask(0, delay, false, () ->
+        {
+            outerAttempts.incrementAndGet();
+            retryStrategy.runRetryingTask(inner);
+            return true;
+        });
+
+        retryStrategy.runRetryingTask(outer);
+        fakeExecutor.run();
+
+        assertEquals(1, outerAttempts.get());
+        assertEquals(1, innerAttempts.get());
+        // Only the new task's chain is live.
+        assertEquals(1, fakeExecutor.numPendingJobs());
+
+        for (int i = 0; i < 10; i++)
+        {
+            fakeExecutor.getClock().elapse(Duration.ofMillis(delay));
+            fakeExecutor.run();
+            assertEquals(1, fakeExecutor.numPendingJobs());
+        }
+
+        assertEquals(1, outerAttempts.get());
+        assertEquals(11, innerAttempts.get());
+    }
+
+    @Test
+    public void testDynamicRetryDelay()
+    {
+        FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
+        RetryStrategy retryStrategy = new RetryStrategy(fakeExecutor);
+
+        List<Instant> attempts = new ArrayList<>();
+        RetryTask task = new SimpleRetryTask(0, 0, false, () ->
+        {
+            attempts.add(fakeExecutor.getClock().instant());
+            return attempts.size() < 4;
+        })
+        {
+            @Override
+            public long getRetryDelay()
+            {
+                // 100, 200, 300
+                return 100L * attempts.size();
+            }
+        };
+
+        Instant start = fakeExecutor.getClock().instant();
+        retryStrategy.runRetryingTask(task);
+        fakeExecutor.runUntil(start.plusSeconds(10));
+
+        assertEquals(4, attempts.size());
+        assertEquals(Duration.ofMillis(100), Duration.between(attempts.get(0), attempts.get(1)));
+        assertEquals(Duration.ofMillis(200), Duration.between(attempts.get(1), attempts.get(2)));
+        assertEquals(Duration.ofMillis(300), Duration.between(attempts.get(2), attempts.get(3)));
+    }
+
+    @Test
+    public void testCancelBeforeStart()
+    {
+        RetryStrategy retryStrategy = new RetryStrategy(new FakeScheduledExecutorService());
+        retryStrategy.cancel();
+        assertFalse(retryStrategy.isCancelled());
     }
 
     private static class TestCounterTask

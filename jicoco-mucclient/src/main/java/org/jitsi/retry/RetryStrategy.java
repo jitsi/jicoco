@@ -58,11 +58,12 @@ public class RetryStrategy
     private ScheduledFuture<?> future;
 
     /**
-     * Inner class implementing <tt>Runnable</tt> that does additional
-     * processing around Callable retry job.
+     * The runner of the current {@link #task}. Every call to
+     * {@link #runRetryingTask(RetryTask)} creates a new runner, and a runner
+     * which is no longer the current one does not schedule further attempts.
+     * This guarantees that at most one retry chain is live at any time.
      */
-    private final TaskRunner taskRunner = new TaskRunner();
-
+    private TaskRunner taskRunner;
 
     /**
      * Creates new <tt>RetryStrategy</tt> instance that will use
@@ -106,7 +107,10 @@ public class RetryStrategy
             future = null;
         }
 
-        task.setCancelled(true);
+        if (task != null)
+        {
+            task.setCancelled(true);
+        }
     }
 
     /**
@@ -124,6 +128,12 @@ public class RetryStrategy
      * retry attempts will be rescheduled as long as it's callable method
      * returns <tt>true</tt> or until ({@link #cancel()} is called.
      *
+     * The given task replaces any task previously started with this method:
+     * an attempt of the previous task which is still pending is cancelled, and
+     * an attempt of the previous task which is currently running is not
+     * interrupted, but will not schedule further attempts. There is never more
+     * than one outstanding attempt.
+     *
      * @param task the retry task to be employed by this retry strategy instance
      */
     synchronized public void runRetryingTask(final RetryTask task)
@@ -131,7 +141,13 @@ public class RetryStrategy
         if (task == null)
             throw new NullPointerException("task");
 
+        if (future != null)
+        {
+            future.cancel(false);
+        }
+
         this.task = task;
+        this.taskRunner = new TaskRunner(task);
         this.future
             = executor.schedule(
                     taskRunner,
@@ -140,16 +156,20 @@ public class RetryStrategy
     }
 
     /**
-     * Schedules new retry attempt if we d
+     * Schedules a new retry attempt, unless the strategy has been cancelled or
+     * <tt>runner</tt> has been superseded by a later call to
+     * {@link #runRetryingTask(RetryTask)}.
+     *
+     * @param runner the runner which has just finished an attempt.
      */
-    synchronized private void scheduleRetry()
+    synchronized private void scheduleRetry(TaskRunner runner)
     {
-        if (task == null || task.isCancelled())
+        if (runner != taskRunner || task.isCancelled())
             return;
 
         this.future
             =  executor.schedule(
-                    taskRunner,
+                    runner,
                     task.getRetryDelay(),
                     TimeUnit.MILLISECONDS);
     }
@@ -159,20 +179,30 @@ public class RetryStrategy
      */
     class TaskRunner implements Runnable
     {
+        /**
+         * The task which this runner executes.
+         */
+        private final RetryTask task;
+
+        TaskRunner(RetryTask task)
+        {
+            this.task = task;
+        }
+
         @Override
         public void run()
         {
             try
             {
                 if (task.getCallable().call())
-                    scheduleRetry();
+                    scheduleRetry(this);
             }
             catch (Exception e)
             {
                 logger.error(e, e);
 
                 if (task.willRetryAfterException())
-                    scheduleRetry();
+                    scheduleRetry(this);
             }
         }
     }

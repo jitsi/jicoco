@@ -115,6 +115,42 @@ public class MucClientConfiguration
     public static String SECURITY_MODE = "SECURITY_MODE";
 
     /**
+     * The name of the property (without a prefix) which specifies the delay
+     * in milliseconds before the first retry after the XMPP server rejects
+     * our credentials. Subsequent retries double the delay, up to
+     * {@link #AUTH_FAILURE_MAX_BACKOFF_MS}.
+     *
+     * This is not a required property, it defaults to
+     * {@link #DEFAULT_AUTH_FAILURE_INITIAL_BACKOFF_MS}.
+     */
+    public static String AUTH_FAILURE_INITIAL_BACKOFF_MS = "AUTH_FAILURE_INITIAL_BACKOFF_MS";
+
+    /**
+     * The name of the property (without a prefix) which specifies the
+     * maximum delay in milliseconds between retries while the XMPP server
+     * keeps rejecting our credentials.
+     *
+     * This is not a required property, it defaults to
+     * {@link #DEFAULT_AUTH_FAILURE_MAX_BACKOFF_MS}.
+     */
+    public static String AUTH_FAILURE_MAX_BACKOFF_MS = "AUTH_FAILURE_MAX_BACKOFF_MS";
+
+    /**
+     * The default for {@link #AUTH_FAILURE_INITIAL_BACKOFF_MS}. It matches the
+     * delay used for reconnects after a network failure, so a short-lived
+     * rejection (e.g. while the server's auth backend restarts) recovers
+     * about as quickly as before.
+     */
+    public static final long DEFAULT_AUTH_FAILURE_INITIAL_BACKOFF_MS = 1000;
+
+    /**
+     * The default for {@link #AUTH_FAILURE_MAX_BACKOFF_MS}. A misconfigured
+     * client makes at most one login attempt per minute, and still picks up
+     * fixed credentials within a minute without being restarted.
+     */
+    public static final long DEFAULT_AUTH_FAILURE_MAX_BACKOFF_MS = 60_000;
+
+    /**
      * Loads a list of {@link MucClientConfiguration} objects based on
      * properties read from a {@link ConfigurationService} with a given
      * {@code prefix}.
@@ -420,6 +456,70 @@ public class MucClientConfiguration
     public void setSecurityMode(ConnectionConfiguration.SecurityMode securityMode)
     {
         props.put(SECURITY_MODE, securityMode != null ? securityMode.toString() : null);
+    }
+
+    /**
+     * @return the delay in milliseconds before the first retry after the XMPP
+     * server rejects our credentials.
+     */
+    public long getAuthFailureInitialBackoffMs()
+    {
+        return getPositiveLong(AUTH_FAILURE_INITIAL_BACKOFF_MS, DEFAULT_AUTH_FAILURE_INITIAL_BACKOFF_MS);
+    }
+
+    /**
+     * Sets the delay in milliseconds before the first retry after the XMPP
+     * server rejects our credentials.
+     */
+    public void setAuthFailureInitialBackoffMs(long authFailureInitialBackoffMs)
+    {
+        props.put(AUTH_FAILURE_INITIAL_BACKOFF_MS, Long.toString(authFailureInitialBackoffMs));
+    }
+
+    /**
+     * @return the maximum delay in milliseconds between retries while the XMPP
+     * server keeps rejecting our credentials.
+     */
+    public long getAuthFailureMaxBackoffMs()
+    {
+        return getPositiveLong(AUTH_FAILURE_MAX_BACKOFF_MS, DEFAULT_AUTH_FAILURE_MAX_BACKOFF_MS);
+    }
+
+    /**
+     * Sets the maximum delay in milliseconds between retries while the XMPP
+     * server keeps rejecting our credentials.
+     */
+    public void setAuthFailureMaxBackoffMs(long authFailureMaxBackoffMs)
+    {
+        props.put(AUTH_FAILURE_MAX_BACKOFF_MS, Long.toString(authFailureMaxBackoffMs));
+    }
+
+    /**
+     * Reads a property as a positive long, falling back to a default if it is
+     * missing or invalid.
+     */
+    private long getPositiveLong(String name, long defaultValue)
+    {
+        String str = props.get(name);
+        if (str == null || str.isEmpty())
+        {
+            return defaultValue;
+        }
+
+        try
+        {
+            long value = Long.parseLong(str.trim());
+            if (value > 0)
+            {
+                return value;
+            }
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+
+        logger.warn("Ignoring invalid value for " + name + ": " + str + ", using " + defaultValue);
+        return defaultValue;
     }
 
     /**
