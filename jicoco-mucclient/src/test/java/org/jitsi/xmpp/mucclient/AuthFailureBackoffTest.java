@@ -20,7 +20,7 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
-import java.util.function.DoubleSupplier;
+import java.util.function.*;
 import org.jitsi.retry.*;
 import org.jitsi.utils.concurrent.*;
 import org.jivesoftware.smack.sasl.*;
@@ -131,6 +131,26 @@ public class AuthFailureBackoffTest
         assertNull(MucClient.findAuthFailure(null));
     }
 
+    @Test
+    public void testConnectAndLoginTaskDelays()
+    {
+        MucClient.AuthFailureBackoff backoff = new MucClient.AuthFailureBackoff(1000, 60_000, NO_JITTER);
+        MucClient.ConnectAndLoginTask task = new MucClient.ConnectAndLoginTask(500, 5000, backoff, () -> false);
+
+        // Without rejections, the task's own delays apply.
+        assertEquals(500, task.getInitialDelay());
+        assertEquals(5000, task.getRetryDelay());
+
+        // After a rejection, the backoff delay replaces both, even when it is shorter.
+        backoff.recordFailure();
+        assertEquals(1000, task.getInitialDelay());
+        assertEquals(1000, task.getRetryDelay());
+
+        backoff.reset();
+        assertEquals(500, task.getInitialDelay());
+        assertEquals(5000, task.getRetryDelay());
+    }
+
     /**
      * Drives {@link MucClient.ConnectAndLoginTask} with a {@link RetryStrategy} on a fake executor, with a login
      * which the server always rejects, and checks that attempts back off instead of running in a tight loop.
@@ -152,7 +172,8 @@ public class AuthFailureBackoffTest
                 backoff.reset();
                 return false;
             }
-            // What MucClient's connect-and-login callable does when the server rejects the login.
+            // The part of what MucClient's connect-and-login callable does on a rejected login which matters for
+            // the delays.
             backoff.recordFailure();
             return true;
         };
@@ -161,7 +182,7 @@ public class AuthFailureBackoffTest
         retryStrategy.runRetryingTask(new MucClient.ConnectAndLoginTask(0, 5000, backoff, connectAndLogin));
         executor.runUntil(start.plus(Duration.ofMinutes(10)));
 
-        // 1+2+4+8+16+32 seconds, then once a minute: 15 attempts in 10 minutes, where the old loop made thousands.
+        // Attempts at 0, 1, 3, 7, 15, 31, 63s, then every 60s: 15 in 10 minutes (the old loop ran at ~9/s).
         assertEquals(15, attempts.size());
         assertEquals(start, attempts.get(0));
         for (int i = 1; i < attempts.size(); i++)
@@ -172,7 +193,7 @@ public class AuthFailureBackoffTest
         assertEquals(1, executor.numPendingJobs());
 
         // A connection close which re-arms the retry with no initial delay (as connectionClosed() does) replaces the
-        // pending attempt, and still waits for the backoff delay.
+        // pending attempt, and still waits for the backoff delay, counted from the re-arm.
         Instant rearmed = executor.getClock().instant();
         int attemptsBefore = attempts.size();
         retryStrategy.runRetryingTask(new MucClient.ConnectAndLoginTask(0, 1000, backoff, connectAndLogin));
@@ -187,7 +208,8 @@ public class AuthFailureBackoffTest
         assertEquals(0, executor.numPendingJobs());
         assertEquals(0, backoff.getDelayMs());
 
-        // A later re-arm (e.g. after a network drop) starts immediately and uses the normal retry delay.
+        // A later re-arm (e.g. after the server closes the stream) starts immediately, and a new rejection starts
+        // the backoff from the initial delay again.
         serverAcceptsLogin.set(false);
         Instant restarted = executor.getClock().instant();
         attemptsBefore = attempts.size();
@@ -213,7 +235,9 @@ public class AuthFailureBackoffTest
         assertEquals(30_000, config.getAuthFailureMaxBackoffMs());
 
         config.setAuthFailureInitialBackoffMs(2000);
+        config.setAuthFailureMaxBackoffMs(20_000);
         assertEquals(2000, config.getAuthFailureInitialBackoffMs());
+        assertEquals(20_000, config.getAuthFailureMaxBackoffMs());
 
         config.setProperty(MucClientConfiguration.AUTH_FAILURE_INITIAL_BACKOFF_MS, "soon");
         config.setProperty(MucClientConfiguration.AUTH_FAILURE_MAX_BACKOFF_MS, "0");

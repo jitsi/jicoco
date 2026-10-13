@@ -117,36 +117,41 @@ public class MucClientConfiguration
     /**
      * The name of the property (without a prefix) which specifies the delay
      * in milliseconds before the first retry after the XMPP server rejects
-     * our credentials. Subsequent retries double the delay, up to
-     * {@link #AUTH_FAILURE_MAX_BACKOFF_MS}.
+     * our credentials. Each further rejection doubles the delay, up to
+     * {@link #AUTH_FAILURE_MAX_BACKOFF_MS}, and every delay is randomized by
+     * &plusmn;10%.
      *
      * This is not a required property, it defaults to
-     * {@link #DEFAULT_AUTH_FAILURE_INITIAL_BACKOFF_MS}.
+     * {@link #DEFAULT_AUTH_FAILURE_INITIAL_BACKOFF_MS}. A value which is not a
+     * positive integer is ignored with a warning.
      */
     public static String AUTH_FAILURE_INITIAL_BACKOFF_MS = "AUTH_FAILURE_INITIAL_BACKOFF_MS";
 
     /**
      * The name of the property (without a prefix) which specifies the
      * maximum delay in milliseconds between retries while the XMPP server
-     * keeps rejecting our credentials.
+     * keeps rejecting our credentials, before the &plusmn;10% randomization.
+     * A value below {@link #AUTH_FAILURE_INITIAL_BACKOFF_MS} is raised to it.
      *
      * This is not a required property, it defaults to
-     * {@link #DEFAULT_AUTH_FAILURE_MAX_BACKOFF_MS}.
+     * {@link #DEFAULT_AUTH_FAILURE_MAX_BACKOFF_MS}. A value which is not a
+     * positive integer is ignored with a warning.
      */
     public static String AUTH_FAILURE_MAX_BACKOFF_MS = "AUTH_FAILURE_MAX_BACKOFF_MS";
 
     /**
      * The default for {@link #AUTH_FAILURE_INITIAL_BACKOFF_MS}. It matches the
-     * delay used for reconnects after a network failure, so a short-lived
-     * rejection (e.g. while the server's auth backend restarts) recovers
-     * about as quickly as before.
+     * 1s delay used for reconnects after a network failure. A rejection which
+     * clears within about a second costs one such interval. A longer one is
+     * noticed at most about its own duration after it clears, and never more
+     * than the maximum delay after.
      */
     public static final long DEFAULT_AUTH_FAILURE_INITIAL_BACKOFF_MS = 1000;
 
     /**
      * The default for {@link #AUTH_FAILURE_MAX_BACKOFF_MS}. A misconfigured
-     * client makes at most one login attempt per minute, and still picks up
-     * fixed credentials within a minute without being restarted.
+     * client makes about one login attempt per minute, and still picks up
+     * fixed credentials within about a minute without being restarted.
      */
     public static final long DEFAULT_AUTH_FAILURE_MAX_BACKOFF_MS = 60_000;
 
@@ -470,6 +475,9 @@ public class MucClientConfiguration
     /**
      * Sets the delay in milliseconds before the first retry after the XMPP
      * server rejects our credentials.
+     *
+     * @param authFailureInitialBackoffMs the delay in ms. A value which is not
+     * positive is ignored when read.
      */
     public void setAuthFailureInitialBackoffMs(long authFailureInitialBackoffMs)
     {
@@ -488,6 +496,9 @@ public class MucClientConfiguration
     /**
      * Sets the maximum delay in milliseconds between retries while the XMPP
      * server keeps rejecting our credentials.
+     *
+     * @param authFailureMaxBackoffMs the delay in ms. A value which is not
+     * positive is ignored when read.
      */
     public void setAuthFailureMaxBackoffMs(long authFailureMaxBackoffMs)
     {
@@ -518,7 +529,8 @@ public class MucClientConfiguration
         {
         }
 
-        logger.warn("Ignoring invalid value for " + name + ": " + str + ", using " + defaultValue);
+        logger.warn("Ignoring invalid value for " + name + " (id=" + getId() + "): " + str + ", using "
+            + defaultValue);
         return defaultValue;
     }
 

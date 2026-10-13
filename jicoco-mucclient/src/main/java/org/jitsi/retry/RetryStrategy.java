@@ -60,8 +60,9 @@ public class RetryStrategy
     /**
      * The runner of the current {@link #task}. Every call to
      * {@link #runRetryingTask(RetryTask)} creates a new runner, and a runner
-     * which is no longer the current one does not schedule further attempts.
-     * This guarantees that at most one retry chain is live at any time.
+     * which is no longer the current one does not schedule further attempts,
+     * so only the current task keeps rescheduling itself. A superseded runner
+     * may still be finishing an attempt which was already running.
      */
     private TaskRunner taskRunner;
 
@@ -131,8 +132,9 @@ public class RetryStrategy
      * The given task replaces any task previously started with this method:
      * an attempt of the previous task which is still pending is cancelled, and
      * an attempt of the previous task which is currently running is not
-     * interrupted, but will not schedule further attempts. There is never more
-     * than one outstanding attempt.
+     * interrupted, but will not schedule further attempts. At most one attempt
+     * is pending at any time. With a multi-threaded executor, a superseded
+     * attempt which is still running may overlap the new task's first attempt.
      *
      * @param task the retry task to be employed by this retry strategy instance
      */
@@ -164,23 +166,25 @@ public class RetryStrategy
      */
     synchronized private void scheduleRetry(TaskRunner runner)
     {
-        if (runner != taskRunner || task.isCancelled())
+        if (runner != taskRunner || runner.task.isCancelled())
             return;
 
         this.future
             =  executor.schedule(
                     runner,
-                    task.getRetryDelay(),
+                    runner.task.getRetryDelay(),
                     TimeUnit.MILLISECONDS);
     }
 
     /**
      * Some extra processing around running retry callable.
      */
-    class TaskRunner implements Runnable
+    private class TaskRunner implements Runnable
     {
         /**
-         * The task which this runner executes.
+         * The task which this runner executes. It deliberately shadows
+         * {@link RetryStrategy#task}: a superseded runner finishes the attempt
+         * of its own task, not of the current one.
          */
         private final RetryTask task;
 

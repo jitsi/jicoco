@@ -188,13 +188,7 @@ public class RetryStrategyTest
 
         long delay = 100L;
         AtomicInteger outerAttempts = new AtomicInteger();
-        AtomicInteger innerAttempts = new AtomicInteger();
-
-        RetryTask inner = new SimpleRetryTask(0, delay, false, () ->
-        {
-            innerAttempts.incrementAndGet();
-            return true;
-        });
+        TestCounterTask inner = new TestCounterTask(0, delay, false, Integer.MAX_VALUE);
         // An attempt which starts a new task while it is running, and then asks to be retried itself.
         RetryTask outer = new SimpleRetryTask(0, delay, false, () ->
         {
@@ -207,7 +201,7 @@ public class RetryStrategyTest
         fakeExecutor.run();
 
         assertEquals(1, outerAttempts.get());
-        assertEquals(1, innerAttempts.get());
+        assertEquals(1, inner.counter);
         // Only the new task's chain is live.
         assertEquals(1, fakeExecutor.numPendingJobs());
 
@@ -219,7 +213,7 @@ public class RetryStrategyTest
         }
 
         assertEquals(1, outerAttempts.get());
-        assertEquals(11, innerAttempts.get());
+        assertEquals(11, inner.counter);
     }
 
     @Test
@@ -251,6 +245,51 @@ public class RetryStrategyTest
         assertEquals(Duration.ofMillis(100), Duration.between(attempts.get(0), attempts.get(1)));
         assertEquals(Duration.ofMillis(200), Duration.between(attempts.get(1), attempts.get(2)));
         assertEquals(Duration.ofMillis(300), Duration.between(attempts.get(2), attempts.get(3)));
+    }
+
+    @Test
+    public void testCancelWhileAttemptRunning()
+    {
+        FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
+        RetryStrategy retryStrategy = new RetryStrategy(fakeExecutor);
+        AtomicInteger attempts = new AtomicInteger();
+
+        // E.g. MucClient.stop() on another thread while an attempt to connect is in progress.
+        retryStrategy.runRetryingTask(new SimpleRetryTask(0, 100, false, () ->
+        {
+            attempts.incrementAndGet();
+            retryStrategy.cancel();
+            return true;
+        }));
+        fakeExecutor.run();
+
+        assertTrue(retryStrategy.isCancelled());
+        assertEquals(0, fakeExecutor.numPendingJobs());
+        fakeExecutor.runUntil(fakeExecutor.getClock().instant().plusSeconds(10));
+        assertEquals(1, attempts.get());
+    }
+
+    @Test
+    public void testCancelWhileSupersededAttemptRunning()
+    {
+        FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
+        RetryStrategy retryStrategy = new RetryStrategy(fakeExecutor);
+        AtomicInteger outerAttempts = new AtomicInteger();
+        TestCounterTask inner = new TestCounterTask(100, 100, false, Integer.MAX_VALUE);
+
+        retryStrategy.runRetryingTask(new SimpleRetryTask(0, 100, false, () ->
+        {
+            outerAttempts.incrementAndGet();
+            retryStrategy.runRetryingTask(inner);
+            retryStrategy.cancel();
+            return true;
+        }));
+        fakeExecutor.run();
+
+        assertEquals(0, fakeExecutor.numPendingJobs());
+        fakeExecutor.runUntil(fakeExecutor.getClock().instant().plusSeconds(10));
+        assertEquals(1, outerAttempts.get());
+        assertEquals(0, inner.counter);
     }
 
     @Test
