@@ -201,9 +201,11 @@ public class RetryStrategy
                 if (task.getCallable().call())
                     scheduleRetry(this);
             }
-            catch (Exception e)
+            catch (Throwable t)
             {
-                logger.error(e, e);
+                // Catch errors too: an error escaping from here would end the
+                // retries without a trace, since nothing reads the future.
+                logger.error(t, t);
 
                 if (task.willRetryAfterException())
                     scheduleRetry(this);

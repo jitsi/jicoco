@@ -114,7 +114,8 @@ public class AuthFailureBackoffTest
     public void testFindAuthFailure()
     {
         for (SASLError error : new SASLError[] {
-            SASLError.not_authorized, SASLError.account_disabled, SASLError.credentials_expired })
+            SASLError.not_authorized, SASLError.account_disabled, SASLError.credentials_expired,
+            SASLError.encryption_required, SASLError.mechanism_too_weak, SASLError.invalid_authzid })
         {
             SASLErrorException e = saslError(error);
             assertSame(e, MucClient.findAuthFailure(e), error.toString());
@@ -122,7 +123,8 @@ public class AuthFailureBackoffTest
         }
 
         for (SASLError error : new SASLError[] {
-            SASLError.temporary_auth_failure, SASLError.invalid_mechanism, SASLError.aborted })
+            SASLError.temporary_auth_failure, SASLError.invalid_mechanism, SASLError.aborted,
+            SASLError.incorrect_encoding, SASLError.malformed_request })
         {
             assertNull(MucClient.findAuthFailure(saslError(error)), error.toString());
         }

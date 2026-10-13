@@ -208,7 +208,7 @@ public class MucClient
 
     /**
      * The backoff applied to connect-and-login attempts while the server
-     * rejects our credentials.
+     * rejects our login.
      */
     private final AuthFailureBackoff authFailureBackoff;
 
@@ -298,7 +298,7 @@ public class MucClient
     }
 
     /**
-     * @return the backoff applied while the server rejects our credentials.
+     * @return the backoff applied while the server rejects our login.
      */
     AuthFailureBackoff getAuthFailureBackoff()
     {
@@ -801,7 +801,7 @@ public class MucClient
 
     /**
      * Creates the task which connects and logs in, backing off while the
-     * server rejects our credentials.
+     * server rejects our login.
      *
      * @param initialDelay the delay in ms before the first attempt, when no
      * login has been rejected since the last successful login.
@@ -864,19 +864,26 @@ public class MucClient
     }
 
     /**
-     * The SASL errors with which the server rejects our credentials.
+     * The SASL errors with which the server rejects our login until our
+     * credentials, our configuration or the server's change, so that retrying
+     * right away won't help.
      */
-    private static final Set<SASLError> CREDENTIALS_REJECTED
-        = EnumSet.of(SASLError.not_authorized, SASLError.account_disabled, SASLError.credentials_expired);
+    private static final Set<SASLError> AUTH_FAILURES = EnumSet.of(
+        SASLError.not_authorized,
+        SASLError.account_disabled,
+        SASLError.credentials_expired,
+        SASLError.encryption_required,
+        SASLError.mechanism_too_weak,
+        SASLError.invalid_authzid);
 
     /**
-     * Finds the exception, if any, with which the server rejected our
-     * credentials, in the first 10 links of the cause chain of {@code t}.
-     * Other SASL failures, such as {@code temporary-auth-failure} or a
-     * mechanism mismatch, don't count.
+     * Finds the exception, if any, with which the server rejected our login
+     * with one of the {@link #AUTH_FAILURES}, in the first 10 links of the
+     * cause chain of {@code t}. Other SASL failures, such as
+     * {@code temporary-auth-failure} or a mechanism mismatch, don't count.
      *
      * @param t the exception thrown when logging in.
-     * @return the {@link SASLErrorException} which rejected our credentials,
+     * @return the {@link SASLErrorException} which rejected our login,
      * or {@code null} if {@code t} is not such a rejection.
      */
     static SASLErrorException findAuthFailure(Throwable t)
@@ -887,7 +894,7 @@ public class MucClient
             if (t instanceof SASLErrorException)
             {
                 SASLErrorException e = (SASLErrorException) t;
-                if (e.getSASLFailure() != null && CREDENTIALS_REJECTED.contains(e.getSASLFailure().getSASLError()))
+                if (e.getSASLFailure() != null && AUTH_FAILURES.contains(e.getSASLFailure().getSASLError()))
                 {
                     return e;
                 }

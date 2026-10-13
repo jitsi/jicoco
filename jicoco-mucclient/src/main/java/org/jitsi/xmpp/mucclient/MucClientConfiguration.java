@@ -117,7 +117,7 @@ public class MucClientConfiguration
     /**
      * The name of the property (without a prefix) which specifies the delay
      * in milliseconds before the first retry after the XMPP server rejects
-     * our credentials. Each further rejection doubles the delay, up to
+     * our login. Each further rejection doubles the delay, up to
      * {@link #AUTH_FAILURE_MAX_BACKOFF_MS}, and every delay is randomized by
      * &plusmn;10%.
      *
@@ -130,7 +130,7 @@ public class MucClientConfiguration
     /**
      * The name of the property (without a prefix) which specifies the
      * maximum delay in milliseconds between retries while the XMPP server
-     * keeps rejecting our credentials, before the &plusmn;10% randomization.
+     * keeps rejecting our login, before the &plusmn;10% randomization.
      * A value below {@link #AUTH_FAILURE_INITIAL_BACKOFF_MS} is raised to it.
      *
      * This is not a required property, it defaults to
@@ -465,7 +465,7 @@ public class MucClientConfiguration
 
     /**
      * @return the delay in milliseconds before the first retry after the XMPP
-     * server rejects our credentials.
+     * server rejects our login.
      */
     public long getAuthFailureInitialBackoffMs()
     {
@@ -474,7 +474,7 @@ public class MucClientConfiguration
 
     /**
      * Sets the delay in milliseconds before the first retry after the XMPP
-     * server rejects our credentials.
+     * server rejects our login.
      *
      * @param authFailureInitialBackoffMs the delay in ms. A value which is not
      * positive is ignored when read.
@@ -486,7 +486,7 @@ public class MucClientConfiguration
 
     /**
      * @return the maximum delay in milliseconds between retries while the XMPP
-     * server keeps rejecting our credentials.
+     * server keeps rejecting our login.
      */
     public long getAuthFailureMaxBackoffMs()
     {
@@ -495,7 +495,7 @@ public class MucClientConfiguration
 
     /**
      * Sets the maximum delay in milliseconds between retries while the XMPP
-     * server keeps rejecting our credentials.
+     * server keeps rejecting our login.
      *
      * @param authFailureMaxBackoffMs the delay in ms. A value which is not
      * positive is ignored when read.

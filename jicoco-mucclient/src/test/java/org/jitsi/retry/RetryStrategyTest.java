@@ -248,6 +248,27 @@ public class RetryStrategyTest
     }
 
     @Test
+    public void testRetryAfterError()
+    {
+        FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
+        RetryStrategy retryStrategy = new RetryStrategy(fakeExecutor);
+        AtomicInteger attempts = new AtomicInteger();
+
+        retryStrategy.runRetryingTask(new SimpleRetryTask(0, 100, true, () ->
+        {
+            if (attempts.incrementAndGet() == 1)
+            {
+                throw new NoClassDefFoundError("Simulated error in retry job");
+            }
+            return attempts.get() < 3;
+        }));
+        fakeExecutor.runUntil(fakeExecutor.getClock().instant().plusSeconds(10));
+
+        assertEquals(3, attempts.get());
+        assertEquals(0, fakeExecutor.numPendingJobs());
+    }
+
+    @Test
     public void testCancelWhileAttemptRunning()
     {
         FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService();
