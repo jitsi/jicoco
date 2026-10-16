@@ -133,7 +133,7 @@ public class MucClientManager implements ConnectionStateListener
         {
             if (mucClients.get(config.getId()) != null)
             {
-                logger.error("Not adding a new MUC client, ID already exists.");
+                logger.info("Not adding a new MUC client, ID already exists.");
                 return false;
             }
 
