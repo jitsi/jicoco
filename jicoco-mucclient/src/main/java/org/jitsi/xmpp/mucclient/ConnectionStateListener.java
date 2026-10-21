@@ -22,6 +22,15 @@ public interface ConnectionStateListener
 {
     void connected(@NotNull MucClient mucClient);
 
+    /**
+     * The connection logged in. With stream management, this is also called when a dropped connection comes back:
+     * {@code resumed} is true when the previous session was resumed (MUC membership and stanzas queued on either side
+     * are kept), and false when a new session was started (the MUCs were joined again from scratch).
+     */
+    default void authenticated(@NotNull MucClient mucClient, boolean resumed)
+    {
+    }
+
     void closed(@NotNull MucClient mucClient);
 
     void closedOnError(@NotNull MucClient mucClient);
