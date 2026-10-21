@@ -415,6 +415,15 @@ public class MucClientManager implements ConnectionStateListener
     }
 
     @Override
+    public void authenticated(@NotNull MucClient mucClient, boolean resumed)
+    {
+        for (ConnectionStateListener listener : connectionStateListeners)
+        {
+            listener.authenticated(mucClient, resumed);
+        }
+    }
+
+    @Override
     public void closed(@NotNull MucClient mucClient)
     {
         for (ConnectionStateListener listener : connectionStateListeners)

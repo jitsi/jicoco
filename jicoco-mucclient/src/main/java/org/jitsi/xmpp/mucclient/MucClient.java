@@ -361,6 +361,8 @@ public class MucClient
                         logger.warn("Failed to join the MUCs.", e);
                     }
                 }
+
+                mucClientManager.authenticated(MucClient.this, resumed);
             }
 
             @Override
@@ -429,6 +431,16 @@ public class MucClient
     boolean isConnected()
     {
         return xmppConnection != null && xmppConnection.isConnected() && xmppConnection.isAuthenticated();
+    }
+
+    /**
+     * Whether the XMPP session can still be resumed with stream management. While the connection is down, this tells
+     * whether a reconnect can pick up the same session or will have to start a new one.
+     */
+    public boolean isSmResumptionPossible()
+    {
+        AbstractXMPPConnection connection = xmppConnection;
+        return connection instanceof XMPPTCPConnection && ((XMPPTCPConnection) connection).isSmResumptionPossible();
     }
 
     /**
