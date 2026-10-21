@@ -278,6 +278,26 @@ class MediaJsonTest : ShouldSpec() {
                 parsed.get("requests").shouldBeInstanceOf<ArrayNode>().size() shouldBe 0
             }
         }
+        context("SpeakersEvent") {
+            val event = SpeakersEvent(speakers = listOf("523834112-a0", "2394a3432-a0"), silence = false)
+
+            context("Serializing") {
+                val parsed = mapper.readTree(event.toJson())
+                parsed.shouldBeInstanceOf<ObjectNode>()
+                parsed.get("event").asText() shouldBe "speakers"
+                val speakers = parsed.get("speakers")
+                speakers.shouldBeInstanceOf<ArrayNode>()
+                speakers.map { it.asText() } shouldBe listOf("523834112-a0", "2394a3432-a0")
+                parsed.get("silence").asBoolean() shouldBe false
+            }
+
+            context("With no speakers yet, in silence") {
+                val parsed = mapper.readTree(SpeakersEvent(emptyList(), silence = true).toJson())
+                parsed.get("event").asText() shouldBe "speakers"
+                parsed.get("speakers").shouldBeInstanceOf<ArrayNode>().size() shouldBe 0
+                parsed.get("silence").asBoolean() shouldBe true
+            }
+        }
         context("InfoEvent") {
             val event = InfoEvent()
                 .put("application", "jitsi-videobridge")

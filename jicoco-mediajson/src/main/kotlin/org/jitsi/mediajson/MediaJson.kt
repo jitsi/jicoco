@@ -121,6 +121,19 @@ data class SourcesEvent(
 ) : Event("sources")
 
 /**
+ * The conference's recent speakers, in speech-activity order: the dominant speaker first. Sent by the bridge whenever
+ * the order changes (and once when the connection is established), limited to the sources the peer may receive, so a
+ * peer can follow the dominant speaker without measuring audio levels itself. Only ever sent by the bridge -- like
+ * [SourcesEvent] it is not registered in [Event]'s subtypes for parsing.
+ */
+data class SpeakersEvent(
+    /** Audio source names in recent-speaker order, the dominant speaker first. Empty until someone has spoken. */
+    val speakers: List<String>,
+    /** Whether the conference is currently silent; [speakers] then still holds the order before the silence. */
+    val silence: Boolean
+) : Event("speakers")
+
+/**
  * An informational message exchanged once when the connection is established, carrying
  * application/version/deployment/session metadata for runtime observability. It is a free-form
  * property bag (like [TranscriptionResultEvent]) so either side can add fields without a schema
