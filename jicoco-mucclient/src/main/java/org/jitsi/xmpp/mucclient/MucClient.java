@@ -23,6 +23,7 @@ import org.jitsi.retry.*;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.iqrequest.*;
 import org.jivesoftware.smack.packet.*;
+import org.jivesoftware.smack.sasl.*;
 import org.jivesoftware.smack.tcp.*;
 import org.jivesoftware.smack.util.*;
 import org.jivesoftware.smackx.disco.*;
@@ -38,6 +39,7 @@ import org.jxmpp.stringprep.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.DoubleSupplier;
 import java.util.stream.*;
 
 import static org.jitsi.xmpp.util.ErrorUtilKt.createError;
@@ -205,6 +207,22 @@ public class MucClient
     private final Logger logger;
 
     /**
+     * The backoff applied to connect-and-login attempts while the server
+     * rejects our login.
+     */
+    private final AuthFailureBackoff authFailureBackoff;
+
+    /**
+     * Set while we disconnect the connection ourselves after a failed login,
+     * so that {@code connectionClosed()} does not start another retry: the
+     * retry which tried to log in (or a task which has since replaced it)
+     * schedules the next attempt. This relies on Smack calling the
+     * {@code connectionClosed()} listeners synchronously from
+     * {@code disconnect()}.
+     */
+    private volatile boolean disconnectingAfterLoginFailure = false;
+
+    /**
      * The ping fail listener.
      */
     private final PingFailedListener pingFailedListener = new PingFailedListenerImpl();
@@ -228,7 +246,17 @@ public class MucClient
         public void reconnectionFailed(Exception e)
         {
             mucClientManager.reconnectionFailed(MucClient.this);
-            logger.warn("Reconnection failed: ", e);
+
+            SASLErrorException authFailure = findAuthFailure(e);
+            if (authFailure != null)
+            {
+                // Count it, so that the retry started below waits for the backoff too.
+                logAuthFailure(e, authFailure, authFailureBackoff.recordFailure());
+            }
+            else
+            {
+                logger.warn("Reconnection failed: ", e);
+            }
 
             // If there was an error reconnecting, do not give up, let's retry (reconnection stops if the connection
             // is connected, but we have another error after the connection is established). This can happen if we retry
@@ -237,8 +265,7 @@ public class MucClient
             {
                 xmppConnection.instantShutdown();
 
-                MucClient.this.connectRetry.runRetryingTask(
-                        new SimpleRetryTask(0, 2000, true, getConnectAndLoginCallable()));
+                MucClient.this.connectRetry.runRetryingTask(createConnectAndLoginTask(0, 2000));
             }
         }
     };
@@ -260,12 +287,22 @@ public class MucClient
                     { "hostname", config.getHostname() }
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1])));
         this.config = config;
+        this.authFailureBackoff = new AuthFailureBackoff(
+            config.getAuthFailureInitialBackoffMs(), config.getAuthFailureMaxBackoffMs());
     }
 
     @NotNull
     public MucClientConfiguration getConfig()
     {
         return config;
+    }
+
+    /**
+     * @return the backoff applied while the server rejects our login.
+     */
+    AuthFailureBackoff getAuthFailureBackoff()
+    {
+        return authFailureBackoff;
     }
 
     /**
@@ -350,6 +387,12 @@ public class MucClient
             {
                 logger.info("Authenticated, resumed=" + resumed);
 
+                int rejectedAttempts = authFailureBackoff.reset();
+                if (rejectedAttempts > 0)
+                {
+                    logger.info("Logged in after " + rejectedAttempts + " rejected login attempt(s).");
+                }
+
                 if (!resumed)
                 {
                     try
@@ -371,6 +414,13 @@ public class MucClient
                 mucClientManager.closed(MucClient.this);
                 logger.info("Closed.");
 
+                if (disconnectingAfterLoginFailure)
+                {
+                    // We closed the connection ourselves after a failed login. The retry which made that attempt
+                    // schedules the next one, starting another here would bypass its delay.
+                    return;
+                }
+
                 if (MucClient.this.connectRetry != null)
                 {
                     // FIXME this is a workaround for an issue that can happen
@@ -382,8 +432,7 @@ public class MucClient
                     // if the connection was closed, we want to continue trying
                     // so we will trigger the reconnection logic again
                     // till we are connected and will relay on smack's reconnect
-                    MucClient.this.connectRetry.runRetryingTask(
-                            new SimpleRetryTask(0, 1000, true, getConnectAndLoginCallable()));
+                    MucClient.this.connectRetry.runRetryingTask(createConnectAndLoginTask(0, 1000));
                 }
             }
 
@@ -402,7 +451,7 @@ public class MucClient
 
         logger.info("Dispatching a thread to connect and login.");
         this.connectRetry = new RetryStrategy(this.executor);
-        this.connectRetry.runRetryingTask(new SimpleRetryTask(0, 5000, true, getConnectAndLoginCallable()));
+        this.connectRetry.runRetryingTask(createConnectAndLoginTask(0, 5000));
     }
 
     /**
@@ -706,7 +755,7 @@ public class MucClient
             }
             catch(Exception t)
             {
-                logger.warn("Error connecting:", t);
+                logger.warn("Error connecting" + describeBackoff() + ":", t);
                 return true;
             }
 
@@ -723,11 +772,29 @@ public class MucClient
                 }
                 catch (Exception e)
                 {
-                    // We've observed the XMPPTCPConnection get in a broken state where it is connected, but unable to
-                    // login (because the locally cached SASL mechanisms supported by the server are empty). We
-                    // disconnect in order to trigger a re-connect and clear that state on the next attempt.
-                    logger.warn("Failed to login. Disconnecting to trigger a re-connect.", e);
-                    xmppConnection.disconnect(null);
+                    SASLErrorException authFailure = findAuthFailure(e);
+                    if (authFailure != null)
+                    {
+                        logAuthFailure(e, authFailure, authFailureBackoff.recordFailure());
+                    }
+                    else
+                    {
+                        logger.warn("Failed to login. Disconnecting, will reconnect on the next attempt"
+                            + describeBackoff() + ".", e);
+                    }
+
+                    // Disconnect so that the next attempt of this retry reconnects from scratch. We've observed the
+                    // XMPPTCPConnection get in a broken state where it is connected, but unable to login (because the
+                    // locally cached SASL mechanisms supported by the server are empty), and reconnecting clears it.
+                    disconnectingAfterLoginFailure = true;
+                    try
+                    {
+                        xmppConnection.disconnect(null);
+                    }
+                    finally
+                    {
+                        disconnectingAfterLoginFailure = false;
+                    }
                     return true;
                 }
 
@@ -742,6 +809,244 @@ public class MucClient
 
             return false; // we are connected and logged in, so we don't need to retry
         };
+    }
+
+    /**
+     * Creates the task which connects and logs in, backing off while the
+     * server rejects our login.
+     *
+     * @param initialDelay the delay in ms before the first attempt, when no
+     * login has been rejected since the last successful login.
+     * @param retryDelay the delay in ms between attempts, when no login has
+     * been rejected since the last successful login.
+     */
+    private RetryTask createConnectAndLoginTask(long initialDelay, long retryDelay)
+    {
+        return new ConnectAndLoginTask(initialDelay, retryDelay, authFailureBackoff, getConnectAndLoginCallable());
+    }
+
+    /**
+     * Logs a login attempt which the server rejected. The first rejection
+     * since the last successful login is logged as a warning with the
+     * exception, repeats at info level without it, so a misconfigured client
+     * produces at most one line per attempt.
+     *
+     * @param e the exception thrown when logging in.
+     * @param authFailure the exception in the cause chain of {@code e} with
+     * which the server rejected the login.
+     * @param nextDelayMs the delay before the next attempt.
+     */
+    private void logAuthFailure(Exception e, SASLErrorException authFailure, long nextDelayMs)
+    {
+        int attempts = authFailureBackoff.getFailures();
+        String reason = authFailure.getSASLFailure().getSASLErrorString();
+        String text = authFailure.getSASLFailure().getDescriptiveText();
+        if (text != null && !text.isEmpty())
+        {
+            reason += ": " + text;
+        }
+        String account = config.getUsername() + "@" + config.getDomain();
+
+        if (attempts == 1)
+        {
+            logger.warn("The server rejected the login of " + account + " with " + authFailure.getMechanism()
+                + " (" + reason + "), will retry with backoff, next attempt in " + nextDelayMs + " ms.", e);
+        }
+        else
+        {
+            logger.info("The server rejected the login of " + account + " again (" + reason + "), attempt "
+                + attempts + ", next attempt in " + nextDelayMs + " ms.");
+        }
+    }
+
+    /**
+     * @return a note on the auth failure backoff for the log line of a failed
+     * attempt, or an empty string if no login has been rejected since the
+     * last successful login.
+     */
+    private String describeBackoff()
+    {
+        int failures = authFailureBackoff.getFailures();
+        if (failures == 0)
+        {
+            return "";
+        }
+        return " (still backing off after " + failures + " rejected login(s), next attempt in "
+            + authFailureBackoff.getDelayMs() + " ms)";
+    }
+
+    /**
+     * The SASL errors with which the server rejects our login until our
+     * credentials, our configuration or the server's change, so that retrying
+     * right away won't help.
+     */
+    private static final Set<SASLError> AUTH_FAILURES = EnumSet.of(
+        SASLError.not_authorized,
+        SASLError.account_disabled,
+        SASLError.credentials_expired,
+        SASLError.encryption_required,
+        SASLError.mechanism_too_weak,
+        SASLError.invalid_authzid);
+
+    /**
+     * Finds the exception, if any, with which the server rejected our login
+     * with one of the {@link #AUTH_FAILURES}, in the first 10 links of the
+     * cause chain of {@code t}. Other SASL failures, such as
+     * {@code temporary-auth-failure} or a mechanism mismatch, don't count.
+     *
+     * @param t the exception thrown when logging in.
+     * @return the {@link SASLErrorException} which rejected our login,
+     * or {@code null} if {@code t} is not such a rejection.
+     */
+    static SASLErrorException findAuthFailure(Throwable t)
+    {
+        // Bound the depth in case of a cycle in the cause chain.
+        for (int depth = 0; t != null && depth < 10; t = t.getCause(), depth++)
+        {
+            if (t instanceof SASLErrorException)
+            {
+                SASLErrorException e = (SASLErrorException) t;
+                if (e.getSASLFailure() != null && AUTH_FAILURES.contains(e.getSASLFailure().getSASLError()))
+                {
+                    return e;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Exponential backoff for login attempts which the server rejected. The
+     * first rejection delays the next attempt by the initial delay, each
+     * further rejection doubles it up to the maximum delay, and every delay
+     * is randomized by {@link #JITTER} so that clients which were rejected at
+     * the same time don't retry in lockstep. A successful login resets it.
+     */
+    static class AuthFailureBackoff
+    {
+        /**
+         * The maximum relative deviation of a delay from its nominal value.
+         */
+        static final double JITTER = 0.1;
+
+        private final long initialDelayMs;
+
+        private final long maxDelayMs;
+
+        /**
+         * Produces values in [0, 1) to randomize the delays.
+         */
+        private final DoubleSupplier random;
+
+        /**
+         * The number of rejected login attempts since the last successful
+         * login.
+         */
+        private int failures = 0;
+
+        /**
+         * The delay before the next attempt, or 0 if no login attempt has
+         * been rejected since the last successful login. Other failures don't
+         * change it.
+         */
+        private long delayMs = 0;
+
+        AuthFailureBackoff(long initialDelayMs, long maxDelayMs)
+        {
+            this(initialDelayMs, maxDelayMs, () -> ThreadLocalRandom.current().nextDouble());
+        }
+
+        AuthFailureBackoff(long initialDelayMs, long maxDelayMs, DoubleSupplier random)
+        {
+            this.initialDelayMs = Math.max(1, initialDelayMs);
+            this.maxDelayMs = Math.max(this.initialDelayMs, maxDelayMs);
+            this.random = random;
+        }
+
+        /**
+         * Records a rejected login attempt.
+         * @return the delay in ms before the next attempt.
+         */
+        synchronized long recordFailure()
+        {
+            failures++;
+            double nominal = Math.min(maxDelayMs, initialDelayMs * Math.pow(2, Math.min(failures - 1, 62)));
+            delayMs = Math.max(1, Math.round(nominal * (1 + JITTER * (2 * random.getAsDouble() - 1))));
+            return delayMs;
+        }
+
+        /**
+         * Resets the backoff after a successful login.
+         * @return the number of rejected attempts which preceded it.
+         */
+        synchronized int reset()
+        {
+            int previousFailures = failures;
+            failures = 0;
+            delayMs = 0;
+            return previousFailures;
+        }
+
+        /**
+         * @return the number of rejected login attempts since the last
+         * successful login.
+         */
+        synchronized int getFailures()
+        {
+            return failures;
+        }
+
+        /**
+         * @return the delay in ms before the next attempt, or 0 if no login
+         * attempt has been rejected since the last successful login.
+         */
+        synchronized long getDelayMs()
+        {
+            return delayMs;
+        }
+
+        /**
+         * @return the delay in ms before the next attempt if a login attempt
+         * has been rejected since the last successful login, otherwise
+         * {@code fallbackMs}.
+         */
+        synchronized long getDelayMs(long fallbackMs)
+        {
+            return failures > 0 ? delayMs : fallbackMs;
+        }
+    }
+
+    /**
+     * The task which connects and logs in. It uses the delays it was created
+     * with, unless a login has been rejected since the last successful login:
+     * then every attempt, including the first one of a newly started task,
+     * waits for the current delay of the {@link AuthFailureBackoff} instead.
+     * The first attempt's delay counts from when the task is started.
+     */
+    static class ConnectAndLoginTask
+        extends SimpleRetryTask
+    {
+        private final AuthFailureBackoff backoff;
+
+        ConnectAndLoginTask(
+            long initialDelay, long retryDelay, AuthFailureBackoff backoff, Callable<Boolean> callable)
+        {
+            super(initialDelay, retryDelay, true, callable);
+            this.backoff = backoff;
+        }
+
+        @Override
+        public long getInitialDelay()
+        {
+            return backoff.getDelayMs(super.getInitialDelay());
+        }
+
+        @Override
+        public long getRetryDelay()
+        {
+            return backoff.getDelayMs(super.getRetryDelay());
+        }
     }
 
     /**
