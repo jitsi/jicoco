@@ -58,11 +58,13 @@ public class RetryStrategy
     private ScheduledFuture<?> future;
 
     /**
-     * Inner class implementing <tt>Runnable</tt> that does additional
-     * processing around Callable retry job.
+     * The runner of the current {@link #task}. Every call to
+     * {@link #runRetryingTask(RetryTask)} creates a new runner, and a runner
+     * which is no longer the current one does not schedule further attempts,
+     * so only the current task keeps rescheduling itself. A superseded runner
+     * may still be finishing an attempt which was already running.
      */
-    private final TaskRunner taskRunner = new TaskRunner();
-
+    private TaskRunner taskRunner;
 
     /**
      * Creates new <tt>RetryStrategy</tt> instance that will use
@@ -106,7 +108,10 @@ public class RetryStrategy
             future = null;
         }
 
-        task.setCancelled(true);
+        if (task != null)
+        {
+            task.setCancelled(true);
+        }
     }
 
     /**
@@ -124,6 +129,13 @@ public class RetryStrategy
      * retry attempts will be rescheduled as long as it's callable method
      * returns <tt>true</tt> or until ({@link #cancel()} is called.
      *
+     * The given task replaces any task previously started with this method:
+     * an attempt of the previous task which is still pending is cancelled, and
+     * an attempt of the previous task which is currently running is not
+     * interrupted, but will not schedule further attempts. At most one attempt
+     * is pending at any time. With a multi-threaded executor, a superseded
+     * attempt which is still running may overlap the new task's first attempt.
+     *
      * @param task the retry task to be employed by this retry strategy instance
      */
     synchronized public void runRetryingTask(final RetryTask task)
@@ -131,7 +143,13 @@ public class RetryStrategy
         if (task == null)
             throw new NullPointerException("task");
 
+        if (future != null)
+        {
+            future.cancel(false);
+        }
+
         this.task = task;
+        this.taskRunner = new TaskRunner(task);
         this.future
             = executor.schedule(
                     taskRunner,
@@ -140,39 +158,57 @@ public class RetryStrategy
     }
 
     /**
-     * Schedules new retry attempt if we d
+     * Schedules a new retry attempt, unless the strategy has been cancelled or
+     * <tt>runner</tt> has been superseded by a later call to
+     * {@link #runRetryingTask(RetryTask)}.
+     *
+     * @param runner the runner which has just finished an attempt.
      */
-    synchronized private void scheduleRetry()
+    synchronized private void scheduleRetry(TaskRunner runner)
     {
-        if (task == null || task.isCancelled())
+        if (runner != taskRunner || runner.task.isCancelled())
             return;
 
         this.future
             =  executor.schedule(
-                    taskRunner,
-                    task.getRetryDelay(),
+                    runner,
+                    runner.task.getRetryDelay(),
                     TimeUnit.MILLISECONDS);
     }
 
     /**
      * Some extra processing around running retry callable.
      */
-    class TaskRunner implements Runnable
+    private class TaskRunner implements Runnable
     {
+        /**
+         * The task which this runner executes. It deliberately shadows
+         * {@link RetryStrategy#task}: a superseded runner finishes the attempt
+         * of its own task, not of the current one.
+         */
+        private final RetryTask task;
+
+        TaskRunner(RetryTask task)
+        {
+            this.task = task;
+        }
+
         @Override
         public void run()
         {
             try
             {
                 if (task.getCallable().call())
-                    scheduleRetry();
+                    scheduleRetry(this);
             }
-            catch (Exception e)
+            catch (Throwable t)
             {
-                logger.error(e, e);
+                // Catch errors too: an error escaping from here would end the
+                // retries without a trace, since nothing reads the future.
+                logger.error(t, t);
 
                 if (task.willRetryAfterException())
-                    scheduleRetry();
+                    scheduleRetry(this);
             }
         }
     }
