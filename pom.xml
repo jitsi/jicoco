@@ -63,7 +63,6 @@
         <kotlin.version>2.4.20</kotlin.version>
         <jackson.version>2.21.7</jackson.version>
         <kotest.version>5.9.1</kotest.version>
-        <mockk.version>1.14.11</mockk.version>
         <prometheus.version>0.16.0</prometheus.version>
         <dokka.version>2.2.0</dokka.version>
         <jetty.version>12.0.41</jetty.version>
@@ -73,6 +72,7 @@
         <smack.version>4.4.8-jitsi-4</smack.version>
         <opentelemetry.version>1.68.0</opentelemetry.version>
         <ktlint.version>1.8.0</ktlint.version>
+        <typesafe.config.version>1.4.2</typesafe.config.version>
     </properties>
 
     <dependencyManagement>
