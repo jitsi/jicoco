@@ -115,6 +115,47 @@ public class MucClientConfiguration
     public static String SECURITY_MODE = "SECURITY_MODE";
 
     /**
+     * The name of the property (without a prefix) which specifies the delay
+     * in milliseconds before the first retry after the XMPP server rejects
+     * our login. Each further rejection doubles the delay, up to
+     * {@link #AUTH_FAILURE_MAX_BACKOFF_MS}, and every delay is randomized by
+     * &plusmn;10%.
+     *
+     * This is not a required property, it defaults to
+     * {@link #DEFAULT_AUTH_FAILURE_INITIAL_BACKOFF_MS}. A value which is not a
+     * positive integer is ignored with a warning.
+     */
+    public static String AUTH_FAILURE_INITIAL_BACKOFF_MS = "AUTH_FAILURE_INITIAL_BACKOFF_MS";
+
+    /**
+     * The name of the property (without a prefix) which specifies the
+     * maximum delay in milliseconds between retries while the XMPP server
+     * keeps rejecting our login, before the &plusmn;10% randomization.
+     * A value below {@link #AUTH_FAILURE_INITIAL_BACKOFF_MS} is raised to it.
+     *
+     * This is not a required property, it defaults to
+     * {@link #DEFAULT_AUTH_FAILURE_MAX_BACKOFF_MS}. A value which is not a
+     * positive integer is ignored with a warning.
+     */
+    public static String AUTH_FAILURE_MAX_BACKOFF_MS = "AUTH_FAILURE_MAX_BACKOFF_MS";
+
+    /**
+     * The default for {@link #AUTH_FAILURE_INITIAL_BACKOFF_MS}. It matches the
+     * 1s delay used for reconnects after a network failure. A rejection which
+     * clears within about a second costs one such interval. A longer one is
+     * noticed at most about its own duration after it clears, and never more
+     * than the maximum delay after.
+     */
+    public static final long DEFAULT_AUTH_FAILURE_INITIAL_BACKOFF_MS = 1000;
+
+    /**
+     * The default for {@link #AUTH_FAILURE_MAX_BACKOFF_MS}. A misconfigured
+     * client makes about one login attempt per minute, and still picks up
+     * fixed credentials within about a minute without being restarted.
+     */
+    public static final long DEFAULT_AUTH_FAILURE_MAX_BACKOFF_MS = 60_000;
+
+    /**
      * Loads a list of {@link MucClientConfiguration} objects based on
      * properties read from a {@link ConfigurationService} with a given
      * {@code prefix}.
@@ -420,6 +461,77 @@ public class MucClientConfiguration
     public void setSecurityMode(ConnectionConfiguration.SecurityMode securityMode)
     {
         props.put(SECURITY_MODE, securityMode != null ? securityMode.toString() : null);
+    }
+
+    /**
+     * @return the delay in milliseconds before the first retry after the XMPP
+     * server rejects our login.
+     */
+    public long getAuthFailureInitialBackoffMs()
+    {
+        return getPositiveLong(AUTH_FAILURE_INITIAL_BACKOFF_MS, DEFAULT_AUTH_FAILURE_INITIAL_BACKOFF_MS);
+    }
+
+    /**
+     * Sets the delay in milliseconds before the first retry after the XMPP
+     * server rejects our login.
+     *
+     * @param authFailureInitialBackoffMs the delay in ms. A value which is not
+     * positive is ignored when read.
+     */
+    public void setAuthFailureInitialBackoffMs(long authFailureInitialBackoffMs)
+    {
+        props.put(AUTH_FAILURE_INITIAL_BACKOFF_MS, Long.toString(authFailureInitialBackoffMs));
+    }
+
+    /**
+     * @return the maximum delay in milliseconds between retries while the XMPP
+     * server keeps rejecting our login.
+     */
+    public long getAuthFailureMaxBackoffMs()
+    {
+        return getPositiveLong(AUTH_FAILURE_MAX_BACKOFF_MS, DEFAULT_AUTH_FAILURE_MAX_BACKOFF_MS);
+    }
+
+    /**
+     * Sets the maximum delay in milliseconds between retries while the XMPP
+     * server keeps rejecting our login.
+     *
+     * @param authFailureMaxBackoffMs the delay in ms. A value which is not
+     * positive is ignored when read.
+     */
+    public void setAuthFailureMaxBackoffMs(long authFailureMaxBackoffMs)
+    {
+        props.put(AUTH_FAILURE_MAX_BACKOFF_MS, Long.toString(authFailureMaxBackoffMs));
+    }
+
+    /**
+     * Reads a property as a positive long, falling back to a default if it is
+     * missing or invalid.
+     */
+    private long getPositiveLong(String name, long defaultValue)
+    {
+        String str = props.get(name);
+        if (str == null || str.isEmpty())
+        {
+            return defaultValue;
+        }
+
+        try
+        {
+            long value = Long.parseLong(str.trim());
+            if (value > 0)
+            {
+                return value;
+            }
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+
+        logger.warn("Ignoring invalid value for " + name + " (id=" + getId() + "): " + str + ", using "
+            + defaultValue);
+        return defaultValue;
     }
 
     /**
